@@ -1,0 +1,72 @@
+/* Atom orbit animation */
+.atom-orbit {
+    @apply absolute inset-0;
+    border: 2px solid transparent;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: orbit 3s linear infinite;
+}
+
+.atom-orbit::after {
+    content: "";
+    @apply absolute w-2 h-2 bg-blue-500 rounded-full;
+    top: -1px;
+    right: 12%;
+}
+
+@keyframes orbit {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Progress circle animation */
+@keyframes progress {
+    0% {
+        stroke-dashoffset: 289;
+    }
+
+    50% {
+        stroke-dashoffset: 144.5;
+    }
+
+    100% {
+        stroke-dashoffset: 289;
+    }
+}
+
+/* Subtle pulse animation */
+@keyframes pulse-subtle {
+
+    0%,
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+    }
+}
+
+.animate-pulse-subtle {
+    animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+    animation: spin 4s linear infinite;
+}
+
+/* Rotate utility classes */
+.rotate-60 {
+    transform: rotate(60deg);
+}
+
+.-rotate-60 {
+    transform: rotate(-60deg);
+}
