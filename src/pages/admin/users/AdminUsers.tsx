@@ -11,186 +11,8 @@ import DataTable from "@/components/data-table/data-table"
 import { useLocation, useNavigate } from "react-router-dom"
 import useDebounce from "@/hooks/use-debounce"
 import { Column } from "@/models/column"
+import mockupUsers from "@/models/mockup-user"
 
-// Mock user data
-const mokcupusers = [
-  {
-    id: 1,
-    name: "Nguyen Van A",
-    email: "nguyenvana@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-15",
-  },
-  {
-    id: 2,
-    name: "Tran Thi B",
-    email: "tranthib@example.com",
-    status: "active",
-    role: "Admin",
-    lastActive: "2023-05-16",
-  },
-  {
-    id: 3,
-    name: "Le Van C",
-    email: "levanc@example.com",
-    status: "blocked",
-    role: "User",
-    lastActive: "2023-05-10",
-  },
-  {
-    id: 4,
-    name: "Pham Thi D",
-    email: "phamthid@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-14",
-  },
-  {
-    id: 5,
-    name: "Hoang Van E",
-    email: "hoangvane@example.com",
-    status: "inactive",
-    role: "User",
-    lastActive: "2023-04-30",
-  },
-  {
-    id: 6,
-    name: "Nguyen Thi F",
-    email: "nguyenthif@example.com",
-    status: "active",
-    role: "Moderator",
-    lastActive: "2023-05-17",
-  },
-  {
-    id: 7,
-    name: "Tran Van G",
-    email: "tranvang@example.com",
-    status: "blocked",
-    role: "User",
-    lastActive: "2023-05-01",
-  },
-  {
-    id: 8,
-    name: "Le Thi H",
-    email: "lethih@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-18",
-  },
-  {
-    id: 9,
-    name: "Pham Van I",
-    email: "phamvani@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-19",
-  },
-  {
-    id: 10,
-    name: "Nguyen Thi K",
-    email: "nguyenthik@example.com",
-    status: "inactive",
-    role: "User",
-    lastActive: "2023-05-05",
-  },
-  {
-    id: 11,
-    name: "Tran Van L",
-    email: "tranvanl@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-20",
-  },
-  {
-    id: 12,
-    name: "Le Thi M",
-    email: "lethim@example.com",
-    status: "blocked",
-    role: "User",
-    lastActive: "2023-05-02",
-  },
-  {
-    id: 13,
-    name: "Hoang Van N",
-    email: "hoangvann@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-21",
-  },
-  {
-    id: 14,
-    name: "Pham Thi O",
-    email: "phamthio@example.com",
-    status: "active",
-    role: "Moderator",
-    lastActive: "2023-05-22",
-  },
-  {
-    id: 15,
-    name: "Nguyen Van P",
-    email: "nguyenvanp@example.com",
-    status: "inactive",
-    role: "User",
-    lastActive: "2023-05-03",
-  },
-  {
-    id: 16,
-    name: "Tran Thi Q",
-    email: "tranthiq@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-23",
-  },
-  {
-    id: 17,
-    name: "Le Van R",
-    email: "levanr@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-24",
-  },
-  {
-    id: 18,
-    name: "Pham Van S",
-    email: "phamvans@example.com",
-    status: "blocked",
-    role: "User",
-    lastActive: "2023-05-04",
-  },
-  {
-    id: 19,
-    name: "Hoang Thi T",
-    email: "hoangthi@example.com",
-    status: "active",
-    role: "Admin",
-    lastActive: "2023-05-25",
-  },
-  {
-    id: 20,
-    name: "Nguyen Van U",
-    email: "nguyenvanu@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-26",
-  },
-  {
-    id: 21,
-    name: "Tran Van V",
-    email: "tranvanv@example.com",
-    status: "inactive",
-    role: "User",
-    lastActive: "2023-05-06",
-  },
-  {
-    id: 22,
-    name: "Le Thi X",
-    email: "lethix@example.com",
-    status: "active",
-    role: "User",
-    lastActive: "2023-05-27",
-  },
-]
 const pageSizeOptions = [5, 10, 15, 20]
 
 const AdminUsers = () => {
@@ -214,8 +36,8 @@ const AdminUsers = () => {
   const fetchData = async () => {
     setLoading(true);
     // fetch users from API
-    setUsers(mokcupusers);
-    setTotalItems(mokcupusers.length);
+    setUsers(mockupUsers);
+    setTotalItems(mockupUsers.length);
     setLoading(false);
   };
 
@@ -353,7 +175,7 @@ const AdminUsers = () => {
       key: "actions",
       title: "Thao tác",
       width: "60px",
-      align: "centrer",
+      align: "center",
       render: (_, record) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

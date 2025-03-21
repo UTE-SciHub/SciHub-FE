@@ -15,6 +15,8 @@ import AdminFinance from "@/pages/admin/AdminFinance";
 import AdminAnnouncements from "@/pages/admin/AdminAnnouncements";
 import NotFoundPage from "@/pages/NotFoundPage";
 import AdminUsers from "@/pages/admin/users/AdminUsers";
+import CreateRegistrationPeriod from "@/pages/admin/registration/page";
+import ExamplePage from "@/pages/example";
 
 const routers = createBrowserRouter([
   {
@@ -38,8 +40,10 @@ const routers = createBrowserRouter([
       { path: "topics", element: <AdminTopics /> },
       { path: "contracts", element: <AdminContracts /> },
       { path: "finance", element: <AdminFinance /> },
+      { path: "registration", element: <CreateRegistrationPeriod /> },
       { path: "announcements", element: <AdminAnnouncements /> },
       { path: "users", element: <AdminUsers /> },
+      { path: "loading", element: <ExamplePage /> },
     ],
   },
   { path: "*", element: <NotFoundPage /> },
