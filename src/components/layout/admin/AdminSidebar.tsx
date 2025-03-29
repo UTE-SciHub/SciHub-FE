@@ -11,6 +11,7 @@ import {
   BarChart2,
   LogOut,
   Home,
+  List,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,9 +52,19 @@ const sidebarItems = [
     icon: BarChart2,
   },
   {
+    title: "Quản lý đợt đăng ký",
+    href: "/admin/registration",
+    icon: FileText,
+  },
+  {
     title: "Quản lý người dùng",
     href: "/admin/users",
     icon: Users,
+  },
+  {
+    title: "Danh sách khoa",
+    href: "/admin/departments",
+    icon: List,
   },
   {
     title: "Cài đặt hệ thống",
@@ -68,7 +79,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
       initial={{ width: collapsed ? 70 : 256 }}
       animate={{ width: collapsed ? 70 : 256 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="fixed left-0 top-0 h-screen bg-white border-r z-40 pt-14 shadow-sm"
+      className="fixed left-0 top-0 h-screen bg-primary-900 border-r z-40 pt-14 shadow-sm"
     >
       <nav className="p-2 space-y-1 h-[calc(100vh-8rem)] overflow-y-auto">
         {sidebarItems.map((item) => (
@@ -77,10 +88,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
             to={item.href}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 text-sm font-medium px-3 py-2.5 rounded-md transition-all duration-300",
+                "flex items-center gap-3 text-sm text-white font-medium px-3 py-2.5 rounded-md transition-all duration-300",
                 isActive
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-gray-700 hover:bg-gray-100",
+                  ? "bg-primary-100 text-gray-900"
+                  : "hover:bg-gray-100 hover:text-gray-900",
                 collapsed && "justify-center px-2"
               )
             }
@@ -91,9 +102,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
               initial={{ opacity: collapsed ? 0 : 1 }}
               animate={{ opacity: collapsed ? 0 : 1 }}
               transition={{ duration: 0.2 }}
-              className={`overflow-hidden whitespace-nowrap ${
-                collapsed ? "w-0" : "w-auto"
-              }`}
+              className={`overflow-hidden whitespace-nowrap ${collapsed ? "w-0" : "w-auto"
+                }`}
             >
               {item.title}
             </motion.span>

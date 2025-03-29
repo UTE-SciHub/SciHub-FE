@@ -56,11 +56,7 @@ const formSchema = z
     decisionNumber: z
       .string()
       .min(3, "Số quyết định không được để trống")
-      .max(50, "Số quyết định không được vượt quá 50 ký tự")
-      .refine((val) => /^[A-Za-z0-9\-/]+$/.test(val), {
-        message:
-          "Số quyết định chỉ được chứa chữ cái, số, dấu gạch ngang và dấu gạch chéo",
-      }),
+      .max(50, "Số quyết định không được vượt quá 50 ký tự"),
     decisionFile: z.string().min(1, "Vui lòng tải lên file quyết định"),
     startDate: z.date({
       required_error: "Vui lòng chọn ngày bắt đầu",
@@ -143,9 +139,11 @@ export default function CreateRegistrationPeriod() {
         title: response.data.message,
         variant: variant,
       });
-    } catch (error) {
-      console.error("Error:", error);
 
+      if (response.status === 201 && response.data.code === 1000) {
+        navigate("/admin/registration");
+      }
+    } catch (error) {
       toast({
         title: "Lỗi",
         description: "Đã xảy ra lỗi, vui lòng thử lại sau",
@@ -161,7 +159,7 @@ export default function CreateRegistrationPeriod() {
   };
 
   return (
-    <div className="container">
+    <div className="">
       {isLoading && <Loading onCancel={handleCancelLoading} />}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold tracking-tight">
@@ -339,8 +337,13 @@ export default function CreateRegistrationPeriod() {
                             initialFocus
                             disabled={(date) => {
                               const startDate = form.getValues("startDate");
-                              return startDate && date <= startDate;
+                              if (!startDate) return false;
+
+                              const minDate = new Date(startDate);
+                              minDate.setDate(minDate.getDate() + 7);
+                              return date <= minDate;
                             }}
+
                           />
                         </PopoverContent>
                       </Popover>

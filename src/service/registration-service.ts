@@ -9,3 +9,14 @@ export const create = async (data: FormData) => {
         },
     });
 };
+
+export const getAll = async (params: {
+    p?: number;
+    s?: number;
+    sort?: string;
+    order?: string;
+    q?: string;
+    status?: string;
+}) => {
+    return axiosClient.get(`${BASE_URL}registration-period`, { params });
+};

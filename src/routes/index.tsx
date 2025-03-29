@@ -15,10 +15,14 @@ import AdminFinance from "@/pages/admin/AdminFinance";
 import AdminAnnouncements from "@/pages/admin/AdminAnnouncements";
 import NotFoundPage from "@/pages/NotFoundPage";
 import AdminUsers from "@/pages/admin/users/AdminUsers";
-import CreateRegistrationPeriod from "@/pages/admin/registration/page";
-import ExamplePage from "@/pages/example";
+import CreateRegistrationPeriod from "@/pages/admin/registration/create-registration";
+import AdminRegistrationPeriods from "@/pages/admin/registration/list-registration";
+import Login from "@/pages/Login";
+import ProfilePage from "@/pages/user/Profile";
+import ListDepartment from "@/pages/admin/department/ListDepartment";
 
 const routers = createBrowserRouter([
+  { path: "/login", element: <Login /> },
   {
     path: "/",
     element: <UserLayout />,
@@ -30,6 +34,7 @@ const routers = createBrowserRouter([
       { path: "topic-execution", element: <TopicExecution /> },
       { path: "topic-completion", element: <TopicCompletion /> },
       { path: "archive", element: <Archive /> },
+      { path: "profile", element: <ProfilePage /> },
     ],
   },
   {
@@ -40,10 +45,11 @@ const routers = createBrowserRouter([
       { path: "topics", element: <AdminTopics /> },
       { path: "contracts", element: <AdminContracts /> },
       { path: "finance", element: <AdminFinance /> },
-      { path: "registration", element: <CreateRegistrationPeriod /> },
       { path: "announcements", element: <AdminAnnouncements /> },
       { path: "users", element: <AdminUsers /> },
-      { path: "loading", element: <ExamplePage /> },
+      { path: "registration", element: <AdminRegistrationPeriods /> },
+      { path: "registration/add", element: <CreateRegistrationPeriod /> },
+      { path: "departments", element: <ListDepartment /> },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

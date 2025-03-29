@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Bell, Search, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import useUserStore from "@/store/userStore";
 
 interface AdminHeaderProps {
   collapsed: boolean;
@@ -17,8 +18,11 @@ interface AdminHeaderProps {
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
+  const user = useUserStore((state) => state.user);
+  const navigate = useNavigate();
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-white">
       <div className="flex h-14 items-center px-4">
         <div className="flex items-center gap-4">
           <NavLink to="/admin" className="flex items-center gap-2 mr-16">
@@ -53,6 +57,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
             <Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Tìm kiếm..." className="pl-8 w-full" />
           </div>
+
+          <span className="text-sm font-medium">
+            Xin chào, {user?.email || "Guest"}
+          </span>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -116,9 +124,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Admin</DropdownMenuLabel>
+              <DropdownMenuLabel>{user?.email || ""}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Hồ sơ</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/profile")}>Hồ sơ</DropdownMenuItem>
               <DropdownMenuItem>Cài đặt</DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <NavLink to="/">Chuyển sang giao diện người dùng</NavLink>

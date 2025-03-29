@@ -1,19 +1,41 @@
-import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Eye, MoreHorizontal, Search, Trash2, UserPlus, UserX } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import DataTable from "@/components/data-table/data-table"
-import { useLocation, useNavigate } from "react-router-dom"
-import useDebounce from "@/hooks/use-debounce"
-import { Column } from "@/models/column"
-import mockupUsers from "@/models/mockup-user"
-
-const pageSizeOptions = [5, 10, 15, 20]
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Eye,
+  MoreHorizontal,
+  Search,
+  Trash2,
+  UserPlus,
+  UserX,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import DataTable from "@/components/data-table/data-table";
+import { useLocation, useNavigate } from "react-router-dom";
+import useDebounce from "@/hooks/use-debounce";
+import { Column } from "@/models/column";
+import mockupUsers from "@/models/mockup-user";
 
 const AdminUsers = () => {
   const location = useLocation();
@@ -63,9 +85,12 @@ const AdminUsers = () => {
     navigate({ search: params.toString() }, { replace: true });
   }, [debouncedSearchQuery, navigate]);
 
-  const indexOfLastUser = currentPage * itemsPerPage
-  const indexOfFirstUser = indexOfLastUser - itemsPerPage
-  const currentUsers = users.slice(indexOfFirstUser, Math.min(indexOfLastUser, users.length))
+  const indexOfLastUser = currentPage * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const currentUsers = users.slice(
+    indexOfFirstUser,
+    Math.min(indexOfLastUser, users.length)
+  );
 
   const handleSortChange = (field: string, order: string) => {
     setSortField(field);
@@ -75,75 +100,71 @@ const AdminUsers = () => {
   };
 
   const handleStatusFilterChange = (status) => {
-    setStatusFilter(status)
-    setCurrentPage(1)
-  }
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
 
   const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value)
-    setCurrentPage(1)
-  }
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handlePageChange = (pageNumber) => {
-    console.log(`Fetching page ${pageNumber} with ${itemsPerPage} items per page`)
-    setCurrentPage(pageNumber)
-  }
+    console.log(
+      `Fetching page ${pageNumber} with ${itemsPerPage} items per page`
+    );
+    setCurrentPage(pageNumber);
+  };
 
   const handlePageSizeChange = (newPageSize) => {
-    console.log(`Changing page size to ${newPageSize}`)
+    console.log(`Changing page size to ${newPageSize}`);
 
-    const firstItemIndex = (currentPage - 1) * itemsPerPage + 1
-    const newCurrentPage = Math.max(1, Math.ceil(firstItemIndex / newPageSize))
+    const firstItemIndex = (currentPage - 1) * itemsPerPage + 1;
+    const newCurrentPage = Math.max(1, Math.ceil(firstItemIndex / newPageSize));
 
-    setItemsPerPage(newPageSize)
-    setCurrentPage(newCurrentPage)
-  }
+    setItemsPerPage(newPageSize);
+    setCurrentPage(newCurrentPage);
+  };
 
   const handleViewUser = (user) => {
-    setSelectedUser(user)
-  }
+    setSelectedUser(user);
+  };
 
   const handleBlockUser = (userId) => {
-    console.log(`Blocking user with ID: ${userId}`)
-  }
+    console.log(`Blocking user with ID: ${userId}`);
+  };
 
   const handleUnblockUser = (userId) => {
-    console.log(`Unblocking user with ID: ${userId}`)
-  }
+    console.log(`Unblocking user with ID: ${userId}`);
+  };
 
   const handleSelectionChange = (keys: string[], rows: any[]) => {
-    setSelectedRowKeys(keys)
-    setSelectedRows(rows)
-    console.log("Selected users:", rows)
-  }
+    setSelectedRowKeys(keys);
+    setSelectedRows(rows);
+    console.log("Selected users:", rows);
+  };
 
   const handleBatchBlock = () => {
-    console.log(selectedRows)
-    setSelectedRowKeys([])
-    setSelectedRows([])
-  }
+    console.log(selectedRows);
+    setSelectedRowKeys([]);
+    setSelectedRows([]);
+  };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "active":
-        return <Badge className="bg-green-500">Hoạt động</Badge>
+        return <Badge className="bg-green-500">Hoạt động</Badge>;
       case "blocked":
-        return <Badge className="bg-red-500">Đã chặn</Badge>
+        return <Badge className="bg-red-500">Đã chặn</Badge>;
       case "inactive":
-        return <Badge className="bg-gray-500">Không hoạt động</Badge>
+        return <Badge className="bg-gray-500">Không hoạt động</Badge>;
       default:
-        return <Badge>{status}</Badge>
+        return <Badge>{status}</Badge>;
     }
-  }
+  };
 
   // Define table columns
   const columns: Column[] = [
-    {
-      key: "id",
-      title: "STT",
-      width: "40px",
-      sortable: true,
-    },
     {
       key: "name",
       title: "Tên",
@@ -189,8 +210,8 @@ const AdminUsers = () => {
               <DialogTrigger asChild>
                 <DropdownMenuItem
                   onSelect={(e) => {
-                    e.preventDefault()
-                    handleViewUser(record)
+                    e.preventDefault();
+                    handleViewUser(record);
                   }}
                 >
                   <Eye className="mr-2 h-4 w-4" />
@@ -217,10 +238,14 @@ const AdminUsers = () => {
                       <div className="col-span-3">{selectedUser.role}</div>
 
                       <div className="font-medium">Trạng thái:</div>
-                      <div className="col-span-3">{getStatusBadge(selectedUser.status)}</div>
+                      <div className="col-span-3">
+                        {getStatusBadge(selectedUser.status)}
+                      </div>
 
                       <div className="font-medium">Hoạt động cuối:</div>
-                      <div className="col-span-3">{selectedUser.lastActive}</div>
+                      <div className="col-span-3">
+                        {selectedUser.lastActive}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -228,12 +253,18 @@ const AdminUsers = () => {
             </Dialog>
 
             {record.status !== "blocked" ? (
-              <DropdownMenuItem onSelect={() => handleBlockUser(record.id)} className="text-red-600">
+              <DropdownMenuItem
+                onSelect={() => handleBlockUser(record.id)}
+                className="text-red-600"
+              >
                 <UserX className="mr-2 h-4 w-4" />
                 Chặn người dùng
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onSelect={() => handleUnblockUser(record.id)} className="text-green-600">
+              <DropdownMenuItem
+                onSelect={() => handleUnblockUser(record.id)}
+                className="text-green-600"
+              >
                 <UserPlus className="mr-2 h-4 w-4" />
                 Bỏ chặn người dùng
               </DropdownMenuItem>
@@ -242,12 +273,14 @@ const AdminUsers = () => {
         </DropdownMenu>
       ),
     },
-  ]
+  ];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight">Quản lý người dùng</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Quản lý người dùng
+        </h1>
 
         <Button>
           <UserPlus className="h-4 w-4" />
@@ -267,7 +300,10 @@ const AdminUsers = () => {
                 onChange={handleSearchChange}
               />
             </div>
-            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+            <Select
+              value={statusFilter}
+              onValueChange={handleStatusFilterChange}
+            >
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Lọc theo trạng thái" />
               </SelectTrigger>
@@ -283,7 +319,9 @@ const AdminUsers = () => {
               {selectedRowKeys.length > 0 ? (
                 <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
                   <span className="text-sm min-w-[220px]">
-                    Đã chọn <span className="font-bold"> {selectedRowKeys.length}</span> người dùng
+                    Đã chọn{" "}
+                    <span className="font-bold"> {selectedRowKeys.length}</span>{" "}
+                    người dùng
                   </span>
                   <Button variant="destructive" onClick={handleBatchBlock}>
                     <UserX className="h-4 w-4" />
@@ -292,8 +330,8 @@ const AdminUsers = () => {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setSelectedRowKeys([])
-                      setSelectedRows([])
+                      setSelectedRowKeys([]);
+                      setSelectedRows([]);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -315,7 +353,6 @@ const AdminUsers = () => {
             pagination={true}
             currentPage={currentPage}
             totalItems={users.length}
-            pageSizeOptions={pageSizeOptions}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
             selectable={true}
@@ -326,8 +363,7 @@ const AdminUsers = () => {
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default AdminUsers
-
+export default AdminUsers;

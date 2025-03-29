@@ -14,7 +14,7 @@ export interface DataTableProps {
     currentPage?: number;
     totalItems?: number;
     itemsPerPage?: number;
-    pageSizeOptions?: number[];
+    pageSizeOptions?: [5, 10, 15, 20];
     onPageChange?: (page: number) => void;
     onPageSizeChange?: (pageSize: number) => void;
 
