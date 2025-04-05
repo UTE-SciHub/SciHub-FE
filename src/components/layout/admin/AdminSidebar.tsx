@@ -57,7 +57,7 @@ const sidebarItems = [
     icon: FileText,
   },
   {
-    title: "Quản lý người dùng",
+    title: "Quản lý tài khoản",
     href: "/admin/users",
     icon: Users,
   },

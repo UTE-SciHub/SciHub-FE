@@ -2,7 +2,8 @@ import { RegistrationPeriodStatus } from "@/models/enums/registration-period-sta
 
 export interface RegistrationPeriod {
     id?: number;
-    name: string;
+    title: string;
+    description: string;
     decisionNumber: string;
     decisionFile: string;
     status: RegistrationPeriodStatus;

@@ -185,7 +185,7 @@ export default function Login() {
                 <div className="max-w-[500px] text-center">
                     <Link to="/">
                         <img
-                            src="public/logo/UTE.png"
+                            src="/logo/UTE.png"
                             alt="UTE Logo"
                             width={300}
                             height={300}
@@ -206,7 +206,7 @@ export default function Login() {
                     <div className="flex flex-col items-center mb-8">
                         <Link to="/" className="lg:hidden">
                             <img
-                                src="public/logo/UTE.png"
+                                src="/logo/UTE.png"
                                 alt="UTE Logo"
                                 width={150}
                                 height={150}

@@ -1,5 +1,5 @@
 export enum RegistrationPeriodStatus {
-    ALL = "ALL",
+    ALL = "",
     OPEN = "OPEN",
     CLOSED = "CLOSED",
     REVIEWING = "REVIEWING",

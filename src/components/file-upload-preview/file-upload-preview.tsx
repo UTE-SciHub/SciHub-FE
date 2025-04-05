@@ -1,17 +1,19 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { FileText, Upload, X, Eye, Download, EyeOff } from 'lucide-react';
-import './file-upload-preview.css';
+import type React from "react"
+import { useRef, useState, useEffect } from "react"
+import { FileText, Upload, X, Eye, Download, EyeOff } from "lucide-react"
+import "./file-upload-preview.css"
 
 interface FileUploadPreviewProps {
-    value: string;
-    onChange: (value: string) => void;
-    onFileChange?: (file: File | null) => void;
-    accept?: string;
-    maxSize?: number; // in MB
-    label?: string;
-    error?: string;
-    placeholder?: string;
-    className?: string;
+    value: string
+    onChange: (value: string) => void
+    onFileChange?: (file: File | null) => void
+    accept?: string
+    maxSize?: number
+    label?: string
+    error?: string
+    placeholder?: string
+    className?: string
+    existingFile?: string
 }
 
 export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
@@ -24,131 +26,169 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     error,
     placeholder = "Tải lên file",
     className = "",
+    existingFile,
 }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [fileName, setFileName] = useState<string>("");
-    const [fileType, setFileType] = useState<string>("");
-    const [fileSize, setFileSize] = useState<string>("");
-    const [showPreview, setShowPreview] = useState<boolean>(false);
-    const [isDragging, setIsDragging] = useState<boolean>(false);
-    const [fileError, setFileError] = useState<string>("");
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [fileName, setFileName] = useState<string>("")
+    const [fileType, setFileType] = useState<string>("")
+    const [fileSize, setFileSize] = useState<string>("")
+    const [showPreview, setShowPreview] = useState<boolean>(false)
+    const [isDragging, setIsDragging] = useState<boolean>(false)
+    const [fileError, setFileError] = useState<string>("")
+    const [isExistingFile, setIsExistingFile] = useState<boolean>(false)
 
     useEffect(() => {
-        if (value && !fileName) {
+        // Handle existing file on component mount
+        if (existingFile && !value) {
+            onChange(existingFile)
+            setIsExistingFile(true)
+
             try {
-                const url = new URL(value);
-                const pathParts = url.pathname.split('/');
-                const name = pathParts[pathParts.length - 1];
-                if (name) setFileName(decodeURIComponent(name));
+                const url = new URL(existingFile)
+                const pathParts = url.pathname.split("/")
+                const name = pathParts[pathParts.length - 1]
+                if (name) setFileName(decodeURIComponent(name))
             } catch (e) {
-                const pathParts = value.split('/');
-                setFileName(pathParts[pathParts.length - 1]);
+                const pathParts = existingFile.split("/")
+                setFileName(pathParts[pathParts.length - 1])
+            }
+
+            // Try to determine file type from extension
+            const extension = existingFile.split(".").pop()?.toLowerCase()
+            if (extension) {
+                switch (extension) {
+                    case "pdf":
+                        setFileType("application/pdf")
+                        break
+                    case "doc":
+                        setFileType("application/msword")
+                        break
+                    case "docx":
+                        setFileType("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                        break
+                    default:
+                        setFileType("")
+                }
             }
         }
-    }, [value, fileName]);
+    }, [existingFile, value, onChange])
+
+    useEffect(() => {
+        if (value && !fileName && !isExistingFile) {
+            try {
+                const url = new URL(value)
+                const pathParts = url.pathname.split("/")
+                const name = pathParts[pathParts.length - 1]
+                if (name) setFileName(decodeURIComponent(name))
+            } catch (e) {
+                const pathParts = value.split("/")
+                setFileName(pathParts[pathParts.length - 1])
+            }
+        }
+    }, [value, fileName, isExistingFile])
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        processFile(file);
-    };
+        const file = e.target.files?.[0]
+        processFile(file)
+    }
 
     const processFile = (file: File | null | undefined) => {
-        setFileError("");
+        setFileError("")
+        setIsExistingFile(false)
 
         if (!file) {
-            setFileName("");
-            setFileType("");
-            setFileSize("");
-            onChange("");
-            if (onFileChange) onFileChange(null);
-            return;
+            setFileName("")
+            setFileType("")
+            setFileSize("")
+            onChange("")
+            if (onFileChange) onFileChange(null)
+            return
         }
 
         // Check file size
-        const fileSizeInMB = file.size / (1024 * 1024);
+        const fileSizeInMB = file.size / (1024 * 1024)
         if (fileSizeInMB > maxSize) {
-            setFileError(`File quá lớn. Kích thước tối đa là ${maxSize}MB.`);
-            return;
+            setFileError(`File quá lớn. Kích thước tối đa là ${maxSize}MB.`)
+            return
         }
 
         // Check file type
-        const fileExtension = file.name.split('.').pop()?.toLowerCase();
-        const acceptedTypes = accept.split(',').map(type =>
-            type.trim().replace('.', '').toLowerCase()
-        );
+        const fileExtension = file.name.split(".").pop()?.toLowerCase()
+        const acceptedTypes = accept.split(",").map((type) => type.trim().replace(".", "").toLowerCase())
 
         if (fileExtension && !acceptedTypes.includes(fileExtension)) {
-            setFileError(`Loại file không được hỗ trợ. Chấp nhận: ${accept}`);
-            return;
+            setFileError(`Loại file không được hỗ trợ. Chấp nhận: ${accept}`)
+            return
         }
 
-        setFileName(file.name);
-        setFileType(file.type);
-        setFileSize(formatFileSize(file.size));
+        setFileName(file.name)
+        setFileType(file.type)
+        setFileSize(formatFileSize(file.size))
 
         // Create object URL for preview
-        const objectUrl = URL.createObjectURL(file);
-        onChange(objectUrl);
+        const objectUrl = URL.createObjectURL(file)
+        onChange(objectUrl)
 
-        if (onFileChange) onFileChange(file);
-    };
+        if (onFileChange) onFileChange(file)
+    }
 
     // Format file size for display
     const formatFileSize = (bytes: number): string => {
-        if (bytes < 1024) return bytes + ' bytes';
-        else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    };
+        if (bytes < 1024) return bytes + " bytes"
+        else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
+        else return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+    }
 
     // Handle drag events
     const handleDragEnter = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    };
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(true)
+    }
 
     const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(false)
+    }
 
     const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    };
+        e.preventDefault()
+        e.stopPropagation()
+    }
 
     const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(false)
 
-        const file = e.dataTransfer.files?.[0];
-        processFile(file);
-    };
+        const file = e.dataTransfer.files?.[0]
+        processFile(file)
+    }
 
     // Clear the selected file
     const clearFile = () => {
-        setFileName("");
-        setFileType("");
-        setFileSize("");
-        setShowPreview(false);
-        onChange("");
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        if (onFileChange) onFileChange(null);
-    };
+        setFileName("")
+        setFileType("")
+        setFileSize("")
+        setShowPreview(false)
+        setIsExistingFile(false)
+        onChange("")
+        if (fileInputRef.current) fileInputRef.current.value = ""
+        if (onFileChange) onFileChange(null)
+    }
 
     // Toggle preview visibility
     const togglePreview = () => {
-        setShowPreview(!showPreview);
-    };
+        setShowPreview(!showPreview)
+    }
 
     return (
         <div className={`file-upload-container ${className}`}>
             {label && <div className="file-upload-label">{label}</div>}
 
             <div
-                className={`file-upload-area ${isDragging ? 'dragging' : ''} ${error || fileError ? 'error' : ''}`}
+                className={`file-upload-area ${isDragging ? "dragging" : ""} ${error || fileError ? "error" : ""}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -162,7 +202,10 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
                                 <span>{placeholder}</span>
                             </div>
                             <div className="file-upload-instructions">
-                                Kéo và thả file vào đây hoặc <span className="file-upload-browse" onClick={() => fileInputRef.current?.click()}>chọn file</span>
+                                Kéo và thả file vào đây hoặc{" "}
+                                <span className="file-upload-browse" onClick={() => fileInputRef.current?.click()}>
+                                    chọn file
+                                </span>
                             </div>
                             <div className="file-upload-info">
                                 {accept && <div className="file-upload-accept">Định dạng: {accept}</div>}
@@ -174,8 +217,11 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
                             <div className="file-info">
                                 <FileText className="file-icon" />
                                 <div className="file-details">
-                                    <div className="file-name" title={fileName}>{fileName}</div>
+                                    <div className="file-name" title={fileName}>
+                                        {fileName}
+                                    </div>
                                     {fileSize && <div className="file-size ml-2">{fileSize}</div>}
+                                    {isExistingFile && <div className="file-badge">File hiện tại</div>}
                                 </div>
                             </div>
                             <div className="file-actions">
@@ -221,31 +267,31 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
                 />
             </div>
 
-            {(error || fileError) && (
-                <div className="file-upload-error">{error || fileError}</div>
-            )}
+            {(error || fileError) && <div className="file-upload-error">{error || fileError}</div>}
 
             {showPreview && value && (
                 <div className="file-preview">
-                    {fileType.includes('pdf') ? (
-                        <iframe
-                            src={`${value}#toolbar=0`}
-                            className="pdf-preview"
-                            title="PDF Preview"
-                        />
-                    ) : fileType.includes('image') ? (
+                    {fileType.includes("pdf") ? (
+                        <iframe src={`${value}#toolbar=0`} className="pdf-preview" title="PDF Preview" />
+                    ) : fileType.includes("image") ? (
                         <img src={value || "/placeholder.svg"} alt="Preview" className="image-preview" />
                     ) : (
                         <div className="generic-preview">
                             <FileText className="generic-preview-icon" />
-                            <p>Xem trước không khả dụng. <a href={value} target="_blank" rel="noopener noreferrer">Mở file</a> để xem.</p>
+                            <p>
+                                Xem trước không khả dụng.{" "}
+                                <a href={value} target="_blank" rel="noopener noreferrer">
+                                    Mở file
+                                </a>{" "}
+                                để xem.
+                            </p>
                         </div>
                     )}
                 </div>
             )}
         </div>
-    );
-};
+    )
+}
 
 // Form-specific version that works with React Hook Form
 export const FormFileUploadPreview = ({
@@ -257,15 +303,17 @@ export const FormFileUploadPreview = ({
     placeholder,
     className,
     onFileChange,
+    existingFile,
 }: {
-    field: any;
-    fieldState: any;
-    label?: string;
-    accept?: string;
-    maxSize?: number;
-    placeholder?: string;
-    className?: string;
-    onFileChange?: (file: File | null) => void;
+    field: any
+    fieldState: any
+    label?: string
+    accept?: string
+    maxSize?: number
+    placeholder?: string
+    className?: string
+    onFileChange?: (file: File | null) => void
+    existingFile?: string
 }) => {
     return (
         <FileUploadPreview
@@ -278,6 +326,8 @@ export const FormFileUploadPreview = ({
             error={fieldState.error?.message}
             placeholder={placeholder}
             className={className}
+            existingFile={existingFile}
         />
-    );
-};
+    )
+}
+

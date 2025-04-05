@@ -14,12 +14,13 @@ import AdminContracts from "@/pages/admin/AdminContracts";
 import AdminFinance from "@/pages/admin/AdminFinance";
 import AdminAnnouncements from "@/pages/admin/AdminAnnouncements";
 import NotFoundPage from "@/pages/NotFoundPage";
-import AdminUsers from "@/pages/admin/users/AdminUsers";
+import AdminUsers from "@/pages/admin/users/ListUsers";
 import CreateRegistrationPeriod from "@/pages/admin/registration/create-registration";
 import AdminRegistrationPeriods from "@/pages/admin/registration/list-registration";
 import Login from "@/pages/Login";
 import ProfilePage from "@/pages/user/Profile";
 import ListDepartment from "@/pages/admin/department/ListDepartment";
+import UpdateRegistrationPeriod from "@/pages/admin/registration/update-registration";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -49,6 +50,7 @@ const routers = createBrowserRouter([
       { path: "users", element: <AdminUsers /> },
       { path: "registration", element: <AdminRegistrationPeriods /> },
       { path: "registration/add", element: <CreateRegistrationPeriod /> },
+      { path: "registration/:id", element: <UpdateRegistrationPeriod /> },
       { path: "departments", element: <ListDepartment /> },
     ],
   },
