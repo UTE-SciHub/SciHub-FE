@@ -5,37 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-const statCards = [
-  {
-    title: 'Đề tài đang thực hiện',
-    value: '24',
-    icon: ClipboardList,
-    change: '+4 so với kỳ trước',
-    trend: 'up',
-  },
-  {
-    title: 'Đề tài chờ phê duyệt',
-    value: '12',
-    icon: FileCheck,
-    change: '-2 so với kỳ trước',
-    trend: 'down',
-  },
-  {
-    title: 'Đợt đăng ký mới',
-    value: '1',
-    icon: Calendar,
-    change: 'Mở đến 30/09/2023',
-    trend: 'neutral',
-  },
-  {
-    title: 'Giảng viên tham gia',
-    value: '56',
-    icon: Users,
-    change: '+8 so với kỳ trước',
-    trend: 'up',
-  },
-];
-
 const recentTopics = [
   {
     id: 'DT2023-042',
@@ -87,31 +56,9 @@ const Dashboard = () => {
           <p className="text-muted-foreground mt-1">Chào mừng đến với hệ thống quản lý nghiên cứu khoa học UTE-SciHub</p>
         </div>
         <Button className="bg-primary-600 hover:bg-primary-700 transition-all">
-          <FilePlus className="mr-2 h-4 w-4" />
-          Đăng ký đề tài mới
+          <FilePlus className="h-4 w-4" />
+          Đăng ký đề tài
         </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((card, i) => (
-          <Card key={i} className="animate-scale-in" style={{ animationDelay: `${i * 80}ms` }}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {card.title}
-              </CardTitle>
-              <card.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
-              <p className={`text-xs mt-1 ${
-                card.trend === 'up' ? 'text-green-600' : 
-                card.trend === 'down' ? 'text-red-600' : 'text-muted-foreground'
-              }`}>
-                {card.change}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
       </div>
 
       <div className="grid gap-4 md:grid-cols-7">
@@ -133,8 +80,8 @@ const Dashboard = () => {
                       <span className="text-sm font-medium text-muted-foreground">{topic.id}</span>
                       <Badge variant={
                         topic.status === 'Đang thực hiện' ? 'default' :
-                        topic.status === 'Chờ nghiệm thu' ? 'secondary' : 
-                        'outline'
+                          topic.status === 'Chờ nghiệm thu' ? 'secondary' :
+                            'outline'
                       }>
                         {topic.status}
                       </Badge>
@@ -158,7 +105,7 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="md:col-span-3 animate-fade-in" style={{ animationDelay: '200ms' }}>
           <CardHeader>
             <CardTitle>Thông báo mới</CardTitle>

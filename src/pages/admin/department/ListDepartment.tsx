@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import useDebounce from "@/hooks/use-debounce";
 import { Column } from "@/models/column";
 import { Button } from "@/components/ui/button";
-import { Badge, Ban, CirclePlus, Eye, Lock, MoreHorizontal, Trash2, Unlock } from "lucide-react";
+import { Badge, Ban, CirclePlus, Eye, Lock, MoreHorizontal, RefreshCw, Trash2, Unlock } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -13,7 +13,7 @@ import { getAll } from "@/service/department-service";
 import { Department } from "@/models/department";
 import CreateDepartmentModal from "@/pages/admin/department/CreateDepartmentModal";
 import DepartmentDetailModal from "@/pages/admin/department/DepartmentDetailModal";
-import { Tooltip } from "@/components/ui/tooltip";
+import DepartmentImage from "@/pages/admin/department/DepartmentImage";
 
 const ListDepartment = () => {
     const location = useLocation();
@@ -31,14 +31,13 @@ const ListDepartment = () => {
     const [totalItems, setTotalItems] = useState(0);
     const [searchQuery, setSearchQuery] = useState(initialQuery);
     const [currentPage, setCurrentPage] = useState(initialPage);
-    const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
-    const [selectedRows, setSelectedRows] = useState<any[]>([]);
     const [sortField, setSortField] = useState(initialSort);
     const [sortOrder, setSortOrder] = useState(initialOrder);
     const [loading, setLoading] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+    const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const isUpdatingUrl = useRef(false);
@@ -97,29 +96,30 @@ const ListDepartment = () => {
         navigate({ search: searchParams.toString() }, { replace: true });
     };
 
+    const handleSearchChange = (e) => {
+        const value = e.target.value
+        setSearchQuery(value)
+        setCurrentPage(1)
+        updateUrl({ q: value, p: 1 })
+    }
+
     const handleSortChange = (field: string, order: string) => {
         setSortField(field);
         setSortOrder(order);
 
-        console.log(`Sorting by ${field} in ${order} order`);
+        updateUrl({ sort: field, order })
     };
 
     const handlePageChange = (pageNumber) => {
-        console.log(
-            `Fetching page ${pageNumber} with ${itemsPerPage} items per page`
-        );
         setCurrentPage(pageNumber);
+        updateUrl({ p: pageNumber })
     };
 
     const handlePageSizeChange = (newPageSize) => {
-        console.log(`Changing page size to ${newPageSize}`);
-
-        const firstItemIndex = (currentPage - 1) * itemsPerPage + 1;
-        const newCurrentPage = Math.max(1, Math.ceil(firstItemIndex / newPageSize));
-
-        setItemsPerPage(newPageSize);
-        setCurrentPage(newCurrentPage);
-    };
+        setItemsPerPage(newPageSize)
+        setCurrentPage(1)
+        updateUrl({ s: newPageSize, p: 1 })
+    }
 
     const handleViewDepartment = (department: Department) => {
         setSelectedDepartment(department);
@@ -150,7 +150,17 @@ const ListDepartment = () => {
     };
 
     const columns: Column[] = [
-        { key: "name", title: "Tên khoa", sortable: true, width: "200px" },
+        {
+            key: "imagesUrl", title: "Logo", width: "40px", render: (_, record) => (
+                <div className="flex items-center gap-4">
+                    <div>
+                        <DepartmentImage imageUrl={record.imageUrl} name={record.name} size="md" />
+                    </div>
+                </div>
+            ),
+
+        },
+        { key: "name", title: "Tên khoa", width: "200px", sortable: true },
         { key: "description", title: "Mô tả", width: "150px" },
         { key: "phoneNumber", title: "Số điện thoại", width: "100px" },
         { key: "email", title: "Email", width: "150px" },
@@ -182,20 +192,7 @@ const ListDepartment = () => {
                 </DropdownMenu>
             ),
         },
-    ]
-
-    const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearchQuery(value);
-        setCurrentPage(1);
-        updateUrl({ q: value, p: 1 });
-    };
-
-    const handleMultipleBlock = () => {
-        console.log("Selected rows:", selectedRows);
-        setSelectedRowKeys([]);
-        setSelectedRows([]);
-    }
+    ];
 
     const handleDepartmentAdded = () => {
         fetchData({
@@ -207,7 +204,7 @@ const ListDepartment = () => {
         });
     };
 
-    const handleDepartmentUpdated = () => {
+    const handleRefresh = () => {
         fetchData({
             p: currentPage,
             s: itemsPerPage,
@@ -215,7 +212,7 @@ const ListDepartment = () => {
             sort: sortField,
             order: sortOrder,
         });
-    }
+    };
 
     return (
         <div className="space-y-4">
@@ -241,33 +238,10 @@ const ListDepartment = () => {
                             />
                         </div>
 
-                        <div className="h-10 flex flex-1 justify-end items-center">
-                            {selectedRowKeys.length > 0 ? (
-                                <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                                    <span className="text-sm min-w-[220px]">
-                                        Đã chọn{" "}
-                                        <span className="font-bold"> {selectedRowKeys.length}</span>{" "}
-                                        dòng
-                                    </span>
-                                    <Button variant="destructive" onClick={handleMultipleBlock}>
-                                        <Ban className="h-4 w-4" />
-                                        {selectedRowKeys.length > 1 ? "Khóa tất cả" : "Khóa"}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            setSelectedRowKeys([]);
-                                            setSelectedRows([]);
-                                        }}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                        Hủy chọn
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="min-w-[260px]"></div>
-                            )}
-                        </div>
+                        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
+                            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                            Làm mới
+                        </Button>
                     </div>
 
                     <DataTable
@@ -279,8 +253,10 @@ const ListDepartment = () => {
                         itemsPerPage={itemsPerPage}
                         pagination={true}
                         currentPage={currentPage}
-                        totalItems={departments.length}
+                        totalItems={totalItems}
+                        selectedRowKeys={selectedRowKeys}
                         onPageChange={handlePageChange}
+                        onSelectionChange={(newSelectedRowKeys) => setSelectedRowKeys(newSelectedRowKeys)}
                         onPageSizeChange={handlePageSizeChange}
                         onSortChange={handleSortChange}
                     />
@@ -298,7 +274,7 @@ const ListDepartment = () => {
                     open={isDetailModalOpen}
                     onOpenChange={setIsDetailModalOpen}
                     department={selectedDepartment}
-                    onDepartmentUpdated={handleDepartmentUpdated}
+                    onDepartmentUpdated={handleRefresh}
                     readOnly={true}
                 />
             )}

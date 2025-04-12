@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { useNavigate, useParams } from "react-router-dom"
-import { CalendarIcon, Save, Undo2, X, InfoIcon, AlertCircle } from "lucide-react"
+import { CalendarIcon, Save, Undo2, X, InfoIcon, AlertCircle, CalendarCheck, CalendarX } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,16 +23,17 @@ import { Badge } from "@/components/ui/badge"
 import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status"
 import { RegistrationPeriod } from "@/models/registraion-period"
 import { getRegistrationById, updateRegistration } from "@/service/registration-service"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 const formSchema = z
     .object({
+        id: z.string(),
         title: z
             .string()
             .min(5, "Tiêu đề phải có ít nhất 5 ký tự")
             .max(100, "Tiêu đề không được vượt quá 100 ký tự")
-            .refine((val) => /^[\p{L}\p{N}\s\-_.,()]+$/u.test(val), {
-                message: "Tiêu đề chỉ được chứa chữ cái, số và các ký tự đặc biệt thông dụng",
-            }),
+        ,
         decisionNumber: z
             .string()
             .min(3, "Số quyết định không được để trống")
@@ -45,6 +46,9 @@ const formSchema = z
             required_error: "Vui lòng chọn ngày kết thúc",
         }),
         description: z.string().min(10, "Mô tả phải có ít nhất 10 ký tự").max(5000, "Mô tả không được vượt quá 5000 ký tự"),
+        status: z.enum([RegistrationPeriodStatus.OPEN, RegistrationPeriodStatus.CLOSED], {
+            errorMap: () => ({ message: "Trạng thái không hợp lệ" }),
+        })
     })
     .refine((data) => data.endDate > data.startDate, {
         message: "Ngày kết thúc phải sau ngày bắt đầu",
@@ -70,10 +74,16 @@ export default function UpdateRegistrationPeriod() {
     const [isFetching, setIsFetching] = useState(true)
     const [registrationPeriod, setRegistrationPeriod] = useState<RegistrationPeriod>(null)
     const [error, setError] = useState<string | null>(null)
+    const [isStatusOpen, setIsStatusOpen] = useState(false)
+    const [isChangingStatus, setIsChangingStatus] = useState(false)
+
+    const BASE_URL = import.meta.env.VITE_BASE_URL;
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
+            id: "",
+            status: RegistrationPeriodStatus.CLOSED,
             title: "",
             decisionNumber: "",
             decisionFile: "",
@@ -93,9 +103,11 @@ export default function UpdateRegistrationPeriod() {
 
                     // Set form values
                     form.reset({
+                        id: data.id,
                         title: data.title,
                         decisionNumber: data.decisionNumber,
                         decisionFile: data.decisionFile || "",
+                        status: data.status,
                         startDate: new Date(data.startDate),
                         endDate: new Date(data.endDate),
                         description: data.description,
@@ -120,6 +132,17 @@ export default function UpdateRegistrationPeriod() {
         setUploadedFile(file)
     }
 
+    const handleStatusToggle = () => {
+        setIsStatusOpen(!isStatusOpen)
+        setIsChangingStatus(true)
+
+        const newStatus = isStatusOpen ? RegistrationPeriodStatus.CLOSED : RegistrationPeriodStatus.OPEN
+        const updatedRegistrationPeriod = { ...registrationPeriod, status: newStatus }
+
+        setRegistrationPeriod(updatedRegistrationPeriod)
+        setIsChangingStatus(false)
+    }
+
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             setIsLoading(true)
@@ -127,6 +150,8 @@ export default function UpdateRegistrationPeriod() {
                 id: id,
                 title: values.title,
                 decisionNumber: values.decisionNumber,
+                status: isStatusOpen ? RegistrationPeriodStatus.OPEN : RegistrationPeriodStatus.CLOSED,
+                decisionFile: values.decisionFile,
                 startDate: format(new Date(values.startDate), "yyyy-MM-dd"),
                 endDate: format(new Date(values.endDate), "yyyy-MM-dd"),
                 description: values.description,
@@ -157,7 +182,7 @@ export default function UpdateRegistrationPeriod() {
             })
 
             if (response.status === 200 && response.data.code === 1000 && response.data.status === 200) {
-                navigate("/admin/registration")
+                navigate(-1)
             }
         } catch (error) {
             toast({
@@ -207,9 +232,7 @@ export default function UpdateRegistrationPeriod() {
 
     if (isFetching) {
         return (
-            <div className="flex items-center justify-center h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
+            <Loading onCancel={handleCancelLoading} />
         )
     }
 
@@ -225,7 +248,7 @@ export default function UpdateRegistrationPeriod() {
 
     return (
         <div className="">
-            {isLoading && <Loading onCancel={handleCancelLoading} />}
+            {isFetching && <Loading onCancel={handleCancelLoading} />}
             <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold tracking-tight">Cập nhật đợt đăng ký</h1>
                 <Button variant="outline" onClick={() => navigate(-1)}>
@@ -252,6 +275,59 @@ export default function UpdateRegistrationPeriod() {
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <FormField
+                                control={form.control}
+                                name="status"
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center space-x-2">
+                                        <FormLabel className="text-sm">Trạng thái</FormLabel>
+                                        <Switch
+                                            checked={registrationPeriod?.status === RegistrationPeriodStatus.OPEN}
+                                            onCheckedChange={(checked) => {
+                                                setIsStatusOpen(checked)
+                                                handleStatusToggle()
+                                                field.onChange(checked ? RegistrationPeriodStatus.OPEN : RegistrationPeriodStatus.CLOSED)
+                                            }}
+                                        />
+                                        <Label className="text-sm font-medium">
+                                            {registrationPeriod?.status === RegistrationPeriodStatus.OPEN ? (
+                                                <span className="flex items-center gap-1 text-green-600">
+                                                    <CalendarCheck className="h-4 w-4" />
+                                                    Mở đăng ký
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-1 text-red-600">
+                                                    <CalendarX className="h-4 w-4" />
+                                                    Đóng đăng ký
+                                                </span>
+                                            )}
+                                        </Label>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="id"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Mã số</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                readOnly
+                                                disabled
+                                                placeholder="Mã số đợt đăng ký"
+                                                value={id}
+                                                {...field}
+                                                className="transition-all focus:border-primary focus:ring-1 focus:ring-primary text-black font-medium"
+                                            />
+                                        </FormControl>
+                                        <FormDescription>Mã đợt đăng ký</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
                             <FormField
                                 control={form.control}
                                 name="title"
@@ -312,14 +388,15 @@ export default function UpdateRegistrationPeriod() {
                                             <FormFileUploadPreview
                                                 field={field}
                                                 fieldState={fieldState}
-                                                accept=".pdf,.doc,.docx"
+                                                accept=".pdf"
                                                 maxSize={10}
                                                 placeholder="Tải lên file quyết định"
                                                 onFileChange={handleFileChange}
-                                                existingFile={registrationPeriod?.decisionFile}
+                                                existingFile={`${BASE_URL}files/${registrationPeriod.decisionFile}`}
+                                                height={800}
                                             />
                                         </FormControl>
-                                        <FormDescription>Tải lên file quyết định phê duyệt (PDF, DOC, DOCX, tối đa 10MB)</FormDescription>
+                                        <FormDescription>Tải lên file quyết định phê duyệt (PDF - tối đa 10MB)</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -447,7 +524,7 @@ export default function UpdateRegistrationPeriod() {
                     </Form>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }
 

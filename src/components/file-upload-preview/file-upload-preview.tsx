@@ -8,25 +8,27 @@ interface FileUploadPreviewProps {
     onChange: (value: string) => void
     onFileChange?: (file: File | null) => void
     accept?: string
-    maxSize?: number
+    maxSize?: number // in MB
     label?: string
     error?: string
     placeholder?: string
     className?: string
-    existingFile?: string
+    existingFile?: string // URL to an existing file
+    height?: string | number // New prop for preview height
 }
 
 export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     value,
     onChange,
     onFileChange,
-    accept = ".pdf,.doc,.docx",
-    maxSize = 10, // Default 10MB
+    accept = ".pdf",
+    maxSize = 10,
     label,
     error,
     placeholder = "Tải lên file",
     className = "",
     existingFile,
+    height = "500px", // Default height
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [fileName, setFileName] = useState<string>("")
@@ -36,56 +38,24 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     const [isDragging, setIsDragging] = useState<boolean>(false)
     const [fileError, setFileError] = useState<string>("")
     const [isExistingFile, setIsExistingFile] = useState<boolean>(false)
+    const [isCleared, setIsCleared] = useState<boolean>(false)
+    const [previewUrl, setPreviewUrl] = useState<string>("")
 
     useEffect(() => {
-        // Handle existing file on component mount
-        if (existingFile && !value) {
+        if (existingFile && !isCleared) {
             onChange(existingFile)
             setIsExistingFile(true)
-
-            try {
-                const url = new URL(existingFile)
-                const pathParts = url.pathname.split("/")
-                const name = pathParts[pathParts.length - 1]
-                if (name) setFileName(decodeURIComponent(name))
-            } catch (e) {
-                const pathParts = existingFile.split("/")
-                setFileName(pathParts[pathParts.length - 1])
-            }
-
-            // Try to determine file type from extension
-            const extension = existingFile.split(".").pop()?.toLowerCase()
-            if (extension) {
-                switch (extension) {
-                    case "pdf":
-                        setFileType("application/pdf")
-                        break
-                    case "doc":
-                        setFileType("application/msword")
-                        break
-                    case "docx":
-                        setFileType("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-                        break
-                    default:
-                        setFileType("")
-                }
-            }
+            setPreviewUrl(existingFile)
+            const name = extractFileName(existingFile)
+            setFileName(name || "")
+            setFileType(determineFileType(existingFile))
+        } else if (value && !fileName && !isExistingFile) {
+            setPreviewUrl(value)
+            const name = extractFileName(value)
+            setFileName(name || "")
+            setFileType(determineFileType(value))
         }
-    }, [existingFile, value, onChange])
-
-    useEffect(() => {
-        if (value && !fileName && !isExistingFile) {
-            try {
-                const url = new URL(value)
-                const pathParts = url.pathname.split("/")
-                const name = pathParts[pathParts.length - 1]
-                if (name) setFileName(decodeURIComponent(name))
-            } catch (e) {
-                const pathParts = value.split("/")
-                setFileName(pathParts[pathParts.length - 1])
-            }
-        }
-    }, [value, fileName, isExistingFile])
+    }, [existingFile, value, onChange, fileName, isExistingFile, isCleared])
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -100,19 +70,18 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
             setFileName("")
             setFileType("")
             setFileSize("")
+            setPreviewUrl("")
             onChange("")
             if (onFileChange) onFileChange(null)
             return
         }
 
-        // Check file size
         const fileSizeInMB = file.size / (1024 * 1024)
         if (fileSizeInMB > maxSize) {
             setFileError(`File quá lớn. Kích thước tối đa là ${maxSize}MB.`)
             return
         }
 
-        // Check file type
         const fileExtension = file.name.split(".").pop()?.toLowerCase()
         const acceptedTypes = accept.split(",").map((type) => type.trim().replace(".", "").toLowerCase())
 
@@ -125,21 +94,19 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
         setFileType(file.type)
         setFileSize(formatFileSize(file.size))
 
-        // Create object URL for preview
         const objectUrl = URL.createObjectURL(file)
+        setPreviewUrl(objectUrl)
         onChange(objectUrl)
 
         if (onFileChange) onFileChange(file)
     }
 
-    // Format file size for display
     const formatFileSize = (bytes: number): string => {
         if (bytes < 1024) return bytes + " bytes"
         else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
         else return (bytes / (1024 * 1024)).toFixed(1) + " MB"
     }
 
-    // Handle drag events
     const handleDragEnter = (e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()
@@ -166,21 +133,50 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
         processFile(file)
     }
 
-    // Clear the selected file
     const clearFile = () => {
         setFileName("")
         setFileType("")
         setFileSize("")
         setShowPreview(false)
         setIsExistingFile(false)
+        setIsCleared(true)
+        setPreviewUrl("")
         onChange("")
         if (fileInputRef.current) fileInputRef.current.value = ""
         if (onFileChange) onFileChange(null)
     }
 
-    // Toggle preview visibility
     const togglePreview = () => {
         setShowPreview(!showPreview)
+    }
+
+    const extractFileName = (url: string): string => {
+        try {
+            const pathParts = new URL(url).pathname.split("/")
+            return decodeURIComponent(pathParts[pathParts.length - 1])
+        } catch {
+            const pathParts = url.split("/")
+            return pathParts[pathParts.length - 1]
+        }
+    }
+
+    const determineFileType = (url: string): string => {
+        const extension = url.split(".").pop()?.toLowerCase()
+        switch (extension) {
+            case "pdf":
+                return "application/pdf"
+            case "doc":
+                return "application/msword"
+            case "docx":
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            default:
+                return ""
+        }
+    }
+
+    // Style object for preview area
+    const previewStyle = {
+        height: typeof height === 'number' ? `${height}px` : height,
     }
 
     return (
@@ -238,7 +234,7 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
                                         <button
                                             type="button"
                                             className="file-action-button download"
-                                            onClick={() => window.open(value, "_blank")}
+                                            onClick={() => window.open(previewUrl, "_blank")}
                                             aria-label="Tải xuống"
                                         >
                                             <Download className="file-action-icon" />
@@ -269,18 +265,41 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
 
             {(error || fileError) && <div className="file-upload-error">{error || fileError}</div>}
 
-            {showPreview && value && (
-                <div className="file-preview">
+            {showPreview && previewUrl && (
+                <div className="file-preview" style={previewStyle}>
                     {fileType.includes("pdf") ? (
-                        <iframe src={`${value}#toolbar=0`} className="pdf-preview" title="PDF Preview" />
+                        <object
+                            data={previewUrl}
+                            type="application/pdf"
+                            className="pdf-preview"
+                            title="PDF Preview"
+                            style={previewStyle}
+                        >
+                            <div className="generic-preview">
+                                <FileText className="generic-preview-icon" />
+                                <p>
+                                    Không thể hiển thị PDF trực tiếp.{" "}
+                                    <a href={previewUrl} target="_blank" rel="noopener noreferrer">
+                                        Mở file
+                                    </a>{" "}
+                                    để xem.
+                                </p>
+                            </div>
+                        </object>
                     ) : fileType.includes("image") ? (
-                        <img src={value || "/placeholder.svg"} alt="Preview" className="image-preview" />
+                        <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="image-preview"
+                            crossOrigin="anonymous"
+                            style={previewStyle}
+                        />
                     ) : (
                         <div className="generic-preview">
                             <FileText className="generic-preview-icon" />
                             <p>
                                 Xem trước không khả dụng.{" "}
-                                <a href={value} target="_blank" rel="noopener noreferrer">
+                                <a href={previewUrl} target="_blank" rel="noopener noreferrer">
                                     Mở file
                                 </a>{" "}
                                 để xem.
@@ -293,7 +312,6 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     )
 }
 
-// Form-specific version that works with React Hook Form
 export const FormFileUploadPreview = ({
     field,
     fieldState,
@@ -304,6 +322,7 @@ export const FormFileUploadPreview = ({
     className,
     onFileChange,
     existingFile,
+    height,
 }: {
     field: any
     fieldState: any
@@ -314,6 +333,7 @@ export const FormFileUploadPreview = ({
     className?: string
     onFileChange?: (file: File | null) => void
     existingFile?: string
+    height?: string | number // Add height to form component props
 }) => {
     return (
         <FileUploadPreview
@@ -327,7 +347,7 @@ export const FormFileUploadPreview = ({
             placeholder={placeholder}
             className={className}
             existingFile={existingFile}
+            height={height}
         />
     )
 }
-

@@ -21,6 +21,7 @@ import Login from "@/pages/Login";
 import ProfilePage from "@/pages/user/Profile";
 import ListDepartment from "@/pages/admin/department/ListDepartment";
 import UpdateRegistrationPeriod from "@/pages/admin/registration/update-registration";
+import { PrivateRoute } from "@/middleware/PrivateRoutes";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -40,7 +41,10 @@ const routers = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <AdminLayout children={""} />,
+    element:
+      <PrivateRoute>
+        <AdminLayout children={""} />
+      </PrivateRoute>,
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: "topics", element: <AdminTopics /> },

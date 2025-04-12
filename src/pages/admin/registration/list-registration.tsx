@@ -39,15 +39,6 @@ import { toast } from "@/hooks/use-toast"
 import { format, set } from "date-fns"
 import { vi } from "date-fns/locale"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Label } from "@/components/ui/label"
 import Loading from "@/components/loading/loading"
@@ -83,10 +74,11 @@ const AdminRegistrationPeriods = () => {
     const [selectedPeriod, setSelectedPeriod] = useState<RegistrationPeriod | null>(null)
     const [startDate, setStartDate] = useState<string>(initialStartDate);
     const [endDate, setEndDate] = useState<string>(initialEndDate);
-    const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
     const isUpdatingUrl = useRef(false)
     const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
+    const BASE_URL = import.meta.env.VITE_BASE_URL;
 
     const fetchData = async (params: {
         p: number
@@ -339,7 +331,7 @@ const AdminRegistrationPeriods = () => {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <a
-                                    href={record.decisionFile}
+                                    href={`${BASE_URL}files/${record.decisionFile}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -374,11 +366,6 @@ const AdminRegistrationPeriods = () => {
                             <Eye className="mr-2 h-4 w-4" />
                             Xem chi tiết
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`edit/${record.id}`)} className="cursor-pointer">
-                            <Edit className="mr-2 h-4 w-4" />
-                            Chỉnh sửa
-                        </DropdownMenuItem>
-
                         <DropdownMenuSeparator />
 
                         {record.status === RegistrationPeriodStatus.OPEN && (
@@ -530,7 +517,7 @@ const AdminRegistrationPeriods = () => {
                     </TabsList>
 
                     <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
-                        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                         Làm mới
                     </Button>
                 </div>

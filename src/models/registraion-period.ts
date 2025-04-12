@@ -1,7 +1,7 @@
 import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status";
 
 export interface RegistrationPeriod {
-    id?: number;
+    id?: string;
     title: string;
     description: string;
     decisionNumber: string;
