@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { LayoutDashboard, LogOut, User, UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -23,13 +23,12 @@ const UserProfile = () => {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Hồ sơ</DropdownMenuItem>
-        <DropdownMenuItem>Cài đặt</DropdownMenuItem>
+        <DropdownMenuItem><UserIcon className='h-4 w-4 mr-2' />Hồ sơ</DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <NavLink to="/admin">Chuyển sang giao diện quản trị</NavLink>
+          <NavLink to="/admin"><LayoutDashboard className='h-4 w-4 mr-2' />Trang quản trị</NavLink>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Đăng xuất</DropdownMenuItem>
+        <DropdownMenuItem className='text-rose-500'><LogOut className='h-4 w-4 mr-2' /> Đăng xuất</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

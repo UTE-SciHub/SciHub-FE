@@ -48,11 +48,7 @@ const formSchema = z
     title: z
       .string()
       .min(5, "Tiêu đề phải có ít nhất 5 ký tự")
-      .max(100, "Tiêu đề không được vượt quá 100 ký tự")
-      .refine((val) => /^[\p{L}\p{N}\s\-_.,()]+$/u.test(val), {
-        message:
-          "Tiêu đề chỉ được chứa chữ cái, số và các ký tự đặc biệt thông dụng",
-      }),
+      .max(100, "Tiêu đề không được vượt quá 100 ký tự"),
     decisionNumber: z
       .string()
       .min(3, "Số quyết định không được để trống")
@@ -245,15 +241,14 @@ export default function CreateRegistrationPeriod() {
                       <FormFileUploadPreview
                         field={field}
                         fieldState={fieldState}
-                        accept=".pdf,.doc,.docx"
+                        accept=".pdf"
                         maxSize={10}
                         placeholder="Tải lên file quyết định"
                         onFileChange={handleFileChange}
                       />
                     </FormControl>
                     <FormDescription>
-                      Tải lên file quyết định phê duyệt (PDF, DOC, DOCX, tối đa
-                      10MB)
+                      Tải lên file quyết định phê duyệt (PDF - tối đa 10MB)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

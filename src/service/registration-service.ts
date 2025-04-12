@@ -17,6 +17,24 @@ export const getAll = async (params: {
     order?: string;
     q?: string;
     status?: string;
+    startDate?: string;
+    endDate?: string;
 }) => {
     return axiosClient.get(`${BASE_URL}registration-period`, { params });
 };
+
+export const exportExcel = async (params) => {
+    return axiosClient.get(`${BASE_URL}registration-period/export-excel`, { params, responseType: 'blob' });
+}
+
+export const getRegistrationById = async (id: string) => {
+    return axiosClient.get(`${BASE_URL}registration-period/${id}`);
+};
+
+export const updateRegistration = async (id: string, data: FormData) => {
+    return axiosClient.put(`${BASE_URL}registration-period/${id}`, data, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+}

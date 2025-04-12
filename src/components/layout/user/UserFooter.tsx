@@ -82,10 +82,10 @@ const UserFooter = () => {
                 Phòng Quản lý Khoa học và Công nghệ
               </li>
               <li className="text-muted-foreground">
-                Trường Đại học Sư phạm Kỹ thuật
+                Trường Đại học Sư phạm Kỹ thuật Đà Nẵng
               </li>
               <li className="text-muted-foreground">
-                Email: qlkh@hcmute.edu.vn
+                Email: qlkh@ute.udn.vn
               </li>
               <li className="text-muted-foreground">Tel: (028) 3896 xxxx</li>
             </ul>
@@ -94,7 +94,7 @@ const UserFooter = () => {
         <div className="border-t mt-8 pt-6 text-center text-sm text-muted-foreground">
           <p>
             &copy; {new Date().getFullYear()} UTE-SciHub. Đại học Sư phạm Kỹ
-            thuật TP.HCM.
+            thuật Đà Nẵng.
           </p>
         </div>
       </div>

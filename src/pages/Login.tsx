@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
@@ -12,6 +12,7 @@ import Cookies from 'js-cookie';
 import { toast } from "@/hooks/use-toast";
 import { getCurrentUsers } from "@/service/user-service";
 import useUserStore from "@/store/userStore";
+import { Roles } from "@/models/enums/roles.enum"
 
 const loginSchema = z.object({
     email: z
@@ -32,6 +33,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export default function Login() {
     const navigate = useNavigate()
+    const location = useLocation();
     const emailId = useId()
     const passwordId = useId()
     const [isLoading, setIsLoading] = useState(false);
@@ -149,9 +151,24 @@ export default function Login() {
                         description: "Đăng nhập thành công!",
                         variant: "success",
                         duration: 2000,
-                    })
+                    });
 
-                    navigate("/admin")
+                    const roles = user.roles || [];
+                    const from = location.state?.from?.pathname || "/";
+
+                    if (roles.includes(Roles.TEACHER) || roles.includes(Roles.ADMIN)) {
+                        if (from.includes("/admin")) {
+                            navigate(from, { replace: true });
+                        } else {
+                            navigate("/admin", { replace: true });
+                        }
+                    } else if (roles.length === 0 || roles.includes(Roles.STUDENT)) {
+                        if (from.includes("/admin")) {
+                            navigate("/", { replace: true });
+                        } else {
+                            navigate(from, { replace: true });
+                        }
+                    }
                 }
             } else if (response.status === 401 || response.code == 1401) {
                 setIsError(true)
@@ -185,7 +202,7 @@ export default function Login() {
                 <div className="max-w-[500px] text-center">
                     <Link to="/">
                         <img
-                            src="public/logo/UTE.png"
+                            src="/logo/UTE.png"
                             alt="UTE Logo"
                             width={300}
                             height={300}
@@ -206,7 +223,7 @@ export default function Login() {
                     <div className="flex flex-col items-center mb-8">
                         <Link to="/" className="lg:hidden">
                             <img
-                                src="public/logo/UTE.png"
+                                src="/logo/UTE.png"
                                 alt="UTE Logo"
                                 width={150}
                                 height={150}
