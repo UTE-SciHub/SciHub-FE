@@ -22,9 +22,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status"
 import { RegistrationPeriod } from "@/models/registraion-period"
-import { getRegistrationById, updateRegistration } from "@/service/registration-service"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { RegistrationService } from "@/service/registration-service"
 
 const formSchema = z
     .object({
@@ -32,7 +32,7 @@ const formSchema = z
         title: z
             .string()
             .min(5, "Tiêu đề phải có ít nhất 5 ký tự")
-            .max(100, "Tiêu đề không được vượt quá 100 ký tự")
+            .max(255, "Tiêu đề không được vượt quá 255 ký tự")
         ,
         decisionNumber: z
             .string()
@@ -95,7 +95,7 @@ export default function UpdateRegistrationPeriod() {
         const fetchRegistrationPeriod = async () => {
             try {
                 setIsFetching(true)
-                const response = await getRegistrationById(id as string)
+                const response = await RegistrationService.getRegistrationById(id as string)
 
                 if (response.status === 200 && response.data.code === 1000) {
                     const data = response.data.data
@@ -151,7 +151,7 @@ export default function UpdateRegistrationPeriod() {
                 title: values.title,
                 decisionNumber: values.decisionNumber,
                 status: isStatusOpen ? RegistrationPeriodStatus.OPEN : RegistrationPeriodStatus.CLOSED,
-                decisionFile: values.decisionFile,
+                decisionFile: registrationPeriod.decisionFile || "",
                 startDate: format(new Date(values.startDate), "yyyy-MM-dd"),
                 endDate: format(new Date(values.endDate), "yyyy-MM-dd"),
                 description: values.description,
@@ -167,7 +167,7 @@ export default function UpdateRegistrationPeriod() {
                 formData.append("decisionFile", uploadedFile, uploadedFile.name)
             }
 
-            const response = await updateRegistration(id as string, formData)
+            const response = await RegistrationService.updateRegistration(id as string, formData)
 
             let variant: "success" | "error" = "error"
             if (response.status === 200 && response.data.code === 1000 && response.data.status === 200) {
@@ -230,7 +230,7 @@ export default function UpdateRegistrationPeriod() {
         }
     }
 
-    if (isFetching) {
+    if (isFetching || isLoading) {
         return (
             <Loading onCancel={handleCancelLoading} />
         )
@@ -341,7 +341,7 @@ export default function UpdateRegistrationPeriod() {
                                                         <InfoIcon className="h-4 w-4 ml-1 text-muted-foreground inline-block cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>Tiêu đề của đợt đăng ký, tối đa 100 ký tự</p>
+                                                        <p>Tiêu đề của đợt đăng ký, tối đa 255 ký tự</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -392,7 +392,7 @@ export default function UpdateRegistrationPeriod() {
                                                 maxSize={10}
                                                 placeholder="Tải lên file quyết định"
                                                 onFileChange={handleFileChange}
-                                                existingFile={`${BASE_URL}files/${registrationPeriod.decisionFile}`}
+                                                existingFile={registrationPeriod.decisionFile}
                                                 height={800}
                                             />
                                         </FormControl>

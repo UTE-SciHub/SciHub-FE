@@ -129,7 +129,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
               <DropdownMenuItem onClick={() => navigate("/profile")}>Hồ sơ</DropdownMenuItem>
               <DropdownMenuItem>Cài đặt</DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <NavLink to="/">Chuyển sang giao diện người dùng</NavLink>
+                <NavLink to="/">Trang chủ</NavLink>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Đăng xuất</DropdownMenuItem>

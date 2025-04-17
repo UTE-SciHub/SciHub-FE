@@ -32,9 +32,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "@/hooks/use-toast"
-import { confirmImport, importUsers } from "@/service/user-service"
 import { UserImportResponse } from "@/models/user-import-dto"
 import Loading from "@/components/loading/loading"
+import { UserService } from "@/service/user-service"
 
 interface ValidationError {
     row: number
@@ -144,7 +144,13 @@ const ImportUsersModal: React.FC<ImportUsersModalProps> = ({ open, onOpenChange,
                 });
             }, 200);
 
-            const response = await importUsers(file, controller.signal);
+            const response = await UserService.importUsers(file, {
+                onUploadProgress: (progressEvent: any) => {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setProgress(percentCompleted);
+                },
+                signal: controller.signal,
+            });
 
             clearTimeout(timeoutId);
             clearInterval(progressInterval);
@@ -224,7 +230,7 @@ const ImportUsersModal: React.FC<ImportUsersModalProps> = ({ open, onOpenChange,
                 phoneNumber: record.phoneNumber,
             }));
 
-            const response = await confirmImport(payload);
+            const response = await UserService.confirmImport(payload);
 
             if (response.status === 200) {
                 toast({

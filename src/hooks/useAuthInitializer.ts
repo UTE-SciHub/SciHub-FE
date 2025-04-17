@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import useUserStore from "@/store/userStore";
-import { getCurrentUsers } from "@/service/user-service";
+import { UserService } from "@/service/user-service";
 
 export const useAuthInitializer = () => {
     const setUser = useUserStore((state) => state.setUser);
@@ -12,7 +12,7 @@ export const useAuthInitializer = () => {
             const token = Cookies.get("access-token");
             if (token) {
                 try {
-                    const res = await getCurrentUsers({ token });
+                    const res = await UserService.getCurrentUsers({ token });
                     if (res.status === 200 || res.data.code === 1000) {
                         setUser(res.data);
                     }

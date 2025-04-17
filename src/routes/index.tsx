@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import UserLayout from "@/components/layout/user/UserLayout";
 import AdminLayout from "@/components/layout/admin/AdminLayout";
-import Dashboard from "@/pages/Dashboard";
+import Index from "@/pages/Index";
 import TopicRegistration from "@/pages/TopicRegistration";
 import TopicApproval from "@/pages/TopicApproval";
 import Contracts from "@/pages/Contracts";
@@ -22,6 +22,8 @@ import ProfilePage from "@/pages/user/Profile";
 import ListDepartment from "@/pages/admin/department/ListDepartment";
 import UpdateRegistrationPeriod from "@/pages/admin/registration/update-registration";
 import { PrivateRoute } from "@/middleware/PrivateRoutes";
+import TopicProposal from "@/pages/topics/TopicProposal";
+import ListResearchField from "@/pages/admin/research-field/ListResearchField";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -29,14 +31,14 @@ const routers = createBrowserRouter([
     path: "/",
     element: <UserLayout />,
     children: [
-      { index: true, element: <Dashboard /> },
-      { path: "topic-registration", element: <TopicRegistration /> },
+      { index: true, element: <Index /> },
       { path: "topic-approval", element: <TopicApproval /> },
       { path: "contracts", element: <Contracts /> },
       { path: "topic-execution", element: <TopicExecution /> },
       { path: "topic-completion", element: <TopicCompletion /> },
       { path: "archive", element: <Archive /> },
       { path: "profile", element: <ProfilePage /> },
+      { path: "topic-proposal", element: <TopicProposal /> },
     ],
   },
   {
@@ -56,6 +58,7 @@ const routers = createBrowserRouter([
       { path: "registration/add", element: <CreateRegistrationPeriod /> },
       { path: "registration/:id", element: <UpdateRegistrationPeriod /> },
       { path: "departments", element: <ListDepartment /> },
+      { path: "research-fields", element: <ListResearchField /> },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

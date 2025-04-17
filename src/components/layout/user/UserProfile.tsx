@@ -23,7 +23,9 @@ const UserProfile = () => {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem><UserIcon className='h-4 w-4 mr-2' />Hồ sơ</DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <NavLink to="/profile"><UserIcon className='h-4 w-4 mr-2' />Hồ sơ</NavLink>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <NavLink to="/admin"><LayoutDashboard className='h-4 w-4 mr-2' />Trang quản trị</NavLink>
         </DropdownMenuItem>

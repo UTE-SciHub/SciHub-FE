@@ -9,11 +9,11 @@ import { Badge, Ban, CirclePlus, Eye, Lock, MoreHorizontal, RefreshCw, Trash2, U
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { getAll } from "@/service/department-service";
 import { Department } from "@/models/department";
 import CreateDepartmentModal from "@/pages/admin/department/CreateDepartmentModal";
 import DepartmentDetailModal from "@/pages/admin/department/DepartmentDetailModal";
 import DepartmentImage from "@/pages/admin/department/DepartmentImage";
+import { DepartmentService } from "@/service/department-service";
 
 const ListDepartment = () => {
     const location = useLocation();
@@ -51,7 +51,7 @@ const ListDepartment = () => {
     }) => {
         setLoading(true);
         try {
-            const response = await getAll({
+            const response = await DepartmentService.getAll({
                 p: params.p,
                 s: params.s,
                 sort: params.sort,
@@ -127,26 +127,28 @@ const ListDepartment = () => {
     };
 
     const getStatusBadge = (status: boolean | string) => {
-        switch (status) {
-            case true:
-                return (
-                    <div className="flex items-center justify-center">
-                        <Lock className="h-6 w-6 text-rose-500" />
-                    </div>
-                );
-            case false:
-                return (
-                    <div className="flex items-center justify-center">
-                        <Unlock className="h-6 w-6 text-green-500" />
-                    </div>
-                );
-            default:
-                return (
-                    <div className="flex items-center justify-center">
-                        <Unlock className="h-6 w-6 text-green-500" />
-                    </div>
-                );
-        }
+        const isLocked = status === true;
+        const badgeConfig = {
+            text: isLocked ? "Khóa" : "Mở khóa",
+            bgColor: isLocked ? "bg-rose-100" : "bg-green-100",
+            textColor: isLocked ? "text-rose-700" : "text-green-700",
+            icon: isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />,
+        };
+
+        return (
+            <div className="flex items-center justify-center">
+                <span
+                    className={`
+          inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+          ${badgeConfig.bgColor} ${badgeConfig.textColor}
+          transition-colors duration-200 hover:${badgeConfig.bgColor.replace("100", "200")}
+        `}
+                >
+                    {badgeConfig.icon}
+                    {badgeConfig.text}
+                </span>
+            </div>
+        );
     };
 
     const columns: Column[] = [

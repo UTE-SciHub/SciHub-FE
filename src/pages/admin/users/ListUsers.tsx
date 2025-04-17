@@ -32,7 +32,6 @@ import DataTable from "@/components/data-table/data-table"
 import { useLocation, useNavigate } from "react-router-dom"
 import useDebounce from "@/hooks/use-debounce"
 import type { Column } from "@/models/column"
-import { changeStatus, exportExcel, getUsers, resetPassword } from "@/service/user-service"
 import { toast } from "@/hooks/use-toast"
 import CreateMultipleAccountsModal from "@/pages/admin/users/MultipleCreateModal"
 import CreateUserModal from "@/pages/admin/users/CreateUserModal"
@@ -49,6 +48,7 @@ import UserDetailModal from "@/pages/admin/users/UserDetailModal"
 import { UserStatus } from "@/models/enums/user-status"
 import { getInitialsAvt } from "@/utils/common"
 import { formatTimeAgo } from "@/utils/dateTimeFormat"
+import { UserService } from "@/service/user-service"
 
 const AdminUsers = () => {
   const location = useLocation()
@@ -85,6 +85,8 @@ const AdminUsers = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
+
   const fetchData = async (params: {
     p: number
     s: number
@@ -95,7 +97,7 @@ const AdminUsers = () => {
   }) => {
     setLoading(true)
     try {
-      const response = await getUsers({
+      const response = await UserService.getUsers({
         p: params.p,
         s: params.s,
         sort: params.sort,
@@ -243,7 +245,6 @@ const AdminUsers = () => {
   }
 
   const handleRefresh = () => {
-    setIsRefreshing(true)
     fetchData({
       p: currentPage,
       s: itemsPerPage,
@@ -305,7 +306,7 @@ const AdminUsers = () => {
       render: (_, record) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9 border">
-            <AvatarImage src={record.imageUrl} alt={record.name} />
+            <AvatarImage src={record?.imageUrl} alt={record.name} />
             <AvatarFallback className="bg-primary/10 text-primary">{getInitialsAvt(record.name)}</AvatarFallback>
           </Avatar>
           <div>
@@ -395,7 +396,7 @@ const AdminUsers = () => {
   const handleExportExcel = async () => {
     try {
       setIsLoading(true)
-      const response = await exportExcel({
+      const response = await UserService.exportExcel({
         q: debouncedSearchQuery,
         status: activeTab,
         sort: sortField,
@@ -454,7 +455,7 @@ const AdminUsers = () => {
   const handleUserStatusChange = async (userId: string, status: UserStatus): Promise<Boolean> => {
     setIsLoading(true)
     try {
-      const response = await changeStatus(userId, status)
+      const response = await UserService.changeStatus(userId, status)
       if (response.status === 200) {
         toast({
           title: `Thay đổi trạng thái thành công`,
@@ -485,7 +486,7 @@ const AdminUsers = () => {
   }
 
   const handleResetPassword = async (userId: string) => {
-    const response = await resetPassword(userId);
+    const response = await UserService.resetPassword(userId);
 
     if (response.status === 200 || response.data.code === 1000) {
       toast({
@@ -553,8 +554,8 @@ const AdminUsers = () => {
             </TabsTrigger>
           </TabsList>
 
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Làm mới
           </Button>
         </div>

@@ -1,9 +1,9 @@
 
-import React from 'react';
-import { ArrowRight, Calendar, ClipboardList, FileCheck, FilePlus, Users, ChevronRight } from 'lucide-react';
+import { ArrowRight, FilePlus, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 const recentTopics = [
   {
@@ -47,7 +47,8 @@ const announcements = [
   },
 ];
 
-const Dashboard = () => {
+const Index = () => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
@@ -55,7 +56,9 @@ const Dashboard = () => {
           <h1 className="font-bold text-3xl tracking-tight">Quản lý nghiên cứu khoa học</h1>
           <p className="text-muted-foreground mt-1">Chào mừng đến với hệ thống quản lý nghiên cứu khoa học UTE-SciHub</p>
         </div>
-        <Button className="bg-primary-600 hover:bg-primary-700 transition-all">
+        <Button className="bg-primary-600 hover:bg-primary-700 transition-all"
+          onClick={() => navigate('/topic-proposal')}
+        >
           <FilePlus className="h-4 w-4" />
           Đăng ký đề tài
         </Button>
@@ -142,4 +145,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Index;

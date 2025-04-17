@@ -47,10 +47,10 @@ const handleResponseErr = async (err) => {
 
         try {
             const res = await axiosClient.post('auth/refresh-token', {
-                token: refreshToken
+                refreshToken: refreshToken
             });
 
-            const newAccessToken = res.data.accessToken;
+            const newAccessToken = res.data.data.accessToken;
             Cookies.set('access-token', newAccessToken, { secure: true, sameSite: 'Strict' });
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 

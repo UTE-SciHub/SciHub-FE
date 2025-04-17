@@ -8,7 +8,7 @@ import UserProfile from "./UserProfile";
 
 const UserHeader = () => {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-[#FFF] bg-background/95 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b bg-[#FFF] shadow-sm">
       <div className="container flex h-16 items-center">
         <UserMobileNav />
         <UserAppLogo />

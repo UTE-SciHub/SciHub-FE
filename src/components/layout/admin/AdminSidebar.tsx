@@ -12,6 +12,7 @@ import {
   LogOut,
   Home,
   List,
+  Microscope,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,11 @@ const sidebarItems = [
     title: "Danh sách khoa",
     href: "/admin/departments",
     icon: List,
+  },
+  {
+    title: "Quản lý lĩnh vực nghiên cứu",
+    href: "/admin/research-fields",
+    icon: Microscope,
   },
   {
     title: "Cài đặt hệ thống",

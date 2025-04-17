@@ -3,24 +3,34 @@ import axiosClient from "@/utils/axiosClient";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-export const create = async (department: Department) => {
-    return axiosClient.post(`${BASE_URL}departments`, department);
-};
+export class DepartmentService {
+    static async create(data: FormData) {
+        return axiosClient.post(`${BASE_URL}departments`, data, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+    }
 
-export const getAll = async (params: {
-    p?: number;
-    s?: number;
-    q?: string;
-    sort?: string;
-    order?: string;
-}) => {
-    return axiosClient.get(`${BASE_URL}departments`, { params });
-};
+    static async getAll(params: {
+        p?: number;
+        s?: number;
+        q?: string;
+        sort?: string;
+        order?: string;
+    }) {
+        return axiosClient.get(`${BASE_URL}departments`, { params });
+    }
 
-export const getById = async (id: string) => {
-    return axiosClient.get(`${BASE_URL}departments/${id}`);
-};
+    static async getById(id: string) {
+        return axiosClient.get(`${BASE_URL}departments/${id}`);
+    }
 
-export const update = async (id: number, department: Department) => {
-    return axiosClient.put(`${BASE_URL}departments/${id}`, department);
+    static async update(id: number, formData: FormData) {
+        return axiosClient.put(`${BASE_URL}departments/${id}`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+    }
 }

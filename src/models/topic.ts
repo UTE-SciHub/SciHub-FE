@@ -1,12 +1,9 @@
-export interface Department {
+export interface Topic {
     id?: number;
     name: string;
     description: string;
-    email: string;
-    phoneNumber: string;
-    imageUrl: string;
     delFlag: boolean;
-    logoPublicId?: string;
+    researchFieldId?: number;
     created_at?: string;
     updated_at?: string;
     created_by?: string;

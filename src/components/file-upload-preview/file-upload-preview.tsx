@@ -6,7 +6,7 @@ import "./file-upload-preview.css"
 interface FileUploadPreviewProps {
     value: string
     onChange: (value: string) => void
-    onFileChange?: (file: File | null) => void
+    onFileChange: (file: File | null) => void
     accept?: string
     maxSize?: number // in MB
     label?: string

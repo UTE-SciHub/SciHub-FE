@@ -70,7 +70,7 @@ const TopicRegistration = () => {
           <TabsTrigger value="registration-periods">Đợt đăng ký</TabsTrigger>
           <TabsTrigger value="my-topics">Đề tài của tôi</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="registration-periods" className="animate-fade-in space-y-4 mt-4">
           {registrationPeriods.map((period, i) => (
             <Card key={i} className={`animate-scale-in overflow-hidden ${i === 0 ? 'border-primary-100' : ''}`} style={{ animationDelay: `${i * 100}ms` }}>
@@ -101,7 +101,7 @@ const TopicRegistration = () => {
                       {period.startDate} - {period.endDate}
                     </span>
                   </div>
-                  
+
                   {period.status === 'Đang mở' ? (
                     <Button className="w-full md:w-auto">
                       <FileTextIcon className="mr-2 h-4 w-4" />
@@ -116,16 +116,16 @@ const TopicRegistration = () => {
               </CardContent>
               {period.status === 'Đang mở' && (
                 <div className="h-1.5 bg-primary-100 w-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary-600" 
-                    style={{ width: `${(1 - period.remainingDays/30) * 100}%` }} 
+                  <div
+                    className="h-full bg-primary-600"
+                    style={{ width: `${(1 - period.remainingDays / 30) * 100}%` }}
                   />
                 </div>
               )}
             </Card>
           ))}
         </TabsContent>
-        
+
         <TabsContent value="my-topics" className="animate-fade-in space-y-4 mt-4">
           {myTopics.map((topic, i) => (
             <Card key={i} className="animate-scale-in hover:shadow-md transition-all" style={{ animationDelay: `${i * 100}ms` }}>
@@ -158,7 +158,7 @@ const TopicRegistration = () => {
               </CardContent>
             </Card>
           ))}
-          
+
           {myTopics.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <FileTextIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />

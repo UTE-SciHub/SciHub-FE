@@ -23,7 +23,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
 import Loading from "@/components/loading/loading"
-import { multipleCreateUser } from "@/service/user-service"
+import { UserService } from "@/service/user-service"
 
 // Define the validation schema
 const createMultipleAccountsSchema = z
@@ -161,7 +161,7 @@ const CreateMultipleAccountsModal: React.FC<CreateMultipleAccountsModalProps> = 
                 accountIds.push(i)
             }
 
-            const response = await multipleCreateUser({
+            const response = await UserService.multipleCreateUser({
                 ids: accountIds,
                 prefix: data.prefix,
                 suffix: data.suffix,

@@ -2,7 +2,7 @@ import { useState, useRef } from "react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, Upload, X, ImageIcon, User, Mail, Phone } from 'lucide-react'
+import { Loader2, Upload, X, ImageIcon, User, Mail, Phone, Save } from 'lucide-react'
 
 import {
     Dialog,
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { toast } from "@/hooks/use-toast"
-import { createUser } from "@/service/user-service"
+import { UserService } from "@/service/user-service"
 
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -33,18 +33,7 @@ const createUserSchema = z.object({
             message: "Số điện thoại không hợp lệ (VD: 0912345678 hoặc +84912345678)",
         })
         .min(1, { message: "Số điện thoại là bắt buộc" }),
-    avatar: z
-        .any()
-        .refine((file) => !file || file instanceof File, {
-            message: "Vui lòng tải lên một tệp hình ảnh hợp lệ",
-        })
-        .refine((file) => !file || file.size <= MAX_FILE_SIZE, {
-            message: `Kích thước tệp tối đa là 10MB`,
-        })
-        .refine((file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), {
-            message: "Chỉ chấp nhận các định dạng .jpg, .jpeg, .png và .webp",
-        })
-        .optional(),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"], { message: "Giới tính không hợp lệ" }),
 })
 
 type CreateUserFormValues = z.infer<typeof createUserSchema>
@@ -67,9 +56,9 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onOpenChange, o
             name: "",
             email: "",
             phoneNumber: "",
-            avatar: undefined,
+            gender: "MALE",
         },
-        mode: "onBlur", // Enable validation on blur
+        mode: "onBlur",
     })
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,8 +87,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onOpenChange, o
             })
             return
         }
-
-        form.setValue("avatar", file, { shouldValidate: true })
 
         const reader = new FileReader()
         reader.onload = () => {
@@ -131,7 +118,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onOpenChange, o
 
     const removeAvatar = () => {
         setAvatarPreview(null)
-        form.setValue("avatar", undefined, { shouldValidate: true })
         if (fileInputRef.current) {
             fileInputRef.current.value = ""
         }
@@ -140,12 +126,16 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onOpenChange, o
     const onSubmit = async (data: CreateUserFormValues) => {
         setIsSubmitting(true)
         try {
-            const response = await createUser({
-                name: data.name.trim(),
-                email: data.email.trim(),
-                phoneNumber: data.phoneNumber.trim(),
-                imageUrl: data.avatar ? data.avatar.name : null,
-            });
+            const formData = new FormData()
+            const jsonBlob = new Blob([JSON.stringify(data)], {
+                type: "application/json",
+            })
+            formData.append("data", jsonBlob)
+            if (fileInputRef.current?.files?.[0]) {
+                formData.append("avatar", fileInputRef.current.files[0])
+            }
+
+            const response = await UserService.createUser(formData);
 
             if (response.status !== 201 && response.data.code !== 1000) {
                 toast({
@@ -246,16 +236,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onOpenChange, o
                             <p className="text-xs">Hỗ trợ JPG, JPEG, PNG, WEBP (tối đa 10MB)</p>
                         </div>
 
-                        <FormField
-                            control={form.control}
-                            name="avatar"
-                            render={({ field: { value, onChange, ...fieldProps }, fieldState }) => (
-                                <FormMessage className="text-center">
-                                    {fieldState.error?.message}
-                                </FormMessage>
-                            )}
-                        />
-
                         {/* Name Field */}
                         <FormField
                             control={form.control}
@@ -319,11 +299,37 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onOpenChange, o
                             )}
                         />
 
+                        <FormField
+                            control={form.control}
+                            name="gender"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        Giới tính <span className="text-destructive">*</span>
+                                    </FormLabel>
+                                    <FormControl>
+                                        <div className="relative">
+                                            <select
+                                                {...field}
+                                                className="w-full h-11 border-gray-200 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                                            >
+                                                <option value="MALE">Nam</option>
+                                                <option value="FEMALE">Nữ</option>
+                                                <option value="OTHER">Khác</option>
+                                            </select>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
                         <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                                Hủy
+                            <Button className="text-rose-500" type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+                                <X className="h-4 w-4" /> Hủy
                             </Button>
                             <Button type="submit" disabled={isSubmitting}>
+                                <Save className="h-4 w-4" />
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {isSubmitting ? "Đang xử lý..." : "Tạo tài khoản"}
                             </Button>

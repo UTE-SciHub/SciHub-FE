@@ -1,8 +1,6 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { format } from "date-fns"
-import { vi } from "date-fns/locale"
 import {
     Dialog,
     DialogContent,
@@ -30,8 +28,8 @@ import { User as UserIcon, Mail, Phone, Shield, UserCog, KeyRound, UserCheck, Us
 import { User } from "@/models/user"
 import { UserStatus } from "@/models/enums/user-status"
 import { formatDate, formatDateTime } from "@/utils/dateTimeFormat"
-import { toast } from "@/hooks/use-toast"
 import { getInitialsAvt } from "@/utils/common"
+import { Gender } from "@/models/enums/gender"
 
 interface UserDetailModalProps {
     open: boolean
@@ -53,6 +51,8 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
     const [showResetConfirm, setShowResetConfirm] = useState(false)
 
     const [isActive, setIsActive] = useState(user?.status === UserStatus.ACTIVE)
+
+    const BASE_URL = import.meta.env.VITE_BASE_URL;
 
     useEffect(() => {
         setIsActive(user?.status === UserStatus.ACTIVE)
@@ -113,6 +113,19 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
         }
     }
 
+    const getGenderLabel = (gender: Gender) => {
+        switch (gender) {
+            case Gender.MALE:
+                return "Nam";
+            case Gender.FEMALE:
+                return "Nữ";
+            case Gender.OTHER:
+                return "Khác";
+            default:
+                return "Chưa cập nhật";
+        }
+    };
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,10 +136,9 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                     </DialogHeader>
 
                     <div className="space-y-6">
-                        {/* User header with avatar and basic info */}
                         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                             <Avatar className="h-24 w-24 border">
-                                <AvatarImage src={user?.imageUrl || undefined} alt={user?.name} />
+                                <AvatarImage src={user?.imageUrl} alt={user?.name} />
                                 <AvatarFallback className="bg-primary/10 text-primary text-2xl">
                                     {getInitialsAvt(user?.name)}
                                 </AvatarFallback>
@@ -234,7 +246,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">Giới tính</p>
-                                    <p className="font-medium">{user?.gender || "Chưa cập nhật"}</p>
+                                    <p className="font-medium">{getGenderLabel(user?.gender)}</p>
                                 </div>
 
                                 <div className="space-y-1">
