@@ -1,57 +1,68 @@
 import { FormRichTextEditor } from "@/components/editor/text-editor"
+import KeywordsInput from "@/components/multiple-select/keyword-input"
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Department } from "@/models/department"
+import { ResearchField } from "@/models/research-field"
+import { ResearchType } from "@/models/research-type"
 
-export default function GeneralInformationStep({ form }) {
+interface GeneralInformationStepProps {
+    form: any;
+    departmentOptions: Department[];
+    researchTypeOptions: ResearchType[];
+    researchFieldOptions: ResearchField[];
+    isLoadingOptions: boolean;
+}
 
-    const researchTypeOptions = [
-        { value: "loai1", label: "Loại 1" },
-        { value: "loai2", label: "Loại 2" },
-        { value: "loai3", label: "Loại 3" },
-        { value: "loai4", label: "Duy tu, bảo dưỡng, sửa chữa CSVC-KT và trang thiết bị KH&CN" },
-    ]
-
-    const khoaOptions = [
-        { value: "CNTT", label: "Khoa Công nghệ thông tin" },
-        { value: "DDT", label: "Khoa Điện - Điện tử" },
-        { value: "CK", label: "Khoa Cơ khí" },
-        { value: "XD", label: "Khoa Xây dựng" },
-    ]
-
-    const loaiHinhNghienCuuOptions = [
-        { value: "NCCB", label: "Nghiên cứu cơ bản" },
-        { value: "NCUD", label: "Nghiên cứu ứng dụng" },
-        { value: "PTCN", label: "Phát triển công nghệ" },
-    ]
-
-    const linhVucOptions = [
-        { value: "CNTT", label: "Công nghệ thông tin" },
-        { value: "DTVT", label: "Điện tử viễn thông" },
-        { value: "KHTN", label: "Khoa học tự nhiên" },
-        { value: "KHXH", label: "Khoa học xã hội" },
-    ]
-
+export default function GeneralInformationStep({
+    form,
+    departmentOptions,
+    researchTypeOptions,
+    researchFieldOptions,
+    isLoadingOptions,
+}: GeneralInformationStepProps) {
     return (
         <div className="space-y-6">
             <div className="text-2xl font-semibold text-center">Thông tin chung</div>
 
+            {/* Topic Code */}
             <FormField
                 control={form.control}
-                name="vietNameseName"
+                name="topicCode"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>
+                            Mã số đề tài <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                            <Input placeholder="Nhập mã số đề tài (VD: DT2025-001)" {...field} />
+                        </FormControl>
+                        <FormDescription>Mã định danh duy nhất cho đề tài nghiên cứu</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+
+            {/* Vietnamese Name */}
+            <FormField
+                control={form.control}
+                name="vietnameseName"
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>
                             Tên tiếng Việt <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
-                            <Input placeholder="Nhập tên tiếng Việt đề tài" {...field} />
+                            <Input placeholder="Nhập tên đề tài bằng tiếng Việt" {...field} />
                         </FormControl>
+                        <FormDescription>Tên của đề tài bằng tiếng Việt</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}
             />
 
+            {/* English Name */}
             <FormField
                 control={form.control}
                 name="englishName"
@@ -61,64 +72,98 @@ export default function GeneralInformationStep({ form }) {
                             Tên tiếng Anh <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
-                            <Input placeholder="Nhập tên tiếng Anh đề tài" {...field} />
+                            <Input placeholder="Nhập tên đề tài bằng tiếng Anh" {...field} />
                         </FormControl>
+                        <FormDescription>Tên của đề tài bằng tiếng Anh</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+
+            {/* Principal Investigator */}
+            <FormField
+                control={form.control}
+                name="principalInvestigator"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>
+                            Chủ nhiệm đề tài <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                            <Input placeholder="Nhập họ tên chủ nhiệm đề tài" {...field} />
+                        </FormControl>
+                        <FormDescription>Họ tên và học vị của người đứng đầu đề tài</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Department */}
                 <FormField
                     control={form.control}
-                    name="maKhoa"
+                    name="department"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>
-                                Loại đề tài <span className="text-destructive">*</span>
+                                Khoa <span className="text-destructive">*</span>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}>
                                 <FormControl>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn loại đề tài" />
+                                        <SelectValue placeholder={isLoadingOptions ? "Đang tải..." : "Chọn khoa"} />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {researchTypeOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
+                                    {departmentOptions.length === 0 && !isLoadingOptions && (
+                                        <SelectItem value="" disabled>
+                                            Không có khoa nào khả dụng
+                                        </SelectItem>
+                                    )}
+                                    {departmentOptions.map((option) => (
+                                        <SelectItem key={option.id} value={String(option.id)}>
+                                            {option.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <FormDescription>Khoa quản lý đề tài</FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
 
+                {/* Field */}
                 <FormField
                     control={form.control}
-                    name="maLinhVuc"
+                    name="field"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>
                                 Lĩnh vực <span className="text-destructive">*</span>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select
+                                onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}
+                            >
                                 <FormControl>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn lĩnh vực" />
+                                        <SelectValue placeholder={isLoadingOptions ? "Đang tải..." : "Chọn lĩnh vực nghiên cứu"} />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {linhVucOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
+                                    {researchFieldOptions.length === 0 && !isLoadingOptions && (
+                                        <SelectItem value="" disabled>
+                                            Không có lĩnh vực nào khả dụng
+                                        </SelectItem>
+                                    )}
+                                    {researchFieldOptions.map((option) => (
+                                        <SelectItem key={option.id} value={String(option.id)}>
+                                            {option.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <FormDescription>Lĩnh vực chuyên môn của đề tài</FormDescription>
+                            <FormDescription>Lĩnh vực nghiên cứu của đề tài</FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -126,52 +171,32 @@ export default function GeneralInformationStep({ form }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Research Type */}
                 <FormField
                     control={form.control}
-                    name="maKhoa"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>
-                                Khoa <span className="text-destructive">*</span>
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn khoa" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {khoaOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormDescription>Khoa chủ quản của đề tài</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="maLoaiHinhNghienCuu"
+                    name="researchType"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>
                                 Loại hình nghiên cứu <span className="text-destructive">*</span>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select
+                                onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}
+                            >
                                 <FormControl>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn loại hình nghiên cứu" />
+                                        <SelectValue placeholder={isLoadingOptions ? "Đang tải..." : "Chọn loại hình nghiên cứu"} />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {loaiHinhNghienCuuOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
+                                    {researchTypeOptions.length === 0 && !isLoadingOptions && (
+                                        <SelectItem value="" disabled>
+                                            Không có loại hình nào khả dụng
+                                        </SelectItem>
+                                    )}
+                                    {researchTypeOptions.map((option) => (
+                                        <SelectItem key={option.id} value={String(option.id)}>
+                                            {option.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -181,15 +206,40 @@ export default function GeneralInformationStep({ form }) {
                         </FormItem>
                     )}
                 />
+
+                {/* Keywords */}
+                <FormField
+                    control={form.control}
+                    name="keywords"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>
+                                Từ khóa <span className="text-destructive">*</span>
+                            </FormLabel>
+                            <FormControl>
+                                <KeywordsInput
+                                    form={form}
+                                    field={field}
+                                    placeholder="Nhập từ khóa"
+                                    description="Các từ khóa liên quan đến đề tài"
+                                    required={true}
+                                />
+                            </FormControl>
+                            <FormDescription>Các từ khóa liên quan đến đề tài</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
             </div>
 
+            {/* Objectives */}
             <FormField
                 control={form.control}
-                name="mucTieu"
+                name="objectives"
                 render={({ field, fieldState }) => (
                     <FormItem>
                         <FormLabel>
-                            Mục tiêu nghiên cứu <span className="text-destructive">*</span>
+                            Mục tiêu <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
                             <FormRichTextEditor
@@ -201,15 +251,16 @@ export default function GeneralInformationStep({ form }) {
                                 fieldState={fieldState}
                             />
                         </FormControl>
-                        <FormDescription>Mô tả rõ mục tiêu tổng quát và mục tiêu cụ thể của đề tài</FormDescription>
+                        <FormDescription>Mô tả mục tiêu chung và cụ thể của đề tài</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}
             />
 
+            {/* Main Content */}
             <FormField
                 control={form.control}
-                name="noiDungChinh"
+                name="mainContent"
                 render={({ field, fieldState }) => (
                     <FormItem>
                         <FormLabel>
@@ -217,7 +268,7 @@ export default function GeneralInformationStep({ form }) {
                         </FormLabel>
                         <FormControl>
                             <FormRichTextEditor
-                                label="Nhập nội dung"
+                                label="Nhập nội dung chính"
                                 field={field}
                                 placeholder="Nhập nội dung chính của đề tài"
                                 height="400px"
@@ -225,13 +276,36 @@ export default function GeneralInformationStep({ form }) {
                                 fieldState={fieldState}
                             />
                         </FormControl>
-                        <FormDescription>Mô tả chi tiết các nội dung chính sẽ thực hiện trong đề tài</FormDescription>
+                        <FormDescription>Mô tả chi tiết nội dung sẽ thực hiện trong đề tài</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}
             />
 
-
+            {/* Novelty */}
+            <FormField
+                control={form.control}
+                name="novelty"
+                render={({ field, fieldState }) => (
+                    <FormItem>
+                        <FormLabel>
+                            Điểm mới và sáng tạo <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                            <FormRichTextEditor
+                                label="Nhập tính mới"
+                                field={field}
+                                placeholder="Mô tả tính mới và đóng góp khoa học"
+                                height="400px"
+                                maxLength={5000}
+                                fieldState={fieldState}
+                            />
+                        </FormControl>
+                        <FormDescription>Mô tả tính mới và đóng góp khoa học của đề tài</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
         </div>
     )
 }

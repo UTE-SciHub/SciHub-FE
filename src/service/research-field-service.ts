@@ -14,6 +14,7 @@ export class ResearchFieldService {
         q?: string;
         sort?: string;
         order?: string;
+        delFlag?: boolean;
     }) {
         return axiosClient.get(`${BASE_URL}research-fields`, { params });
     }

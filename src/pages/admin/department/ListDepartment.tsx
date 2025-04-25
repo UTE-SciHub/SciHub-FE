@@ -5,9 +5,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import useDebounce from "@/hooks/use-debounce";
 import { Column } from "@/models/column";
 import { Button } from "@/components/ui/button";
-import { Badge, Ban, CirclePlus, Eye, Lock, MoreHorizontal, RefreshCw, Trash2, Unlock } from "lucide-react";
+import { Badge, Ban, CirclePlus, Download, Eye, Lock, MoreHorizontal, RefreshCw, Trash2, Unlock } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Department } from "@/models/department";
 import CreateDepartmentModal from "@/pages/admin/department/CreateDepartmentModal";
@@ -25,6 +26,7 @@ const ListDepartment = () => {
     const initialQuery = params.get("q") || "";
     const initialSort = params.get("sort") || "createdAt";
     const initialOrder = params.get("order") || "desc";
+    const initialDelFlag = params.get("delFlag") || "all";
 
     const [departments, setDepartments] = useState<Department[]>([]);
     const [itemsPerPage, setItemsPerPage] = useState(initialSize);
@@ -33,11 +35,12 @@ const ListDepartment = () => {
     const [currentPage, setCurrentPage] = useState(initialPage);
     const [sortField, setSortField] = useState(initialSort);
     const [sortOrder, setSortOrder] = useState(initialOrder);
+    const [delFlag, setDelFlag] = useState<string>(initialDelFlag);
     const [loading, setLoading] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
-    const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+    const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const isUpdatingUrl = useRef(false);
@@ -48,25 +51,36 @@ const ListDepartment = () => {
         q: string;
         sort: string;
         order: string;
+        delFlag?: string;
     }) => {
         setLoading(true);
         try {
-            const response = await DepartmentService.getAll({
+            const requestParams: {
+                p: number;
+                s: number;
+                sort: string;
+                order: string;
+                q?: string;
+                delFlag?: boolean;
+            } = {
                 p: params.p,
                 s: params.s,
                 sort: params.sort,
                 order: params.order,
                 q: params.q,
-            });
+                delFlag: params.delFlag === "all" ? undefined : params.delFlag === "true",
+            };
+
+            const response = await DepartmentService.getAll(requestParams);
 
             setDepartments(response.data.data);
             setTotalItems(response.data.totalItems);
         } catch (error) {
-            console.error("Error fetching registration periods:", error);
+            console.error("Error fetching departments:", error);
             toast({
                 title: "Có lỗi trong quá trình lấy dữ liệu!",
                 variant: "error",
-            })
+            });
         } finally {
             setLoading(false);
         }
@@ -79,13 +93,14 @@ const ListDepartment = () => {
             q: debouncedSearchQuery,
             sort: sortField,
             order: sortOrder,
+            delFlag: delFlag,
         });
-    }, [currentPage, itemsPerPage, debouncedSearchQuery, sortField, sortOrder]);
+    }, [currentPage, itemsPerPage, debouncedSearchQuery, sortField, sortOrder, delFlag]);
 
     const updateUrl = (params: Record<string, string | number>) => {
         const searchParams = new URLSearchParams(location.search);
         Object.entries(params).forEach(([key, value]) => {
-            if (value) {
+            if (value && (key !== "delFlag" || value !== "all")) {
                 searchParams.set(key, value.toString());
             } else {
                 searchParams.delete(key);
@@ -96,30 +111,35 @@ const ListDepartment = () => {
         navigate({ search: searchParams.toString() }, { replace: true });
     };
 
-    const handleSearchChange = (e) => {
-        const value = e.target.value
-        setSearchQuery(value)
-        setCurrentPage(1)
-        updateUrl({ q: value, p: 1 })
-    }
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+        setCurrentPage(1);
+        updateUrl({ q: value, p: 1 });
+    };
+
+    const handleDelFlagChange = (value: string) => {
+        setDelFlag(value);
+        setCurrentPage(1);
+        updateUrl({ delFlag: value, p: 1 });
+    };
 
     const handleSortChange = (field: string, order: string) => {
         setSortField(field);
         setSortOrder(order);
-
-        updateUrl({ sort: field, order })
+        updateUrl({ sort: field, order });
     };
 
-    const handlePageChange = (pageNumber) => {
+    const handlePageChange = (pageNumber: number) => {
         setCurrentPage(pageNumber);
-        updateUrl({ p: pageNumber })
+        updateUrl({ p: pageNumber });
     };
 
-    const handlePageSizeChange = (newPageSize) => {
-        setItemsPerPage(newPageSize)
-        setCurrentPage(1)
-        updateUrl({ s: newPageSize, p: 1 })
-    }
+    const handlePageSizeChange = (newPageSize: number) => {
+        setItemsPerPage(newPageSize);
+        setCurrentPage(1);
+        updateUrl({ s: newPageSize, p: 1 });
+    };
 
     const handleViewDepartment = (department: Department) => {
         setSelectedDepartment(department);
@@ -139,10 +159,10 @@ const ListDepartment = () => {
             <div className="flex items-center justify-center">
                 <span
                     className={`
-          inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
-          ${badgeConfig.bgColor} ${badgeConfig.textColor}
-          transition-colors duration-200 hover:${badgeConfig.bgColor.replace("100", "200")}
-        `}
+                        inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+                        ${badgeConfig.bgColor} ${badgeConfig.textColor}
+                        transition-colors duration-200 hover:${badgeConfig.bgColor.replace("100", "200")}
+                    `}
                 >
                     {badgeConfig.icon}
                     {badgeConfig.text}
@@ -153,14 +173,14 @@ const ListDepartment = () => {
 
     const columns: Column[] = [
         {
-            key: "imagesUrl", title: "Logo", width: "40px", render: (_, record) => (
+            key: "imageUrl",
+            title: "Logo",
+            width: "40px",
+            render: (_, record) => (
                 <div className="flex items-center gap-4">
-                    <div>
-                        <DepartmentImage imageUrl={record.imageUrl} name={record.name} size="md" />
-                    </div>
+                    <DepartmentImage imageUrl={record.imageUrl} name={record.name} size="md" />
                 </div>
             ),
-
         },
         { key: "name", title: "Tên khoa", width: "200px", sortable: true },
         { key: "description", title: "Mô tả", width: "150px" },
@@ -203,6 +223,7 @@ const ListDepartment = () => {
             q: debouncedSearchQuery,
             sort: sortField,
             order: sortOrder,
+            delFlag: delFlag,
         });
     };
 
@@ -213,19 +234,76 @@ const ListDepartment = () => {
             q: debouncedSearchQuery,
             sort: sortField,
             order: sortOrder,
+            delFlag: delFlag,
         });
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            setLoading(true)
+            const response = await DepartmentService.exportExcel({
+                q: debouncedSearchQuery,
+                delFlag: delFlag === "all" ? undefined : delFlag === "true",
+            });
+
+            if (response.status !== 200) {
+                toast({
+                    title: "Có lỗi trong quá trình xuất file!",
+                    variant: "error",
+                });
+                return;
+            }
+
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[:T-]/g, "").slice(0, 14);
+            const fileName = `users_${timestamp}.xlsx`;
+
+            const blob = new Blob([response.data], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast({
+                title: "Xuất file thành công",
+                variant: "success",
+            });
+        } catch (error) {
+            toast({
+                title: "Đã xảy ra lỗi không mong muốn!",
+                description: error.message || "Vui lòng thử lại sau.",
+                variant: "error",
+            });
+            console.error("Export Excel Error:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold tracking-tight">Danh sách khoa</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Danh sách khoa</h1>
+                </div>
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+                    <Button variant="outline" onClick={handleExportExcel}>
+                        <Download className="h-4 w-4" />
+                        Xuất excel
+                    </Button>
+                    <Button onClick={() => setIsAddModalOpen(true)}>
+                        <CirclePlus className="h-4 w-4" /> Thêm mới khoa
+                    </Button>
+                </div>
 
-                <Button
-                    onClick={() => setIsAddModalOpen(true)}
-                >
-                    <CirclePlus /> Thêm mới khoa
-                </Button>
             </div>
             <Card>
                 <CardContent className="mt-4">
@@ -239,7 +317,18 @@ const ListDepartment = () => {
                                 onChange={handleSearchChange}
                             />
                         </div>
-
+                        <div className="w-40">
+                            <Select value={delFlag} onValueChange={handleDelFlagChange}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Tất cả</SelectItem>
+                                    <SelectItem value="false">Mở khóa</SelectItem>
+                                    <SelectItem value="true">Khóa</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
                             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                             Làm mới

@@ -10,8 +10,8 @@ const navItems = [
     href: "/",
   },
   {
-    title: "Đăng ký đề tài",
-    href: "/topic-registration",
+    title: "Đề tài của tôi",
+    href: "/my-topics",
     icon: FileTextIcon,
   },
 ];

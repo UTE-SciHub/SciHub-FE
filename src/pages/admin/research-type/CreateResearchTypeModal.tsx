@@ -18,25 +18,25 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "@/hooks/use-toast"
-import { ResearchFieldService } from "@/service/research-field-service"
-import { ResearchField } from "@/models/research-field"
 import { trimAndStrip } from "@/utils/common"
+import { ResearchType } from "@/models/research-type"
+import { ResearchTypeService } from "@/service/research-type-service"
 
 const researchFieldSchema = z.object({
-    name: z.string().min(1, { message: "Tên lĩnh vực là bắt buộc" }),
+    name: z.string().min(1, { message: "Tên loại hình là bắt buộc" }),
     description: z.string().min(1, { message: "Mô tả là bắt buộc" }),
 });
 
-interface CreateResearchFieldProps {
+interface CreateResearchTypeProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onResearchFieldAdded?: () => void
+    onResearchTypeAdded?: () => void
 }
 
-const CreateResearchFieldModal: React.FC<CreateResearchFieldProps> = ({ open, onOpenChange, onResearchFieldAdded }) => {
+const CreateResearchTypeModal: React.FC<CreateResearchTypeProps> = ({ open, onOpenChange, onResearchTypeAdded }) => {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const form = useForm<ResearchField>({
+    const form = useForm<ResearchType>({
         resolver: zodResolver(researchFieldSchema),
         defaultValues: {
             name: "",
@@ -45,7 +45,7 @@ const CreateResearchFieldModal: React.FC<CreateResearchFieldProps> = ({ open, on
         mode: "onBlur",
     })
 
-    const onSubmit = async (data: ResearchField) => {
+    const onSubmit = async (data: ResearchType) => {
         setIsSubmitting(true)
         try {
             data = {
@@ -55,12 +55,12 @@ const CreateResearchFieldModal: React.FC<CreateResearchFieldProps> = ({ open, on
                 delFlag: false,
 
             }
-            const response = await ResearchFieldService.create(data);
+            const response = await ResearchTypeService.create(data);
 
             if (response.status !== 201 || response.data.code !== 1000) {
                 toast({
                     title: "Lỗi",
-                    description: response.data.message || "Đã xảy ra lỗi trong quá trình thêm lĩnh vực mới.",
+                    description: response.data.message || "Đã xảy ra lỗi trong quá trình thêm loại hình mới.",
                     variant: "error",
                 })
                 return
@@ -72,14 +72,14 @@ const CreateResearchFieldModal: React.FC<CreateResearchFieldProps> = ({ open, on
                 variant: "success"
             })
 
-            onResearchFieldAdded?.()
+            onResearchTypeAdded?.()
             onOpenChange(false)
             form.reset()
         } catch (error) {
             console.error("Error adding department:", error)
             toast({
                 title: "Lỗi",
-                description: "Đã xảy ra lỗi trong quá trình thêm lĩnh vực mới. Vui lòng thử lại.",
+                description: "Đã xảy ra lỗi trong quá trình thêm loại hình mới. Vui lòng thử lại.",
                 variant: "error",
             })
         } finally {
@@ -91,8 +91,8 @@ const CreateResearchFieldModal: React.FC<CreateResearchFieldProps> = ({ open, on
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[650px] p-0">
                 <DialogHeader className="p-6 pb-2">
-                    <DialogTitle>Thêm mới lĩnh vực</DialogTitle>
-                    <DialogDescription>Nhập thông tin chi tiết để thêm lĩnh vực nghiên cứu mới vào hệ thống.</DialogDescription>
+                    <DialogTitle>Thêm mới loại hình</DialogTitle>
+                    <DialogDescription>Nhập thông tin chi tiết để thêm loại hình nghiên cứu mới vào hệ thống.</DialogDescription>
                 </DialogHeader>
 
                 <ScrollArea className="max-h-[calc(90vh-10rem)] px-6">
@@ -105,10 +105,10 @@ const CreateResearchFieldModal: React.FC<CreateResearchFieldProps> = ({ open, on
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>
-                                            Tên lĩnh vực <span className="text-destructive">*</span>
+                                            Tên loại hình <span className="text-destructive">*</span>
                                         </FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Nhập tên lĩnh vực" {...field} />
+                                            <Input placeholder="Nhập tên loại hình" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -124,12 +124,12 @@ const CreateResearchFieldModal: React.FC<CreateResearchFieldProps> = ({ open, on
                                         <FormLabel>Mô tả</FormLabel>
                                         <FormControl>
                                             <Textarea
-                                                placeholder="Nhập mô tả về lĩnh vực nghiên cứu"
+                                                placeholder="Nhập mô tả về loại hình nghiên cứu"
                                                 className="resize-none min-h-[100px]"
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormDescription>Mô tả ngắn gọn về lĩnh vực nghiên cứu và các thông tin liên quan.</FormDescription>
+                                        <FormDescription>Mô tả ngắn gọn về loại hình nghiên cứu và các thông tin liên quan.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -153,4 +153,4 @@ const CreateResearchFieldModal: React.FC<CreateResearchFieldProps> = ({ open, on
     )
 }
 
-export default CreateResearchFieldModal;
+export default CreateResearchTypeModal;

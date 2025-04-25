@@ -63,7 +63,6 @@ const formSchema = z
     description: z
       .string()
       .min(10, "Mô tả phải có ít nhất 10 ký tự")
-      .max(5000, "Mô tả không được vượt quá 5000 ký tự"),
   })
   .refine((data) => data.endDate > data.startDate, {
     message: "Ngày kết thúc phải sau ngày bắt đầu",
@@ -364,7 +363,6 @@ export default function CreateRegistrationPeriod() {
                         field={field}
                         placeholder="Nhập mô tả chi tiết về đợt đăng ký..."
                         height="400px"
-                        maxLength={5000}
                         fieldState={fieldState}
                       />
                     </FormControl>

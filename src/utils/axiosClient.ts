@@ -5,9 +5,6 @@ import Cookies from 'js-cookie';
 const axiosClient = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
     timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json'
-    }
 });
 
 const handleRequestSuccess = async (config) => {

@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { FileTextIcon, PlusCircle, Search, Calendar, Bell } from 'lucide-react';
+import { FileTextIcon, PlusCircle, Search, Calendar, Bell, FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 const registrationPeriods = [
   {
@@ -46,6 +47,7 @@ const myTopics = [
 ];
 
 const TopicRegistration = () => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
@@ -58,9 +60,11 @@ const TopicRegistration = () => {
             placeholder="Tìm kiếm đề tài..."
             className="md:w-64 w-full"
           />
-          <Button className="bg-primary-600 hover:bg-primary-700">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Đăng ký mới
+          <Button className="bg-primary-600 hover:bg-primary-700 transition-all"
+            onClick={() => navigate('/topic-proposal')}
+          >
+            <FilePlus className="h-4 w-4" />
+            Đăng ký đề tài
           </Button>
         </div>
       </div>

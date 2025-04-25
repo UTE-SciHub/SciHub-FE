@@ -24,6 +24,8 @@ import UpdateRegistrationPeriod from "@/pages/admin/registration/update-registra
 import { PrivateRoute } from "@/middleware/PrivateRoutes";
 import TopicProposal from "@/pages/topics/TopicProposal";
 import ListResearchField from "@/pages/admin/research-field/ListResearchField";
+import ListResearchType from "@/pages/admin/research-type/ListResearchType";
+import RegistrationPeriodDetail from "@/pages/RegistrationDetail";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -39,6 +41,8 @@ const routers = createBrowserRouter([
       { path: "archive", element: <Archive /> },
       { path: "profile", element: <ProfilePage /> },
       { path: "topic-proposal", element: <TopicProposal /> },
+      { path: "registration/:id", element: <RegistrationPeriodDetail /> },
+      { path: "my-topics", element: <TopicRegistration /> },
     ],
   },
   {
@@ -59,6 +63,7 @@ const routers = createBrowserRouter([
       { path: "registration/:id", element: <UpdateRegistrationPeriod /> },
       { path: "departments", element: <ListDepartment /> },
       { path: "research-fields", element: <ListResearchField /> },
+      { path: "research-types", element: <ListResearchType /> },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

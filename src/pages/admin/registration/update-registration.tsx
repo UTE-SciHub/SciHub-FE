@@ -45,7 +45,7 @@ const formSchema = z
         endDate: z.date({
             required_error: "Vui lòng chọn ngày kết thúc",
         }),
-        description: z.string().min(10, "Mô tả phải có ít nhất 10 ký tự").max(5000, "Mô tả không được vượt quá 5000 ký tự"),
+        description: z.string().min(10, "Mô tả phải có ít nhất 10 ký tự"),
         status: z.enum([RegistrationPeriodStatus.OPEN, RegistrationPeriodStatus.CLOSED], {
             errorMap: () => ({ message: "Trạng thái không hợp lệ" }),
         })
@@ -100,8 +100,8 @@ export default function UpdateRegistrationPeriod() {
                 if (response.status === 200 && response.data.code === 1000) {
                     const data = response.data.data
                     setRegistrationPeriod(data)
+                    setIsStatusOpen(data.status === RegistrationPeriodStatus.OPEN)
 
-                    // Set form values
                     form.reset({
                         id: data.id,
                         title: data.title,
@@ -133,13 +133,11 @@ export default function UpdateRegistrationPeriod() {
     }
 
     const handleStatusToggle = () => {
-        setIsStatusOpen(!isStatusOpen)
         setIsChangingStatus(true)
-
         const newStatus = isStatusOpen ? RegistrationPeriodStatus.CLOSED : RegistrationPeriodStatus.OPEN
-        const updatedRegistrationPeriod = { ...registrationPeriod, status: newStatus }
-
-        setRegistrationPeriod(updatedRegistrationPeriod)
+        setIsStatusOpen(!isStatusOpen)
+        form.setValue("status", newStatus)
+        setRegistrationPeriod({ ...registrationPeriod, status: newStatus })
         setIsChangingStatus(false)
     }
 
@@ -150,7 +148,7 @@ export default function UpdateRegistrationPeriod() {
                 id: id,
                 title: values.title,
                 decisionNumber: values.decisionNumber,
-                status: isStatusOpen ? RegistrationPeriodStatus.OPEN : RegistrationPeriodStatus.CLOSED,
+                status: values.status,
                 decisionFile: registrationPeriod.decisionFile || "",
                 startDate: format(new Date(values.startDate), "yyyy-MM-dd"),
                 endDate: format(new Date(values.endDate), "yyyy-MM-dd"),
@@ -282,15 +280,11 @@ export default function UpdateRegistrationPeriod() {
                                     <FormItem className="flex items-center space-x-2">
                                         <FormLabel className="text-sm">Trạng thái</FormLabel>
                                         <Switch
-                                            checked={registrationPeriod?.status === RegistrationPeriodStatus.OPEN}
-                                            onCheckedChange={(checked) => {
-                                                setIsStatusOpen(checked)
-                                                handleStatusToggle()
-                                                field.onChange(checked ? RegistrationPeriodStatus.OPEN : RegistrationPeriodStatus.CLOSED)
-                                            }}
+                                            checked={isStatusOpen}
+                                            onCheckedChange={handleStatusToggle}
                                         />
                                         <Label className="text-sm font-medium">
-                                            {registrationPeriod?.status === RegistrationPeriodStatus.OPEN ? (
+                                            {isStatusOpen ? (
                                                 <span className="flex items-center gap-1 text-green-600">
                                                     <CalendarCheck className="h-4 w-4" />
                                                     Mở đăng ký
@@ -496,7 +490,6 @@ export default function UpdateRegistrationPeriod() {
                                                 field={field}
                                                 placeholder="Nhập mô tả chi tiết về đợt đăng ký..."
                                                 height="400px"
-                                                maxLength={5000}
                                                 fieldState={fieldState}
                                             />
                                         </FormControl>
@@ -527,4 +520,3 @@ export default function UpdateRegistrationPeriod() {
         </div >
     )
 }
-

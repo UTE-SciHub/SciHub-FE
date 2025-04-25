@@ -10,9 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { ResearchField } from "@/models/research-field";
-import { ResearchFieldService } from "@/service/research-field-service";
-import CreateResearchFieldModal from "@/pages/admin/research-field/CreateResearchFieldModal";
+import { ResearchType } from "@/models/research-type";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,9 +21,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import UpdateResearchFieldModal from "@/pages/admin/research-field/UpdateResearchFieldModal";
+import CreateResearchTypeModal from "@/pages/admin/research-type/CreateResearchTypeModal";
+import UpdateResearchTypeModal from "@/pages/admin/research-type/UpdateResearchTypeModal";
+import { ResearchTypeService } from "@/service/research-type-service";
 
-const ListResearchField = () => {
+const ListResearchType = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -37,20 +37,20 @@ const ListResearchField = () => {
     const initialOrder = params.get("order") || "desc";
     const initialDelFlag = params.get("delFlag") || "all";
 
-    const [researchFields, setResearchFields] = useState<ResearchField[]>([]);
+    const [researchTypes, setResearchTypes] = useState<ResearchType[]>([]);
     const [itemsPerPage, setItemsPerPage] = useState(initialSize);
     const [totalItems, setTotalItems] = useState(0);
     const [searchQuery, setSearchQuery] = useState(initialQuery);
     const [currentPage, setCurrentPage] = useState(initialPage);
-    const [sortField, setSortField] = useState(initialSort);
+    const [sortType, setSortType] = useState(initialSort);
     const [sortOrder, setSortOrder] = useState(initialOrder);
-    const [delFlag, setDelFlag] = useState<string>(initialDelFlag);
+    const [delFlag, setDelFlag] = useState(initialDelFlag);
     const [loading, setLoading] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [selectedResearchField, setSelectedResearchField] = useState<ResearchField | null>(null);
+    const [selectedResearchType, setSelectedResearchType] = useState<ResearchType | null>(null);
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
-    const [selectedRows, setSelectedRows] = useState<ResearchField[]>([]);
+    const [selectedRows, setSelectedRows] = useState<ResearchType[]>([]);
     const [statusChangeConfirm, setStatusChangeConfirm] = useState(false);
     const [isActive, setIsActive] = useState(false);
     const [batchAction, setBatchAction] = useState<"block" | "unblock" | null>(null);
@@ -85,12 +85,12 @@ const ListResearchField = () => {
                 delFlag: params.delFlag === "all" ? undefined : params.delFlag === "true",
             };
 
-            const response = await ResearchFieldService.getAll(requestParams);
+            const response = await ResearchTypeService.getAll(requestParams);
 
-            setResearchFields(response.data.data);
+            setResearchTypes(response.data.data);
             setTotalItems(response.data.totalItems);
         } catch (error) {
-            console.error("Error fetching research fields:", error);
+            console.error("Error fetching research types:", error);
             toast({
                 title: "Có lỗi trong quá trình lấy dữ liệu!",
                 variant: "error",
@@ -105,16 +105,16 @@ const ListResearchField = () => {
             p: currentPage,
             s: itemsPerPage,
             q: debouncedSearchQuery,
-            sort: sortField,
+            sort: sortType,
             order: sortOrder,
             delFlag: delFlag,
         });
-    }, [currentPage, itemsPerPage, debouncedSearchQuery, sortField, sortOrder, delFlag]);
+    }, [currentPage, itemsPerPage, debouncedSearchQuery, sortType, sortOrder, delFlag]);
 
     const updateUrl = (params: Record<string, string | number>) => {
         const searchParams = new URLSearchParams(location.search);
         Object.entries(params).forEach(([key, value]) => {
-            if (value && (key !== "delFlag" || value !== "all")) {
+            if (value) {
                 searchParams.set(key, value.toString());
             } else {
                 searchParams.delete(key);
@@ -125,6 +125,12 @@ const ListResearchField = () => {
         navigate({ search: searchParams.toString() }, { replace: true });
     };
 
+    const handleDelFlagChange = (value: string) => {
+        setDelFlag(value);
+        setCurrentPage(1);
+        updateUrl({ delFlag: value, p: 1 });
+    };
+
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearchQuery(value);
@@ -132,16 +138,10 @@ const ListResearchField = () => {
         updateUrl({ q: value, p: 1 });
     };
 
-    const handleDelFlagChange = (value: string) => {
-        setDelFlag(value);
-        setCurrentPage(1);
-        updateUrl({ delFlag: value, p: 1 });
-    };
-
-    const handleSortChange = (field: string, order: string) => {
-        setSortField(field);
+    const handleSortChange = (type: string, order: string) => {
+        setSortType(type);
         setSortOrder(order);
-        updateUrl({ sort: field, order });
+        updateUrl({ sort: type, order });
     };
 
     const handlePageChange = (pageNumber: number) => {
@@ -155,10 +155,10 @@ const ListResearchField = () => {
         updateUrl({ s: newPageSize, p: 1 });
     };
 
-    const handleViewResearchField = (researchField: ResearchField) => {
+    const handleViewResearchType = (researchType: ResearchType) => {
         setIsDetailModalOpen(false);
         setTimeout(() => {
-            setSelectedResearchField(researchField);
+            setSelectedResearchType(researchType);
             setIsDetailModalOpen(true);
         }, 0);
     };
@@ -189,7 +189,7 @@ const ListResearchField = () => {
     };
 
     const columns: Column[] = [
-        { key: "name", title: "Tên lĩnh vực", width: "100px", sortable: true },
+        { key: "name", title: "Tên loại hình", width: "100px", sortable: true },
         { key: "description", title: "Mô tả", width: "150px" },
         { key: "delFlag", title: "Trạng thái", width: "80px", render: (_, record) => getStatusBadge(record.delFlag) },
         { key: "createdAt", title: "Ngày tạo", width: "150px", sortable: true },
@@ -209,7 +209,7 @@ const ListResearchField = () => {
                         <DropdownMenuItem
                             onSelect={(e) => {
                                 e.preventDefault();
-                                handleViewResearchField(record);
+                                handleViewResearchType(record);
                             }}
                         >
                             <Eye className="mr-2 h-4 w-4" />
@@ -244,12 +244,12 @@ const ListResearchField = () => {
         },
     ];
 
-    const handleResearchFieldAdded = () => {
+    const handleResearchTypeAdded = () => {
         fetchData({
             p: 1,
             s: itemsPerPage,
             q: debouncedSearchQuery,
-            sort: sortField,
+            sort: sortType,
             order: sortOrder,
             delFlag: delFlag,
         });
@@ -260,14 +260,14 @@ const ListResearchField = () => {
             p: currentPage,
             s: itemsPerPage,
             q: debouncedSearchQuery,
-            sort: sortField,
+            sort: sortType,
             order: sortOrder,
             delFlag: delFlag,
         });
     };
 
-    const openConfirmLock = async (record: ResearchField, newStatus: boolean) => {
-        setSelectedResearchField(record);
+    const openConfirmLock = async (record: ResearchType, newStatus: boolean) => {
+        setSelectedResearchType(record);
         setIsActive(newStatus);
         setStatusChangeConfirm(true);
     };
@@ -276,23 +276,23 @@ const ListResearchField = () => {
         setLoading(true);
 
         try {
-            const response = await ResearchFieldService.updateStatus(selectedResearchField?.id!, isActive);
+            const response = await ResearchTypeService.updateStatus(selectedResearchType?.id!, isActive);
             if (response.status === 200 && response.data.code === 1000) {
                 toast({
-                    title: `Đã ${isActive ? "mở khóa" : "khóa"} lĩnh vực ${selectedResearchField?.name} thành công!`,
+                    title: `Đã ${isActive ? "mở khóa" : "khóa"} thành công!`,
                     variant: "success",
                 });
                 handleRefresh();
             } else {
                 toast({
-                    title: `Có lỗi trong quá trình ${isActive ? "mở khóa" : "khóa"} lĩnh vực ${selectedResearchField?.name}!`,
+                    title: `Có lỗi trong quá trình ${isActive ? "mở khóa" : "khóa"}!`,
                     variant: "error",
                 });
             }
         } catch (error) {
             console.error("Error updating status:", error);
             toast({
-                title: `Có lỗi trong quá trình ${isActive ? "mở khóa" : "khóa"} lĩnh vực ${selectedResearchField?.name}!`,
+                title: `Có lỗi trong quá trình ${isActive ? "mở khóa" : "khóa"}!`,
                 variant: "error",
             });
         } finally {
@@ -306,18 +306,18 @@ const ListResearchField = () => {
 
         setLoading(true);
         try {
-            const promises = selectedRows.map((row: ResearchField) =>
-                ResearchFieldService.updateStatus(row.id!, batchAction === "block")
+            const promises = selectedRows.map((row: ResearchType) =>
+                ResearchTypeService.updateStatus(row.id!, batchAction === "block")
             );
             const responses = await Promise.all(promises);
 
             const failed = responses.some((res) => res.status !== 200 || res.data.code !== 1000);
             if (failed) {
-                throw new Error("Có lỗi trong quá trình xử lý một số lĩnh vực");
+                throw new Error("Có lỗi trong quá trình xử lý một số loại hình");
             }
 
             toast({
-                title: `Đã ${batchAction === "block" ? "khóa" : "mở khóa"} ${selectedRowKeys.length} lĩnh vực thành công!`,
+                title: `Đã ${batchAction === "block" ? "khóa" : "mở khóa"} ${selectedRowKeys.length} loại hình thành công!`,
                 variant: "success",
             });
 
@@ -327,7 +327,7 @@ const ListResearchField = () => {
         } catch (error) {
             console.error("Error during batch action:", error);
             toast({
-                title: `Có lỗi trong quá trình ${batchAction === "block" ? "khóa" : "mở khóa"} các lĩnh vực!`,
+                title: `Có lỗi trong quá trình ${batchAction === "block" ? "khóa" : "mở khóa"} các loại hình!`,
                 variant: "error",
             });
         } finally {
@@ -341,11 +341,11 @@ const ListResearchField = () => {
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Danh sách lĩnh vực nghiên cứu</h1>
-                    <p className="text-muted-foreground mt-1">Quản lý các lĩnh vực nghiên cứu của đề tài</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Danh sách loại hình nghiên cứu</h1>
+                    <p className="text-muted-foreground mt-1">Quản lý các loại hình nghiên cứu của đề tài</p>
                 </div>
                 <Button onClick={() => setIsAddModalOpen(true)}>
-                    <CirclePlus /> Thêm lĩnh vực
+                    <CirclePlus /> Thêm loại hình
                 </Button>
             </div>
             <Card>
@@ -376,7 +376,7 @@ const ListResearchField = () => {
                             {selectedRowKeys.length > 0 ? (
                                 <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
                                     <span className="text-sm min-w-[220px]">
-                                        Đã chọn <span className="font-bold">{selectedRowKeys.length}</span> lĩnh vực
+                                        Đã chọn <span className="font-bold">{selectedRowKeys.length}</span> loại hình
                                     </span>
                                     <Button
                                         size="sm"
@@ -428,7 +428,7 @@ const ListResearchField = () => {
                         maxHeight="550px"
                         loading={loading}
                         columns={columns}
-                        data={researchFields}
+                        data={researchTypes}
                         itemsPerPage={itemsPerPage}
                         pagination={true}
                         currentPage={currentPage}
@@ -445,28 +445,28 @@ const ListResearchField = () => {
                 </CardContent>
             </Card>
 
-            <CreateResearchFieldModal
+            <CreateResearchTypeModal
                 open={isAddModalOpen}
                 onOpenChange={setIsAddModalOpen}
-                onResearchFieldAdded={handleResearchFieldAdded}
+                onResearchTypeAdded={handleResearchTypeAdded}
             />
 
-            {selectedResearchField && (
-                <UpdateResearchFieldModal
+            {selectedResearchType && (
+                <UpdateResearchTypeModal
                     open={isDetailModalOpen}
                     onOpenChange={setIsDetailModalOpen}
-                    researchField={selectedResearchField}
-                    onResearchFieldUpdated={handleResearchFieldAdded}
+                    researchType={selectedResearchType}
+                    onResearchTypeUpdated={handleResearchTypeAdded}
                 />
             )}
 
             <AlertDialog open={statusChangeConfirm} onOpenChange={setStatusChangeConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{isActive ? "Mở khóa lĩnh vực" : "Khóa lĩnh vực"}</AlertDialogTitle>
+                        <AlertDialogTitle>{isActive ? "Mở khóa loại hình" : "Khóa loại hình"}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn có chắc muốn {isActive ? "mở khóa" : "khóa"} lĩnh vực{" "}
-                            <span className="font-medium">{selectedResearchField?.name}</span>?
+                            Bạn có chắc muốn {isActive ? "mở khóa" : "khóa"} loại hình{" "}
+                            <span className="font-medium">{selectedResearchType?.name}</span>?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -490,11 +490,11 @@ const ListResearchField = () => {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {batchAction === "block" ? "Khóa các lĩnh vực" : "Mở khóa các lĩnh vực"}
+                            {batchAction === "block" ? "Khóa các loại hình" : "Mở khóa các loại hình"}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             Bạn có chắc muốn {batchAction === "block" ? "khóa" : "mở khóa"}{" "}
-                            <span className="font-medium">{selectedRowKeys.length}</span> lĩnh vực đã chọn?
+                            <span className="font-medium">{selectedRowKeys.length}</span> loại hình đã chọn?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -517,4 +517,4 @@ const ListResearchField = () => {
     );
 };
 
-export default ListResearchField;
+export default ListResearchType;

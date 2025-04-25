@@ -18,6 +18,7 @@ export class DepartmentService {
         q?: string;
         sort?: string;
         order?: string;
+        delFlag?: boolean;
     }) {
         return axiosClient.get(`${BASE_URL}departments`, { params });
     }
@@ -31,6 +32,16 @@ export class DepartmentService {
             headers: {
                 "Content-Type": "multipart/form-data",
             },
+        });
+    }
+
+    static async exportExcel(params: {
+        q?: string;
+        delFlag?: boolean;
+    }) {
+        return axiosClient.get(`${BASE_URL}departments/export-excel`, {
+            params,
+            responseType: "blob",
         });
     }
 }
