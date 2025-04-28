@@ -97,7 +97,7 @@ export default function RegistrationPeriodDetail() {
 
     return (
         <div>
-            <div className="flex items-center">
+            <div className="flex items-center mb-2">
                 <Button variant="ghost" className="text-gray-600 hover:text-gray-900 p-2" onClick={() => navigate(-1)}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>

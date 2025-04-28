@@ -71,7 +71,7 @@ const getFundingSourceLabel = (value) => {
 export default function ReviewStep({ form, formValues }) {
     return (
         <div className="space-y-8">
-            <div className="text-2xl font-semibold text-center">Xem xét & Nộp hồ sơ</div>
+            <div className="text-2xl font-semibold text-center">Xác nhận và hoàn tất</div>
 
             <Alert className="z-5">
                 <InfoIcon className="h-4 w-4" />

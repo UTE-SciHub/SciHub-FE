@@ -51,22 +51,47 @@ interface State {
   toasts: ToasterToast[];
 }
 
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+const toastTimeouts = new Map<string, { timeout: ReturnType<typeof setTimeout>; remaining: number }>();
 
 const addToRemoveQueue = (toastId: string, duration?: number) => {
   if (toastTimeouts.has(toastId)) {
     return;
   }
 
+  const durationToUse = duration || TOAST_REMOVE_DELAY;
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId);
     dispatch({
       type: "REMOVE_TOAST",
       toastId: toastId,
     });
-  }, duration || TOAST_REMOVE_DELAY);
+  }, durationToUse);
 
-  toastTimeouts.set(toastId, timeout);
+  toastTimeouts.set(toastId, { timeout, remaining: durationToUse });
+};
+
+const pauseTimer = (toastId: string) => {
+  const toastTimeout = toastTimeouts.get(toastId);
+  if (toastTimeout) {
+    clearTimeout(toastTimeout.timeout);
+    toastTimeouts.set(toastId, { ...toastTimeout, timeout: null });
+  }
+};
+
+const resumeTimer = (toastId: string) => {
+  const toastTimeout = toastTimeouts.get(toastId);
+  if (toastTimeout && !toastTimeout.timeout) {
+    const remaining = toastTimeout.remaining;
+    const timeout = setTimeout(() => {
+      toastTimeouts.delete(toastId);
+      dispatch({
+        type: "REMOVE_TOAST",
+        toastId: toastId,
+      });
+    }, remaining);
+
+    toastTimeouts.set(toastId, { ...toastTimeout, timeout });
+  }
 };
 
 export const reducer = (state: State, action: Action): State => {
@@ -155,6 +180,8 @@ function toast({ duration, ...props }: Toast) {
       onOpenChange: (open) => {
         if (!open) dismiss();
       },
+      onMouseEnter: () => pauseTimer(id),
+      onMouseLeave: () => resumeTimer(id),
     },
   });
 

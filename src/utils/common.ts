@@ -26,3 +26,18 @@ export const formatFileSize = (bytes: number) => {
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
 }
+
+export const formatVND = (value: number | undefined): string => {
+    if (value === undefined || value === null) return "";
+    const formatted = new Intl.NumberFormat("vi-VN", {
+        minimumFractionDigits: 0,
+    }).format(value);
+    return `${formatted} VND`;
+};
+
+export const parseVND = (value) => {
+    if (!value) return undefined;
+    // Remove all non-numeric characters except for the decimal point (if any)
+    const numericValue = value.replace(/[^0-9]/g, '');
+    return numericValue ? Number(numericValue) : undefined;
+};

@@ -36,23 +36,11 @@ const productColumns: TableColumn[] = [
 export default function SpecializationStep({ form }) {
     const [selectedTransferForm, setSelectedTransferForm] = useState([]);
 
-    const councilOptions = [
-        { value: "IT_COUNCIL", label: "Hội đồng Công nghệ Thông tin" },
-        { value: "EE_COUNCIL", label: "Hội đồng Điện - Điện tử" },
-        { value: "ME_COUNCIL", label: "Hội đồng Cơ khí" },
-    ]
-
-    const registrationPeriodOptions = [
-        { value: "2025_1", label: "Đợt đăng ký 1 - 2025" },
-        { value: "2025_2", label: "Đợt đăng ký 2 - 2025" },
-        { value: "2026_1", label: "Đợt đăng ký 1 - 2026" },
-    ]
-
     const transferFormOptions = [
-        { value: "RESEARCH_TRANSFER", label: "Chuyển giao nghiên cứu" },
-        { value: "PRODUCT_TRANSFER", label: "Chuyển giao sản phẩm" },
-        { value: "TECHNOLOGY_TRANSFER", label: "Chuyển giao công nghệ" },
-        { value: "OTHER", label: "Khác" }
+        { value: "Chuyển giao nghiên cứu", label: "Chuyển giao nghiên cứu" },
+        { value: "Chuyển giao sản phẩm", label: "Chuyển giao sản phẩm" },
+        { value: "Chuyển giao công nghệ", label: "Chuyển giao công nghệ" },
+        { value: "Khác", label: "Khác" }
     ]
 
     return (
@@ -98,6 +86,8 @@ export default function SpecializationStep({ form }) {
                                     field.onChange(newValue);
                                     form.trigger("expectedProducts");
                                 }}
+                                control={form.control}
+                                name="expectedProducts"
                             />
                         </FormControl>
                         <FormDescription>Liệt kê các sản phẩm dự kiến sau khi hoàn thành đề tài</FormDescription>

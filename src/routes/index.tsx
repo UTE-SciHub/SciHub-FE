@@ -26,6 +26,8 @@ import TopicProposal from "@/pages/topics/TopicProposal";
 import ListResearchField from "@/pages/admin/research-field/ListResearchField";
 import ListResearchType from "@/pages/admin/research-type/ListResearchType";
 import RegistrationPeriodDetail from "@/pages/RegistrationDetail";
+import ListCategory from "@/pages/admin/category/ListCategories";
+import ListTopics from "@/pages/admin/topics";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -53,7 +55,7 @@ const routers = createBrowserRouter([
       </PrivateRoute>,
     children: [
       { index: true, element: <AdminDashboard /> },
-      { path: "topics", element: <AdminTopics /> },
+      { path: "topics", element: <ListTopics /> },
       { path: "contracts", element: <AdminContracts /> },
       { path: "finance", element: <AdminFinance /> },
       { path: "announcements", element: <AdminAnnouncements /> },
@@ -64,6 +66,7 @@ const routers = createBrowserRouter([
       { path: "departments", element: <ListDepartment /> },
       { path: "research-fields", element: <ListResearchField /> },
       { path: "research-types", element: <ListResearchType /> },
+      { path: "categories", element: <ListCategory /> },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

@@ -3,15 +3,20 @@ import KeywordsInput from "@/components/multiple-select/keyword-input"
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/hooks/use-toast"
+import { Category } from "@/models/category"
 import { Department } from "@/models/department"
 import { ResearchField } from "@/models/research-field"
 import { ResearchType } from "@/models/research-type"
+import { TopicService } from "@/service/topic-service"
+import { useState } from "react"
 
 interface GeneralInformationStepProps {
     form: any;
     departmentOptions: Department[];
     researchTypeOptions: ResearchType[];
     researchFieldOptions: ResearchField[];
+    categoriesOptions: Category[];
     isLoadingOptions: boolean;
 }
 
@@ -20,29 +25,13 @@ export default function GeneralInformationStep({
     departmentOptions,
     researchTypeOptions,
     researchFieldOptions,
+    categoriesOptions,
     isLoadingOptions,
 }: GeneralInformationStepProps) {
+
     return (
         <div className="space-y-6">
             <div className="text-2xl font-semibold text-center">Thông tin chung</div>
-
-            {/* Topic Code */}
-            <FormField
-                control={form.control}
-                name="topicCode"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>
-                            Mã số đề tài <span className="text-destructive">*</span>
-                        </FormLabel>
-                        <FormControl>
-                            <Input placeholder="Nhập mã số đề tài (VD: DT2025-001)" {...field} />
-                        </FormControl>
-                        <FormDescription>Mã định danh duy nhất cho đề tài nghiên cứu</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
 
             {/* Vietnamese Name */}
             <FormField
@@ -207,30 +196,65 @@ export default function GeneralInformationStep({
                     )}
                 />
 
-                {/* Keywords */}
+                {/* Category */}
                 <FormField
                     control={form.control}
-                    name="keywords"
+                    name="category"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>
-                                Từ khóa <span className="text-destructive">*</span>
+                                Loại đề tài <span className="text-destructive">*</span>
                             </FormLabel>
-                            <FormControl>
-                                <KeywordsInput
-                                    form={form}
-                                    field={field}
-                                    placeholder="Nhập từ khóa"
-                                    description="Các từ khóa liên quan đến đề tài"
-                                    required={true}
-                                />
-                            </FormControl>
-                            <FormDescription>Các từ khóa liên quan đến đề tài</FormDescription>
+                            <Select
+                                onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}
+                            >
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={isLoadingOptions ? "Đang tải..." : "Chọn loại đề tài"} />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {categoriesOptions.length === 0 && !isLoadingOptions && (
+                                        <SelectItem value="" disabled>
+                                            Không có loại đề tài nào khả dụng
+                                        </SelectItem>
+                                    )}
+                                    {categoriesOptions.map((option) => (
+                                        <SelectItem key={option.id} value={String(option.id)}>
+                                            {option.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
             </div>
+
+            {/* Keywords */}
+            <FormField
+                control={form.control}
+                name="keywords"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>
+                            Từ khóa <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                            <KeywordsInput
+                                form={form}
+                                field={field}
+                                placeholder="Nhập từ khóa"
+                                description="Các từ khóa liên quan đến đề tài"
+                                required={true}
+                            />
+                        </FormControl>
+                        <FormDescription>Các từ khóa liên quan đến đề tài</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
 
             {/* Objectives */}
             <FormField

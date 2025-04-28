@@ -17,6 +17,15 @@ export class TopicService {
         q?: string;
         sort?: string;
         order?: string;
+        status?: string;
+        departmentId?: number;
+        researchTypeId?: number;
+        researchFieldId?: number;
+        categoryId?: number;
+        startDate?: string;
+        endDate?: string;
+        minBudget?: number;
+        investigator?: string;
     }) {
         return axiosClient.get(`${BASE_URL}topics`, { params });
     }
@@ -31,5 +40,15 @@ export class TopicService {
                 "Content-Type": "multipart/form-data",
             },
         });
+    }
+
+    static async existsByTopicCode(topicCode: string) {
+        return axiosClient.get(`${BASE_URL}topics/exists-by-topic-code?topicCode=${topicCode}`);
+    }
+
+    static async getStatistics() {
+        const response = await axiosClient.get(`${BASE_URL}topics/statistics`);
+
+        return response.data;
     }
 }

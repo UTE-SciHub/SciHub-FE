@@ -22,8 +22,6 @@ import {
     Trash2,
     PlusCircle,
     Ban,
-    Search,
-    Filter,
     Calendar,
     RefreshCw,
     CalendarCheck,

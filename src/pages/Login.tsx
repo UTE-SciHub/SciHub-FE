@@ -245,7 +245,7 @@ export default function Login() {
                         duration: 2000,
                     });
 
-                    const roles = user.roles || [];
+                    const roles = (user.roles || []).map((role: { id: number; name: string }) => role.name);
                     const from = location.state?.from?.pathname || "/";
 
                     if (roles.includes(Roles.TEACHER) || roles.includes(Roles.ADMIN)) {

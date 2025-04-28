@@ -80,7 +80,7 @@ const sidebarItems: SidebarItem[] = [
     subItems: [
       {
         title: "Danh sách đề tài",
-        href: "/admin/topics/list",
+        href: "/admin/topics",
         icon: List,
       },
       {
@@ -89,6 +89,11 @@ const sidebarItems: SidebarItem[] = [
         icon: FileText,
       },
     ],
+  },
+  {
+    title: "Danh mục đề tài",
+    href: "/admin/categories",
+    icon: List,
   },
   {
     title: "Quản lý hợp đồng",
@@ -166,27 +171,36 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
     }
   }
 
+  const clearUser = useUserStore((state) => state.clearUser);
+
   const handleLogout = async () => {
     try {
-      await logout()
-      Cookies.remove("access-token")
-      Cookies.remove("refresh-token")
-      useUserStore.getState().clearUser()
+      const accessToken = Cookies.get("access-token");
+      if (accessToken) {
+        await logout(accessToken);
+      }
+
+      Cookies.remove("access-token", { secure: true, sameSite: "Strict" });
+      Cookies.remove("refresh-token", { secure: true, sameSite: "Strict" });
+      clearUser();
+
       toast({
+        title: "Thông báo",
         description: "Đăng xuất thành công!",
         variant: "success",
         duration: 2000,
-      })
-      navigate("/login", { replace: true })
+      });
+
+      navigate("/", { replace: true });
     } catch (error) {
+      console.error("Logout failed:", error);
       toast({
-        title: "Lỗi",
-        description: "Đăng xuất thất bại, vui lòng thử lại.",
+        title: "Thông báo",
+        description: "Đăng xuất thất bại. Vui lòng thử lại.",
         variant: "error",
-        duration: 2000,
-      })
+      });
     }
-  }
+  };
 
   return (
     <motion.aside

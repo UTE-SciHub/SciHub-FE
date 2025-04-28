@@ -32,19 +32,24 @@ import { ResearchField } from "@/models/research-field"
 import { ResearchTypeService } from "@/service/research-type-service"
 import { ResearchFieldService } from "@/service/research-field-service"
 import Loading from "@/components/loading/loading"
+import { zodResolver } from "@hookform/resolvers/zod"
+import TestStep from "@/pages/topics/steps/test-step"
+import { Category } from "@/models/category"
+import { CategoryService } from "@/service/category-service"
 import { ca } from "date-fns/locale"
 
 const topicFormSchema = z
     .object({
         vietnameseName: z.string().min(5, { message: "Tên tiếng Việt phải có ít nhất 5 ký tự" }),
         englishName: z.string().min(5, { message: "Tên tiếng Anh phải có ít nhất 5 ký tự" }),
-        topicCode: z.string().min(5, { message: "Mã đề tài phải có ít nhất 5 ký tự" }),
+        topicCode: z.string().optional(),
         principalInvestigator: z.string().min(5, { message: "Chủ nhiệm đề tài phải có ít nhất 5 ký tự" }),
         objectives: z.string().min(10, { message: "Mục tiêu phải có ít nhất 10 ký tự" }),
         mainContent: z.string().min(20, { message: "Nội dung chính phải có ít nhất 20 ký tự" }),
         novelty: z.string().min(10, { message: "Tính mới phải có ít nhất 10 ký tự" }),
         keywords: z.array(z.string()).min(1, { message: "Cần ít nhất một từ khóa" }),
         department: z.string().min(1, { message: "Vui lòng chọn khoa" }),
+        category: z.string().min(1, { message: "Vui lòng chọn loại đề tài" }),
         field: z.string().min(1, { message: "Vui lòng chọn lĩnh vực nghiên cứu" }),
         researchType: z.string().min(1, { message: "Vui lòng chọn loại hình nghiên cứu" }),
         transferForm: z.array(z.string()).optional(),
@@ -68,7 +73,7 @@ const topicFormSchema = z
             )
             .optional(),
         expectedRisks: z.string().optional(),
-        registrationPeriod: z.string().min(1, { message: "Vui lòng chọn đợt đăng ký" }),
+        registrationPeriod: z.string().optional(),
         startDate: z.date({ required_error: "Vui lòng chọn ngày bắt đầu" }),
         durationInMonths: z.number().min(1, { message: "Thời gian thực hiện phải lớn hơn 0" }),
         endYear: z.number().min(2023, { message: "Năm kết thúc không hợp lệ" }),
@@ -86,7 +91,7 @@ const topicFormSchema = z
             )
             .min(1, { message: "Cần ít nhất một hạng mục kinh phí" }),
         status: z.enum(["DRAFT", "PENDING"], { required_error: "Vui lòng chọn trạng thái" }),
-        commitment: z.boolean().refine((val) => val === true, { message: "Bạn cần xác nhận cam kết" }),
+        commitment: z.boolean().optional(),
         additionalNotes: z.string().optional(),
     })
     .refine(
@@ -97,6 +102,16 @@ const topicFormSchema = z
         {
             message: "Năm kết thúc phải lớn hơn hoặc bằng năm bắt đầu",
             path: ["endYear"],
+        }
+    )
+    .refine(
+        (data) => {
+            const breakdownTotal = data.budgetBreakdown.reduce((sum, item) => sum + (item.amount || 0), 0);
+            return breakdownTotal <= data.totalBudget;
+        },
+        {
+            message: "Tổng chi tiết chi phí phải nhỏ hơn hoặc bằng tổng kinh phí",
+            path: ["budgetBreakdown"],
         }
     );
 
@@ -218,15 +233,16 @@ export default function TopicProposal() {
     const [currentStep, setCurrentStep] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showSaveDraftConfirm, setShowSaveDraftConfirm] = useState(false)
+    const [showRegistrationConfirm, setShowRegistrationConfirm] = useState(false)
     const [showExitConfirm, setShowExitConfirm] = useState(false)
     const [exitAction, setExitAction] = useState<(() => void) | null>(null)
     const [isReloading, setIsReloading] = useState(false)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-    const backButtonClicked = useRef(false)
     const [hasSavedDraft, setHasSavedDraft] = useState(false)
     const [departments, setDepartments] = useState<Department[]>([])
     const [researchTypes, setResearchTypes] = useState<ResearchType[]>([])
     const [researchFields, setResearchFields] = useState<ResearchField[]>([])
+    const [categories, setCategories] = useState<Category[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     const navigate = useNavigate();
@@ -255,7 +271,7 @@ export default function TopicProposal() {
     ];
 
     const form = useForm<TopicFormValues>({
-        // resolver: zodResolver(topicFormSchema),
+        resolver: zodResolver(topicFormSchema),
         defaultValues: {
             vietnameseName: "",
             englishName: "",
@@ -266,6 +282,7 @@ export default function TopicProposal() {
             novelty: "",
             keywords: [],
             department: "",
+            category: "",
             field: "",
             researchType: "",
             transferForm: [],
@@ -312,7 +329,7 @@ export default function TopicProposal() {
         const fetchOptions = async () => {
             setIsLoading(true);
             try {
-                const [departmentResponse, researchTypeResponse, researchFieldResponse] = await Promise.all([
+                const [departmentResponse, researchTypeResponse, researchFieldResponse, categoriesResponse] = await Promise.all([
                     DepartmentService.getAll({
                         p: 1,
                         s: 1000,
@@ -334,11 +351,19 @@ export default function TopicProposal() {
                         order: "asc",
                         delFlag: false,
                     }),
+                    CategoryService.getAll({
+                        p: 1,
+                        s: 1000,
+                        sort: "name",
+                        order: "asc",
+                        delFlag: false,
+                    }),
                 ]);
 
                 setDepartments(departmentResponse.data.data);
                 setResearchTypes(researchTypeResponse.data.data);
                 setResearchFields(researchFieldResponse.data.data);
+                setCategories(categoriesResponse.data.data);
             } catch (error) {
                 console.error("Lỗi khi lấy dữ liệu:", error);
                 toast({
@@ -401,7 +426,7 @@ export default function TopicProposal() {
         if (!hasSavedDraft) {
             setShowExitConfirm(true)
         } else {
-            navigate("/")
+            navigate(-1)
         }
     }
 
@@ -411,27 +436,22 @@ export default function TopicProposal() {
     }
 
     const formValues = form.watch()
-
     const handleNext = async () => {
-        // const fieldsToValidate = stepFieldsToValidate[currentStep - 1];
+        const fieldsToValidate = stepFieldsToValidate[currentStep - 1];
 
-        // const isValid = await form.trigger(fieldsToValidate);
+        const isValid = await form.trigger(fieldsToValidate);
 
-        // if (isValid) {
-        //     if (currentStep < steps.length) {
-        //         setCurrentStep(currentStep + 1);
-        //         window.scrollTo(0, 0);
-        //     }
-        // } else {
-        //     toast({
-        //         title: "Thông tin chưa hoàn thiện",
-        //         description: "Vui lòng nhập đầy đủ các trường bắt buộc (có dấu * đỏ).",
-        //         variant: "error",
-        //     });
-        // }
-        if (currentStep < steps.length) {
-            setCurrentStep(currentStep + 1);
-            window.scrollTo(0, 0);
+        if (isValid) {
+            if (currentStep < steps.length) {
+                setCurrentStep(currentStep + 1);
+                window.scrollTo(0, 0);
+            }
+        } else {
+            toast({
+                title: "Thông tin chưa hoàn thiện",
+                description: "Vui lòng nhập đầy đủ các trường bắt buộc (có dấu * đỏ).",
+                variant: "error",
+            });
         }
     };
 
@@ -450,6 +470,7 @@ export default function TopicProposal() {
                 novelty: data.novelty,
                 keywords: data.keywords,
                 department: data.department,
+                category: data.category,
                 field: data.field,
                 researchType: data.researchType,
                 transferForm: data.transferForm,
@@ -516,20 +537,21 @@ export default function TopicProposal() {
             setIsSubmitting(false);
             setHasUnsavedChanges(false);
             setShowExitConfirm(false);
-            navigate("/");
+            setShowRegistrationConfirm(false);
+            navigate("/my-topics");
         }
     }
 
     const handleExitWithSave = async () => {
         await handleSaveDraft()
         setShowExitConfirm(false)
-        navigate("/")
+        navigate(-1)
     }
 
     const handleExitWithoutSave = () => {
         setShowExitConfirm(false)
         setHasUnsavedChanges(false)
-        navigate("/")
+        navigate(-1)
     }
 
     if (isSubmitting || isLoading) {
@@ -567,11 +589,12 @@ export default function TopicProposal() {
                                     departmentOptions={departments}
                                     researchTypeOptions={researchTypes}
                                     researchFieldOptions={researchFields}
+                                    categoriesOptions={categories}
                                     isLoadingOptions={isLoading}
                                 />}
                             {currentStep === 2 && <SpecializationStep form={form} />}
                             {currentStep === 3 && <TimeAndBudgetStep form={form} />}
-                            {currentStep === 4 && <ReviewStep form={form} formValues={formValues} />}
+                            {currentStep === 4 && <TestStep formValues={formValues} />}
                         </CardContent>
 
                         <Separator />
@@ -599,10 +622,7 @@ export default function TopicProposal() {
                                 {currentStep === steps.length ? (
                                     <Button
                                         type="button"
-                                        onClick={() => {
-                                            form.setValue("status", "PENDING")
-                                            form.handleSubmit(onSubmit)()
-                                        }}
+                                        onClick={() => { setShowRegistrationConfirm(true) }}
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting && form.getValues("status") === "PENDING" && (
@@ -676,6 +696,52 @@ export default function TopicProposal() {
                         >
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isSubmitting ? "Đang lưu..." : isReloading ? "Lưu và reload" : "Lưu và thoát"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Confirm Dialog cho Đăng ký */}
+            <AlertDialog open={showRegistrationConfirm} onOpenChange={setShowRegistrationConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Gửi đơn đăng ký đề tài</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn có chắc chắn muốn Gửi đơn đăng ký đề tài?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isSubmitting} className="text-rose-500"><X className="h-4 w-4" /> Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={async (e) => {
+                                e.preventDefault();
+                                try {
+                                    form.setValue("status", "PENDING", { shouldValidate: true });
+
+                                    await form.handleSubmit(async (data) => {
+                                        await onSubmit(data);
+                                    }, (errors) => {
+                                        console.error("Validation errors:", errors);
+                                        toast({
+                                            title: "Thông tin chưa hoàn thiện",
+                                            description: "Vui lòng nhập đầy đủ các trường bắt buộc (có dấu * đỏ).",
+                                            variant: "error",
+                                        })
+                                    })();
+                                } catch (error) {
+                                    toast({
+                                        title: "Lỗi",
+                                        description: "Có lỗi xảy ra khi gửi đơn. Vui lòng thử lại.",
+                                        variant: "error",
+                                    })
+                                }
+                            }}
+                            disabled={isSubmitting}
+                            className="bg-primary"
+                        >
+                            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {!isSubmitting && <Save className="h-4 w-4" />}
+                            {isSubmitting ? "Đang gửi..." : "Xác nhận"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
