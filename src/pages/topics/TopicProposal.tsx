@@ -6,7 +6,7 @@ import GeneralInformationStep from "@/pages/topics/steps/GeneralInformationStep"
 import SpecializationStep from "@/pages/topics/steps/SpecializationStep"
 import TimeAndBudgetStep from "@/pages/topics/steps/TimeAndBudgetStep"
 import ReviewStep from "@/pages/topics/steps/ReviewStep"
-import { ArrowLeft, ArrowRight, ClipboardCheck, CornerUpLeft, Loader2, Save, X } from "lucide-react"
+import { ArrowLeft, ArrowRight, ClipboardCheck, CornerUpLeft, Loader2, RotateCcw, Save, Trash2, X } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { Path, useForm } from "react-hook-form"
 import { z } from "zod"
@@ -36,33 +36,45 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import TestStep from "@/pages/topics/steps/test-step"
 import { Category } from "@/models/category"
 import { CategoryService } from "@/service/category-service"
-import { ca } from "date-fns/locale"
+import { RegistrationPeriod } from "@/models/registraion-period"
+import { RegistrationService } from "@/service/registration-service"
+import AttachedDocuments from "@/pages/topics/steps/AttachedDocuments"
 
 const topicFormSchema = z
     .object({
         vietnameseName: z.string().min(5, { message: "Tên tiếng Việt phải có ít nhất 5 ký tự" }),
         englishName: z.string().min(5, { message: "Tên tiếng Anh phải có ít nhất 5 ký tự" }),
         topicCode: z.string().optional(),
-        principalInvestigator: z.string().min(5, { message: "Chủ nhiệm đề tài phải có ít nhất 5 ký tự" }),
+        principalInvestigator: z.string().optional(),
         objectives: z.string().min(10, { message: "Mục tiêu phải có ít nhất 10 ký tự" }),
         mainContent: z.string().min(20, { message: "Nội dung chính phải có ít nhất 20 ký tự" }),
-        novelty: z.string().min(10, { message: "Tính mới phải có ít nhất 10 ký tự" }),
+        urgency: z.string().min(1, { message: "Tính cấp thiết là bắt buộc" }),
         keywords: z.array(z.string()).min(1, { message: "Cần ít nhất một từ khóa" }),
         department: z.string().min(1, { message: "Vui lòng chọn khoa" }),
         category: z.string().min(1, { message: "Vui lòng chọn loại đề tài" }),
+        period: z.string().min(1, { message: "Vui lòng chọn đợt đăng ký" }),
         field: z.string().min(1, { message: "Vui lòng chọn lĩnh vực nghiên cứu" }),
         researchType: z.string().min(1, { message: "Vui lòng chọn loại hình nghiên cứu" }),
         transferForm: z.array(z.string()).optional(),
-        expectedProducts: z
-            .array(
-                z.object({
-                    id: z.string().optional(),
-                    productName: z.string().min(1, { message: "Tên sản phẩm không được để trống" }),
-                    criteria: z.string().min(1, { message: "Tiêu chí không được để trống" }),
-                    description: z.string().optional(),
+        expectedProducts: z.object({
+            scientific: z
+                .object({
+                    domestic: z.number().min(0, { message: "Số bài báo trong nước không được âm" }).optional(),
+                    international: z.number().min(0, { message: "Số bài báo quốc tế không được âm" }).optional(),
                 })
-            )
-            .min(1, { message: "Cần ít nhất một sản phẩm dự kiến" }),
+                .optional(),
+            training: z
+                .object({
+                    masters: z.number().min(0, { message: "Số lượng cao học không được âm" }).optional(),
+                    students: z.number().min(0, { message: "Số lượng sinh viên không được âm" }).optional(),
+                })
+                .optional(),
+            commercial: z
+                .object({
+                    details: z.string().optional(),
+                })
+                .optional(),
+        }).optional(),
         practicalApplications: z.string().min(10, { message: "Ứng dụng thực tiễn phải có ít nhất 10 ký tự" }),
         attachedDocuments: z
             .array(
@@ -78,7 +90,6 @@ const topicFormSchema = z
         durationInMonths: z.number().min(1, { message: "Thời gian thực hiện phải lớn hơn 0" }),
         endYear: z.number().min(2023, { message: "Năm kết thúc không hợp lệ" }),
         totalBudget: z.number().min(0, { message: "Tổng kinh phí không được âm" }),
-        approvedBudget: z.number().min(0, { message: "Kinh phí được duyệt không được âm" }).optional(),
         remainingBudget: z.number().min(0, { message: "Kinh phí còn lại không được âm" }).optional(),
         fundingSource: z.string().min(1, { message: "Vui lòng chọn nguồn kinh phí" }),
         budgetBreakdown: z
@@ -121,7 +132,8 @@ const steps = [
     { id: 1, title: "Thông tin chung" },
     { id: 2, title: "Kết quả nghiên cứu (dự kiến)" },
     { id: 3, title: "Thời gian & kinh phí" },
-    { id: 4, title: "Xác nhận & hoàn tất" },
+    { id: 4, title: "Biểu mẫu đính kèm" },
+    { id: 5, title: "Xác nhận & hoàn tất" },
 ]
 
 const SECRET_KEY = import.meta.env.VITE_APP_SECRET_KEY || "my-secure-16-byte-key-1234567890"
@@ -213,6 +225,36 @@ const getDraftFromLocalStorage = (): TopicFormValues | null => {
             return null
         }
 
+        // Kiểm tra và chuyển đổi expectedProducts nếu cần
+        if (parsed.expectedProducts && Array.isArray(parsed.expectedProducts)) {
+            const convertedProducts = {
+                scientific: { domestic: 0, international: 0 },
+                training: { masters: 0, students: 0 },
+                commercial: { details: "" },
+            };
+
+            parsed.expectedProducts.forEach((product) => {
+                if (product.type === "scientific") {
+                    convertedProducts.scientific.domestic = product.domestic || 0;
+                    convertedProducts.scientific.international = product.international || 0;
+                } else if (product.type === "training") {
+                    convertedProducts.training.masters = product.masters || 0;
+                    convertedProducts.training.students = product.students || 0;
+                } else if (product.type === "commercial") {
+                    convertedProducts.commercial.details = product.details || "";
+                }
+            });
+
+            parsed.expectedProducts = convertedProducts;
+        } else if (!parsed.expectedProducts) {
+            // Nếu expectedProducts không tồn tại, đặt về giá trị mặc định
+            parsed.expectedProducts = {
+                scientific: { domestic: 0, international: 0 },
+                training: { masters: 0, students: 0 },
+                commercial: { details: "" },
+            };
+        }
+
         if (parsed.startDate) {
             parsed.startDate = new Date(parsed.startDate)
         }
@@ -243,6 +285,7 @@ export default function TopicProposal() {
     const [researchTypes, setResearchTypes] = useState<ResearchType[]>([])
     const [researchFields, setResearchFields] = useState<ResearchField[]>([])
     const [categories, setCategories] = useState<Category[]>([])
+    const [periods, setPeriods] = useState<RegistrationPeriod[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     const navigate = useNavigate();
@@ -256,17 +299,21 @@ export default function TopicProposal() {
             "principalInvestigator",
             "objectives",
             "mainContent",
-            "novelty",
+            "urgency",
             "keywords",
             "department",
+            "category",
+            "period",
             "field",
             "researchType",
         ],
         // Step 2: Kết quả nghiên cứu (dự kiến)
-        ["transferForm", "expectedProducts", "attachedDocuments", "expectedRisks", "practicalApplications"],
+        ["transferForm", "expectedProducts", "expectedRisks", "practicalApplications"],
         // Step 3: Thời gian & kinh phí
         ["startDate", "durationInMonths", "endYear", "fundingSource", "budgetBreakdown"],
-        // Step 4: Xác nhận & hoàn tất
+        // Step 4: Biểu mẫu đính kèm
+        ["attachedDocuments"],
+        // Step 5: Xác nhận & hoàn tất
         ["commitment"],
     ];
 
@@ -279,18 +326,27 @@ export default function TopicProposal() {
             principalInvestigator: "",
             objectives: "",
             mainContent: "",
-            novelty: "",
+            urgency: "",
             keywords: [],
             department: "",
             category: "",
+            period: "",
             field: "",
             researchType: "",
             transferForm: [],
-            expectedProducts: [{
-                productName: "",
-                criteria: "",
-                description: "",
-            }],
+            expectedProducts: {
+                scientific: {
+                    domestic: 0,
+                    international: 0,
+                },
+                training: {
+                    masters: 0,
+                    students: 0,
+                },
+                commercial: {
+                    details: "",
+                },
+            },
             practicalApplications: "",
             attachedDocuments: [{
                 file: undefined,
@@ -302,7 +358,6 @@ export default function TopicProposal() {
             durationInMonths: 12,
             endYear: new Date().getFullYear() + 1,
             totalBudget: 0,
-            approvedBudget: 0,
             remainingBudget: 0,
             fundingSource: "",
             budgetBreakdown: [{
@@ -329,7 +384,7 @@ export default function TopicProposal() {
         const fetchOptions = async () => {
             setIsLoading(true);
             try {
-                const [departmentResponse, researchTypeResponse, researchFieldResponse, categoriesResponse] = await Promise.all([
+                const [departmentResponse, researchTypeResponse, researchFieldResponse, categoriesResponse, periodResponse] = await Promise.all([
                     DepartmentService.getAll({
                         p: 1,
                         s: 1000,
@@ -358,12 +413,20 @@ export default function TopicProposal() {
                         order: "asc",
                         delFlag: false,
                     }),
+                    RegistrationService.getAll({
+                        p: 1,
+                        s: 1000,
+                        sort: "startDate",
+                        order: "desc",
+                        year: new Date().getFullYear(),
+                    })
                 ]);
 
                 setDepartments(departmentResponse.data.data);
                 setResearchTypes(researchTypeResponse.data.data);
                 setResearchFields(researchFieldResponse.data.data);
                 setCategories(categoriesResponse.data.data);
+                setPeriods(periodResponse.data.data);
             } catch (error) {
                 console.error("Lỗi khi lấy dữ liệu:", error);
                 toast({
@@ -437,21 +500,9 @@ export default function TopicProposal() {
 
     const formValues = form.watch()
     const handleNext = async () => {
-        const fieldsToValidate = stepFieldsToValidate[currentStep - 1];
-
-        const isValid = await form.trigger(fieldsToValidate);
-
-        if (isValid) {
-            if (currentStep < steps.length) {
-                setCurrentStep(currentStep + 1);
-                window.scrollTo(0, 0);
-            }
-        } else {
-            toast({
-                title: "Thông tin chưa hoàn thiện",
-                description: "Vui lòng nhập đầy đủ các trường bắt buộc (có dấu * đỏ).",
-                variant: "error",
-            });
+        if (currentStep < steps.length) {
+            setCurrentStep(currentStep + 1);
+            window.scrollTo(0, 0);
         }
     };
 
@@ -460,6 +511,8 @@ export default function TopicProposal() {
             setIsSubmitting(true)
             const formData = new FormData();
 
+            console.log("Dữ liệu trước khi gửi:", data)
+
             const topicData = {
                 vietnameseName: data.vietnameseName,
                 englishName: data.englishName,
@@ -467,22 +520,21 @@ export default function TopicProposal() {
                 principalInvestigator: data.principalInvestigator,
                 objectives: data.objectives,
                 mainContent: data.mainContent,
-                novelty: data.novelty,
+                urgency: data.urgency,
                 keywords: data.keywords,
                 department: data.department,
                 category: data.category,
+                registrationPeriod: data.period,
                 field: data.field,
                 researchType: data.researchType,
                 transferForm: data.transferForm,
                 expectedProducts: data.expectedProducts,
                 practicalApplications: data.practicalApplications,
                 expectedRisks: data.expectedRisks,
-                registrationPeriod: data.registrationPeriod,
                 startDate: data.startDate.toISOString(),
                 durationInMonths: data.durationInMonths,
                 endYear: data.endYear,
                 totalBudget: data.totalBudget,
-                approvedBudget: data.approvedBudget,
                 remainingBudget: data.remainingBudget,
                 fundingSource: data.fundingSource,
                 budgetBreakdown: data.budgetBreakdown,
@@ -490,6 +542,8 @@ export default function TopicProposal() {
                 commitment: data.commitment,
                 additionalNotes: data.additionalNotes,
             };
+
+            console.log("Dữ liệu sau khi xử lý:", topicData)
 
             const jsonBlob = new Blob([JSON.stringify(topicData)], {
                 type: "application/json",
@@ -590,11 +644,17 @@ export default function TopicProposal() {
                                     researchTypeOptions={researchTypes}
                                     researchFieldOptions={researchFields}
                                     categoriesOptions={categories}
+                                    periodsOptions={periods}
                                     isLoadingOptions={isLoading}
                                 />}
                             {currentStep === 2 && <SpecializationStep form={form} />}
                             {currentStep === 3 && <TimeAndBudgetStep form={form} />}
-                            {currentStep === 4 && <TestStep formValues={formValues} />}
+                            {currentStep === 4 && <AttachedDocuments form={form} />}
+                            {currentStep === 5 &&
+                                <ReviewStep
+                                    formValues={formValues}
+                                    researchFields={researchFields}
+                                />}
                         </CardContent>
 
                         <Separator />
@@ -626,7 +686,7 @@ export default function TopicProposal() {
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting && form.getValues("status") === "PENDING" && (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Loader2 className="h-4 w-4 animate-spin" />
                                         )}
                                         <ClipboardCheck className="h-4 w-4" /> Đăng ký
                                     </Button>
@@ -668,7 +728,6 @@ export default function TopicProposal() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Confirm Dialog cho Thoát (Quay lại, Reload) */}
             <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -681,20 +740,39 @@ export default function TopicProposal() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setShowExitConfirm(false)} disabled={isSubmitting}>
+                            <X className="h-4 w-4" />
                             Hủy
                         </AlertDialogCancel>
-                        <AlertDialogCancel className="text-rose-500" onClick={handleExitWithoutSave} disabled={isSubmitting}>
-                            {isReloading ? "Reload không lưu" : "Thoát không lưu"}
+                        <AlertDialogCancel
+                            className="text-rose-500"
+                            onClick={handleExitWithoutSave}
+                            disabled={isSubmitting}
+                        >
+                            {isReloading ? (
+                                <>
+                                    <RotateCcw className="h-4 w-4" />
+                                    Reload không lưu
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="h-4 w-4" />
+                                    Thoát không lưu
+                                </>
+                            )}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={(e) => {
-                                e.preventDefault()
-                                handleExitWithSave()
+                                e.preventDefault();
+                                handleExitWithSave();
                             }}
                             disabled={isSubmitting}
                             className="bg-primary"
                         >
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isSubmitting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
                             {isSubmitting ? "Đang lưu..." : isReloading ? "Lưu và reload" : "Lưu và thoát"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -716,7 +794,7 @@ export default function TopicProposal() {
                             onClick={async (e) => {
                                 e.preventDefault();
                                 try {
-                                    form.setValue("status", "PENDING", { shouldValidate: true });
+                                    form.setValue("status", "DRAFT", { shouldValidate: true });
 
                                     await form.handleSubmit(async (data) => {
                                         await onSubmit(data);

@@ -3,13 +3,11 @@ import KeywordsInput from "@/components/multiple-select/keyword-input"
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/hooks/use-toast"
 import { Category } from "@/models/category"
 import { Department } from "@/models/department"
+import { RegistrationPeriod } from "@/models/registraion-period"
 import { ResearchField } from "@/models/research-field"
 import { ResearchType } from "@/models/research-type"
-import { TopicService } from "@/service/topic-service"
-import { useState } from "react"
 
 interface GeneralInformationStepProps {
     form: any;
@@ -17,6 +15,7 @@ interface GeneralInformationStepProps {
     researchTypeOptions: ResearchType[];
     researchFieldOptions: ResearchField[];
     categoriesOptions: Category[];
+    periodsOptions: RegistrationPeriod[];
     isLoadingOptions: boolean;
 }
 
@@ -26,6 +25,7 @@ export default function GeneralInformationStep({
     researchTypeOptions,
     researchFieldOptions,
     categoriesOptions,
+    periodsOptions,
     isLoadingOptions,
 }: GeneralInformationStepProps) {
 
@@ -69,19 +69,34 @@ export default function GeneralInformationStep({
                 )}
             />
 
-            {/* Principal Investigator */}
             <FormField
                 control={form.control}
-                name="principalInvestigator"
+                name="period"
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>
-                            Chủ nhiệm đề tài <span className="text-destructive">*</span>
+                            Đợt đăng ký <span className="text-destructive">*</span>
                         </FormLabel>
-                        <FormControl>
-                            <Input placeholder="Nhập họ tên chủ nhiệm đề tài" {...field} />
-                        </FormControl>
-                        <FormDescription>Họ tên và học vị của người đứng đầu đề tài</FormDescription>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}>
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder={isLoadingOptions ? "Đang tải..." : "Chọn đợt đăng ký"} />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {periodsOptions.length === 0 && !isLoadingOptions && (
+                                    <SelectItem value="" disabled>
+                                        Không có đượt đăng ký nào
+                                    </SelectItem>
+                                )}
+                                {periodsOptions.map((option) => (
+                                    <SelectItem key={option.id} value={String(option.id)}>
+                                        {option.title}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormDescription>Khoa quản lý đề tài</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}
@@ -309,23 +324,23 @@ export default function GeneralInformationStep({
             {/* Novelty */}
             <FormField
                 control={form.control}
-                name="novelty"
+                name="urgency"
                 render={({ field, fieldState }) => (
                     <FormItem>
                         <FormLabel>
-                            Điểm mới và sáng tạo <span className="text-destructive">*</span>
+                            Tính cấp thiết <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
                             <FormRichTextEditor
-                                label="Nhập tính mới"
+                                label="Nhập tính cấp thiết"
                                 field={field}
-                                placeholder="Mô tả tính mới và đóng góp khoa học"
+                                placeholder="Mô tả tính cấp thiết và đóng góp khoa học"
                                 height="400px"
                                 maxLength={5000}
                                 fieldState={fieldState}
                             />
                         </FormControl>
-                        <FormDescription>Mô tả tính mới và đóng góp khoa học của đề tài</FormDescription>
+                        <FormDescription>Mô tả tính cấp thiết và đóng góp khoa học của đề tài</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}

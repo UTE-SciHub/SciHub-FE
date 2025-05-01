@@ -129,7 +129,7 @@ const TopicsFilter: React.FC<TopicsFilterProps> = ({
                 <h3 className="text-lg font-medium">Bộ lọc đề tài</h3>
                 <Button variant="outline" size="sm" className='text-rose-500' onClick={onClearFilters}>
                     <X className="h-4 w-4" />
-                    Xóa tất cả
+                    Xóa bộ lọc
                 </Button>
             </div>
 

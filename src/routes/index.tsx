@@ -9,7 +9,6 @@ import TopicExecution from "@/pages/TopicExecution";
 import TopicCompletion from "@/pages/TopicCompletion";
 import Archive from "@/pages/Archive";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminTopics from "@/pages/admin/AdminTopics";
 import AdminContracts from "@/pages/admin/AdminContracts";
 import AdminFinance from "@/pages/admin/AdminFinance";
 import AdminAnnouncements from "@/pages/admin/AdminAnnouncements";
@@ -21,13 +20,14 @@ import Login from "@/pages/Login";
 import ProfilePage from "@/pages/user/Profile";
 import ListDepartment from "@/pages/admin/department/ListDepartment";
 import UpdateRegistrationPeriod from "@/pages/admin/registration/update-registration";
-import { PrivateRoute } from "@/middleware/PrivateRoutes";
+import { AuthGuard } from "@/middleware/AuthGuard";
 import TopicProposal from "@/pages/topics/TopicProposal";
 import ListResearchField from "@/pages/admin/research-field/ListResearchField";
 import ListResearchType from "@/pages/admin/research-type/ListResearchType";
 import RegistrationPeriodDetail from "@/pages/RegistrationDetail";
 import ListCategory from "@/pages/admin/category/ListCategories";
 import ListTopics from "@/pages/admin/topics";
+import ForbiddenPage from "@/pages/ForbiddenPage";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -49,10 +49,11 @@ const routers = createBrowserRouter([
   },
   {
     path: "/admin",
-    element:
-      <PrivateRoute>
+    element: (
+      <AuthGuard>
         <AdminLayout children={""} />
-      </PrivateRoute>,
+      </AuthGuard>
+    ),
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: "topics", element: <ListTopics /> },
@@ -70,6 +71,7 @@ const routers = createBrowserRouter([
     ],
   },
   { path: "*", element: <NotFoundPage /> },
+  { path: "/forbidden", element: <ForbiddenPage /> },
 ]);
 
 export default routers;

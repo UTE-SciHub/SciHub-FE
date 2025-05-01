@@ -83,54 +83,51 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
     const handleFileSelect = (sessionId: string, selectedFiles: FileList | null) => {
         if (!selectedFiles) return;
 
+        // Chỉ lấy file đầu tiên vì mỗi section chỉ cho phép 1 file
+        const file = selectedFiles[0];
+        if (!file) return;
+
         const maxSizeBytes = maxSize * 1024 * 1024; // Convert MB to bytes
         const acceptedTypes = accept.split(",").map((type) => type.trim().toLowerCase());
 
-        const newFiles = Array.from(selectedFiles)
-            .filter((file) => {
-                const fileExtension = `.${file.name.split(".").pop()?.toLowerCase()}`;
-                const isValidType = acceptedTypes.includes(fileExtension) || acceptedTypes.includes(file.type);
-                const isValidSize = file.size <= maxSizeBytes;
+        const fileExtension = `.${file.name.split(".").pop()?.toLowerCase()}`;
+        const isValidType = acceptedTypes.includes(fileExtension) || acceptedTypes.includes(file.type);
+        const isValidSize = file.size <= maxSizeBytes;
 
-                if (!isValidType) {
-                    form.setError(field.name, {
-                        type: "manual",
-                        message: `File ${file.name} không được hỗ trợ. Chỉ chấp nhận ${accept}.`,
-                    });
-                    return false;
-                }
-                if (!isValidSize) {
-                    form.setError(field.name, {
-                        type: "manual",
-                        message: `File ${file.name} vượt quá kích thước tối đa ${maxSize}MB.`,
-                    });
-                    return false;
-                }
-                return true;
-            })
-            .map((file) => ({
-                id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                file,
-                status: "pending" as FileStatus,
-            }));
+        if (!isValidType) {
+            form.setError(field.name, {
+                type: "manual",
+                message: `File ${file.name} không được hỗ trợ. Chỉ chấp nhận ${accept}.`,
+            });
+            return;
+        }
+        if (!isValidSize) {
+            form.setError(field.name, {
+                type: "manual",
+                message: `File ${file.name} vượt quá kích thước tối đa ${maxSize}MB.`,
+            });
+            return;
+        }
 
-        if (newFiles.length === 0) return;
+        const newFile = {
+            id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            file,
+            status: "pending" as FileStatus,
+        };
 
         setSessions((prevSessions) => {
             const updatedSessions = prevSessions.map((session) => {
                 if (session.id === sessionId) {
                     return {
                         ...session,
-                        files: [...session.files, ...newFiles],
+                        files: [newFile], // Chỉ lưu 1 file duy nhất
                     };
                 }
                 return session;
             });
 
             setTimeout(() => {
-                newFiles.forEach((newFile) => {
-                    simulateUpload(sessionId, newFile.id);
-                });
+                simulateUpload(sessionId, newFile.id);
             }, 100);
 
             return updatedSessions;
@@ -269,7 +266,7 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
                             <div className="mb-4">
                                 <input
                                     type="file"
-                                    multiple
+                                    // Bỏ multiple để chỉ cho phép chọn 1 file
                                     accept={accept}
                                     className="hidden"
                                     ref={(el) => (fileInputRefs.current[session.id] = el)}
@@ -280,6 +277,13 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
                                     variant="secondary"
                                     onClick={(e) => {
                                         e.preventDefault();
+                                        if (session.files.length > 0) {
+                                            form.setError(field.name, {
+                                                type: "manual",
+                                                message: "Mỗi mục chỉ được tải lên 1 file duy nhất.",
+                                            });
+                                            return;
+                                        }
                                         fileInputRefs.current[session.id]?.click();
                                     }}
                                     className="flex items-center gap-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border-none"
@@ -344,6 +348,11 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
                     <Plus size={16} className="mr-1" />
                 </Button>
             </div>
+
+            {/* Thêm phần note đỏ */}
+            <p className="text-sm text-red-500 mt-2">
+                Kéo thả file vào đây để tải lên. (Cần chữ ký của các biểu mẫu trước khi upload lên)
+            </p>
         </div>
     );
 }

@@ -1,6 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.font-times {
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+.font-times * {
+  font-family: "Times New Roman", Times, serif !important;
+}
 
 @layer base {
   :root {

@@ -1,382 +1,316 @@
-import { format } from "date-fns"
-import { vi } from "date-fns/locale"
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Textarea } from "@/components/ui/textarea"
-import { InfoIcon } from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { formatFileSize } from "@/utils/common"
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import { formatDate } from "@/utils/dateTimeFormat";
+import { formatVND } from "@/utils/common";
+import { renderContent } from "@/utils/util";
+import { ResearchField } from "@/models/research-field";
+import useUserStore from "@/store/userStore";
 
-const getFieldLabel = (value) => {
-    const options = {
-        IT: "Công nghệ Thông tin",
-        TELECOM: "Viễn thông",
-        NATURAL: "Khoa học Tự nhiên",
-        SOCIAL: "Khoa học Xã hội",
-    }
-    return options[value] || value
+interface ReviewStepProps {
+    formValues: any;
+    researchFields: ResearchField[];
 }
 
-const getResearchTypeLabel = (value) => {
-    const options = {
-        BASIC: "Nghiên cứu cơ bản",
-        APPLIED: "Nghiên cứu ứng dụng",
-        TECH_DEV: "Phát triển công nghệ",
-        MAINTENANCE: "Bảo trì và sửa chữa",
-    }
-    return options[value] || value
-}
+export default function ReviewStep({
+    formValues,
+    researchFields,
+}: ReviewStepProps) {
+    const [isExporting, setIsExporting] = useState(false);
+    const pdfRef = useRef<HTMLDivElement>(null);
+    const user = useUserStore((state) => state.user);
 
-const getDepartmentLabel = (value) => {
-    const options = {
-        IT: "Khoa Công nghệ Thông tin",
-        EE: "Khoa Điện và Điện tử",
-        ME: "Khoa Cơ khí",
-        CE: "Khoa Xây dựng",
-    }
-    return options[value] || value
-}
+    const exportToPdf = async () => {
+        if (!pdfRef.current) {
+            console.error("PDF reference element not found.");
+            return;
+        }
 
-const getCouncilLabel = (value) => {
-    const options = {
-        IT_COUNCIL: "Hội đồng Công nghệ Thông tin",
-        EE_COUNCIL: "Hội đồng Điện và Điện tử",
-        ME_COUNCIL: "Hội đồng Cơ khí",
-    }
-    return options[value] || value
-}
+        setIsExporting(true);
 
-const getRegistrationPeriodLabel = (value) => {
-    const options = {
-        "2025_1": "Đợt đăng ký 1 - 2025",
-        "2025_2": "Đợt đăng ký 2 - 2025",
-        "2026_1": "Đợt đăng ký 1 - 2026",
-    }
-    return options[value] || value
-}
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-const getFundingSourceLabel = (value) => {
-    const options = {
-        GOVERNMENT: "Nhà nước",
-        ENTERPRISE: "Doanh nghiệp",
-        SELF_FUNDED: "Tự túc",
-        OTHER: "Khác",
-    }
-    return options[value] || value
-}
+        try {
+            window.scrollTo(0, 0);
 
-export default function ReviewStep({ form, formValues }) {
+            const canvas = await html2canvas(pdfRef.current, {
+                scale: 2,
+                useCORS: true,
+                logging: true,
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: 210 * 3.78,
+                windowHeight: pdfRef.current.scrollHeight,
+            });
+
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: "a4",
+            });
+
+            const imgWidth = 210;
+            const pageHeight = 297;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+
+            heightLeft -= pageHeight;
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save(`Đề xuất đề tài - ${formValues.topicCode || "Mẫu"}.pdf`);
+        } catch (error) {
+            console.error("Error exporting PDF:", error);
+            alert("Có lỗi xảy ra khi xuất PDF. Vui lòng thử lại.");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const currentDate = new Date();
+
     return (
-        <div className="space-y-8">
-            <div className="text-2xl font-semibold text-center">Xác nhận và hoàn tất</div>
-
-            <Alert className="z-5">
-                <InfoIcon className="h-4 w-4" />
-                <AlertTitle>Xác nhận thông tin</AlertTitle>
-                <AlertDescription>
-                    Vui lòng kiểm tra kỹ thông tin đề tài trước khi nộp. Sau khi nộp, bạn không thể chỉnh sửa thông tin cho đến khi được phê duyệt.
-                </AlertDescription>
-            </Alert>
-
-            <div className="space-y-8">
-                {/* Phần 1: Thông tin chung */}
-                <div className="border rounded-md p-6 bg-muted/50">
-                    <h3 className="font-medium text-lg mb-4">1. Thông tin chung</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Mã số đề tài</h4>
-                            <p className="font-medium">{formValues.topicCode || "Chưa nhập"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Tên tiếng Việt</h4>
-                            <p className="font-medium">{formValues.vietnameseName || "Chưa nhập"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Tên tiếng Anh</h4>
-                            <p className="font-medium">{formValues.englishName || "Chưa nhập"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Đơn vị chủ trì</h4>
-                            <p className="font-medium">{formValues.leadOrganization || "Chưa nhập"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Chủ nhiệm đề tài</h4>
-                            <p className="font-medium">{formValues.principalInvestigator || "Chưa nhập"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Từ khóa</h4>
-                            <p className="font-medium">{formValues.keywords?.join(", ") || "Chưa nhập"}</p>
-                        </div>
-                        <div className="md:col-span-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">Mục tiêu</h4>
-                            <ScrollArea className="h-24 w-full rounded-md border p-4">
-                                <p className="whitespace-pre-line">{formValues.objectives || "Chưa nhập"}</p>
-                            </ScrollArea>
-                        </div>
-                        <div className="md:col-span-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">Nội dung chính</h4>
-                            <ScrollArea className="h-24 w-full rounded-md border p-4">
-                                <p className="whitespace-pre-line">{formValues.mainContent || "Chưa nhập"}</p>
-                            </ScrollArea>
-                        </div>
-                        <div className="md:col-span-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">Tính mới</h4>
-                            <ScrollArea className="h-24 w-full rounded-md border p-4">
-                                <p className="whitespace-pre-line">{formValues.novelty || "Chưa nhập"}</p>
-                            </ScrollArea>
-                        </div>
-                    </div>
+        <div className="space-y-6 w-full">
+            <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold"></h3>
+                <div className="flex gap-2">
+                    <Button onClick={exportToPdf} disabled={isExporting} className="flex items-center">
+                        <Download className="h-4 w-4" />
+                        {isExporting ? "Đang xuất..." : "Xuất PDF"}
+                    </Button>
                 </div>
+            </div>
 
-                {/* Phần 2: Kết quả nghiên cứu dự kiến */}
-                <div className="border rounded-md p-6 bg-muted/50">
-                    <h3 className="font-medium text-lg mb-4">2. Kết quả nghiên cứu dự kiến</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Hình thức chuyển giao</h4>
-                            <p className="font-medium">{formValues.transferForm || "Không có"}</p>
+            {/* PDF Preview */}
+            <div className="w-full border rounded-lg shadow-lg bg-white">
+                <div ref={pdfRef} className="p-4 mx-auto text-sm font-times">
+                    {/* Header */}
+                    <div className="flex justify-between mb-6">
+                        <div className="text-left">
+                            <div className="flex items-center">
+                                <div className="w-10 h-10 mr-2">
+                                    <img src="/logo/UTE.png" alt="Logo" className="w-full h-full object-contain" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold">BỘ GIÁO DỤC VÀ ĐÀO TẠO</p>
+                                    <p className="text-xs font-bold">
+                                        TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT - ĐẠI HỌC ĐÀ NẴNG
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Ứng dụng thực tiễn</h4>
-                            <ScrollArea className="h-24 w-full rounded-md border p-4">
-                                <p className="whitespace-pre-line">{formValues.practicalApplications || "Chưa nhập"}</p>
-                            </ScrollArea>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Rủi ro dự kiến</h4>
-                            <ScrollArea className="h-24 w-full rounded-md border p-4">
-                                <p className="whitespace-pre-line">{formValues.expectedRisks}</p>
-                            </ScrollArea>
-
-                            {formValues.expectedRisks?.trim() ? (
-                                <ScrollArea className="h-24 w-full rounded-md border p-4">
-                                    <p className="whitespace-pre-line">{formValues.expectedRisks}</p>
-                                </ScrollArea>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">Chưa nhập</p>
-                            )}
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Tài liệu đính kèm</h4>
-                            {formValues.attachedDocuments && formValues.attachedDocuments.length > 0 ? (
-                                <ul className="mt-1 space-y-1">
-                                    {formValues.attachedDocuments.map((doc, index) => (
-                                        <li key={index} className="font-medium text-sm">
-                                            {doc.file.name} ({formatFileSize(doc.file.size)})
-                                            {doc.description && (
-                                                <span className="text-muted-foreground"> - {doc.description}</span>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="font-medium text-sm">Không có</p>
-                            )}
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Lĩnh vực</h4>
-                            <p className="font-medium">{getFieldLabel(formValues.field) || "Chưa chọn"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Loại hình nghiên cứu</h4>
-                            <p className="font-medium">{getResearchTypeLabel(formValues.researchType) || "Chưa chọn"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Khoa</h4>
-                            <p className="font-medium">{getDepartmentLabel(formValues.department) || "Chưa chọn"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Hội đồng xét duyệt</h4>
-                            <p className="font-medium">{getCouncilLabel(formValues.council) || "Chưa chọn"}</p>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Đợt đăng ký</h4>
-                            <p className="font-medium">{getRegistrationPeriodLabel(formValues.registrationPeriod) || "Chưa chọn"}</p>
+                        <div className="text-right">
+                            <p className="text-xs">Mẫu số: BM.01-QT.01-KHCN</p>
+                            <p className="text-xs">Đà Nẵng, ngày {formatDate(currentDate)}</p>
                         </div>
                     </div>
-                    <div className="mt-6">
-                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Sản phẩm dự kiến</h4>
-                        {formValues.expectedProducts?.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Tên sản phẩm dự kiến</TableHead>
-                                        <TableHead>Tiêu chí đánh giá (định lượng)</TableHead>
-                                        <TableHead>Ghi chú</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {formValues.expectedProducts.map((item, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{item.productName}</TableCell>
-                                            <TableCell>{item.criteria}</TableCell>
-                                            <TableCell>{item.description || ""}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">Chưa có chi tiết kinh phí</p>
-                        )}
-                    </div>
-                </div>
 
-                {/* Phần 3: Thời gian & Kinh phí */}
-                <div className="border rounded-md p-6 bg-muted/50">
-                    <h3 className="font-medium text-lg mb-4">3. Thời gian & Kinh phí</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Title */}
+                    <div className="text-center mb-6">
+                        <h1 className="text-xl font-bold uppercase">
+                            ĐỀ XUẤT ĐỀ TÀI KHOA HỌC VÀ CÔNG NGHỆ CẤP TRƯỜNG
+                        </h1>
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-4">
+                        {/* 1. Tên đề tài */}
                         <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Ngày bắt đầu</h4>
-                            <p className="font-medium">
-                                {formValues.startDate ? format(formValues.startDate, "dd/MM/yyyy", { locale: vi }) : "Chưa chọn"}
+                            <p className="font-bold">
+                                1. Tên đề tài: {formValues.vietnameseName || ""}
                             </p>
                         </div>
+
+                        {/* 2. Lĩnh vực nghiên cứu */}
                         <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Thời gian thực hiện</h4>
-                            <p className="font-medium">{formValues.durationInMonths ? `${formValues.durationInMonths} tháng` : "Chưa nhập"}</p>
+                            <p className="font-bold">2. Lĩnh vực nghiên cứu:</p>
+                            <div className="ml-4 grid grid-cols-3 gap-2">
+                                {researchFields.map((field) => (
+                                    <div key={field.id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={formValues.field === String(field.id)}
+                                            readOnly
+                                            className="h-4 w-4"
+                                        />
+                                        <span>{field.name}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
+
+                        {/* 3. Tính cấp thiết */}
                         <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Năm kết thúc</h4>
-                            <p className="font-medium">{formValues.endYear || "Chưa nhập"}</p>
+                            <p className="font-bold">3. Tính cấp thiết:</p>
+                            <div className="ml-4">
+                                {formValues.urgency ? renderContent(formValues.urgency) : ""}
+                            </div>
                         </div>
+
+                        {/* 4. Mục tiêu */}
                         <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Nguồn kinh phí</h4>
-                            <p className="font-medium">{getFundingSourceLabel(formValues.fundingSource) || "Chưa chọn"}</p>
+                            <p className="font-bold">4. Mục tiêu:</p>
+                            <div className="ml-4">
+                                {formValues.objectives ? renderContent(formValues.objectives) : ""}
+                            </div>
+                        </div>
+
+                        {/* 5. Nội dung chính */}
+                        <div>
+                            <p className="font-bold">5. Nội dung chính:</p>
+                            <div className="ml-4">
+                                {formValues.mainContent ? renderContent(formValues.mainContent) : ""}
+                            </div>
+                        </div>
+
+                        {/* 6. Sản phẩm và kết quả dự kiến */}
+                        <div>
+                            <p className="font-bold">6. Sản phẩm và kết quả dự kiến:</p>
+                            <div className="ml-4 space-y-2">
+                                {/* Sản phẩm khoa học */}
+                                {(formValues.expectedProducts?.scientific?.domestic > 0 || formValues.expectedProducts?.scientific?.international > 0) && (
+                                    <div>
+                                        <div className="flex items-center space-x-2">
+                                            <span>Sản phẩm khoa học</span>
+                                        </div>
+                                        <div className="ml-6">
+                                            <p>
+                                                - Số bài báo khoa học đăng trên tạp chí trong nước:{" "}
+                                                {formValues.expectedProducts?.scientific?.domestic || ""}
+                                            </p>
+                                            <p>
+                                                - Số bài báo khoa học đăng trên tạp chí quốc tế:{" "}
+                                                {formValues.expectedProducts?.scientific?.international || ""}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Sản phẩm đào tạo */}
+                                {(formValues.expectedProducts?.training?.masters > 0 || formValues.expectedProducts?.training?.students > 0) && (
+                                    <div>
+                                        <div className="flex items-center space-x-2">
+                                            <span>Sản phẩm đào tạo</span>
+                                        </div>
+                                        <div className="ml-6">
+                                            <p>
+                                                - Số lượng cao học: {formValues.expectedProducts?.training?.masters || ""}
+                                            </p>
+                                            <p>
+                                                - Số lượng sinh viên tham gia:{" "}
+                                                {formValues.expectedProducts?.training?.students || ""}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Sản phẩm ứng dụng */}
+                                {formValues.expectedProducts?.commercial?.details && (
+                                    <div>
+                                        <div className="flex items-center space-x-2">
+                                            <span>Sản phẩm ứng dụng:</span>
+                                        </div>
+                                        <div className="ml-6">
+                                            <p>
+                                                - Thông tin sản phẩm ứng dụng:{" "}
+                                                {formValues.expectedProducts?.commercial?.details ? renderContent(formValues.expectedProducts.commercial.details) : ""}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 7. Hiệu quả dự kiến */}
+                        <div>
+                            <p className="font-bold">7. Hiệu quả dự kiến:</p>
+                            <div className="ml-4">
+                                {formValues.practicalApplications ? renderContent(formValues.practicalApplications) : ""}
+                            </div>
+                        </div>
+
+                        {/* 8. Nhu cầu kinh phí dự kiến */}
+                        <div>
+                            <p className="font-bold">8. Nhu cầu kinh phí dự kiến:</p>
+                            <div className="ml-4">
+                                {formValues.totalBudget ? formatVND(formValues.totalBudget) : ""}
+                            </div>
+                        </div>
+
+                        {/* 9. Thời gian nghiên cứu dự kiến */}
+                        <div>
+                            <p className="font-bold">9. Thời gian nghiên cứu dự kiến:</p>
+                            <div className="ml-4">
+                                {formValues.durationInMonths
+                                    ? `${formValues.durationInMonths} tháng`
+                                    : ""}
+                            </div>
+                        </div>
+
+                        {/* 10. Thông tin liên lạc của người đề xuất */}
+                        <div>
+                            <p className="font-bold">10. Thông tin liên lạc của người đề xuất:</p>
+                            <div className="ml-4">
+                                <p>Họ và tên: {user.name || ""}</p>
+                                <p>Điện thoại: {user.phoneNumber || ""}</p>
+                                <p>Email: {user.email || ""}</p>
+                            </div>
+                        </div>
+
+                        {/* 11. Danh sách tài liệu đính kèm */}
+                        <div>
+                            <p className="font-bold">11. Danh sách tài liệu đính kèm:</p>
+                            <div className="ml-4">
+                                {formValues.attachedDocuments && formValues.attachedDocuments.length > 0 ? (
+                                    <table className="w-full border-collapse border border-gray-300">
+                                        <thead>
+                                            <tr>
+                                                <th className="border border-gray-300 p-2 text-left">STT</th>
+                                                <th className="border border-gray-300 p-2 text-left">Tên tài liệu</th>
+                                                <th className="border border-gray-300 p-2 text-left">Mô tả</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {formValues.attachedDocuments.map((doc, index) => (
+                                                <tr key={index}>
+                                                    <td className="border border-gray-300 p-2">{index + 1}</td>
+                                                    <td className="border border-gray-300 p-2">{doc.file?.name || ""}</td>
+                                                    <td className="border border-gray-300 p-2">{doc.description || ""}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <p>Không có tài liệu đính kèm.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Ký tên */}
+                        <div className="mt-8">
+                            <div className="flex justify-end">
+                                <div className="text-center">
+                                    <p>{`Đà Nẵng, ngày ${formatDate(currentDate)}`}</p>
+                                    <p className="font-bold">Người đề xuất</p>
+                                    <p>(Ký, họ và tên)</p>
+                                    <div className="h-20"></div>
+                                    <p>{formValues.principalInvestigator || ""}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <div className="mt-6 pt-4 border-t">
-                        <h4 className="font-medium mb-4">Thông tin kinh phí</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <h4 className="text-sm font-medium text-muted-foreground">Tổng kinh phí</h4>
-                                <p className="font-medium">{formValues.totalBudget?.toLocaleString("vi-VN") || 0} VND</p>
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-medium text-muted-foreground">Kinh phí được duyệt</h4>
-                                <p className="font-medium">{formValues.approvedBudget?.toLocaleString("vi-VN") || 0} VND</p>
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-medium text-muted-foreground">Kinh phí còn lại</h4>
-                                <p className="font-medium">{formValues.remainingBudget?.toLocaleString("vi-VN") || 0} VND</p>
-                            </div>
-                        </div>
-
-                        <div className="mt-6">
-                            <h4 className="text-sm font-medium text-muted-foreground mb-2">Chi tiết kinh phí</h4>
-                            {formValues.budgetBreakdown?.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Hạng mục</TableHead>
-                                            <TableHead>Số tiền (VND)</TableHead>
-                                            <TableHead>Mô tả</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {formValues.budgetBreakdown.map((item, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell>{item.category}</TableCell>
-                                                <TableCell>{item.amount.toLocaleString("vi-VN")} VND</TableCell>
-                                                <TableCell>{item.description || ""}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">Chưa có chi tiết kinh phí</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Phần 4: Chi tiết nộp hồ sơ */}
-                <div className="border rounded-md p-6 bg-muted/50">
-                    <h3 className="font-medium text-lg mb-4">4. Chi tiết nộp hồ sơ</h3>
-
-                    {/* Commitment */}
-                    <FormField
-                        control={form.control}
-                        name="commitment"
-                        render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2">
-                                <FormControl>
-                                    <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                </FormControl>
-                                <FormLabel>
-                                    Tôi xác nhận rằng thông tin cung cấp là chính xác và cam kết thực hiện đề tài
-                                    <span className="text-destructive">*</span>
-                                </FormLabel>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Additional Notes */}
-                    <FormField
-                        control={form.control}
-                        name="additionalNotes"
-                        render={({ field }) => (
-                            <FormItem className="mt-4">
-                                <FormLabel>Ghi chú bổ sung</FormLabel>
-                                <FormControl>
-                                    <Textarea
-                                        placeholder="Nhập ghi chú bổ sung (nếu có)"
-                                        className="min-h-[100px]"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormDescription>Ghi chú hoặc thông tin bổ sung cho hội đồng xét duyệt</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Status */}
-                    <FormField
-                        control={form.control}
-                        name="status"
-                        render={({ field }) => (
-                            <FormItem className="space-y-3 mt-4">
-                                <FormLabel>Chọn trạng thái đề tài</FormLabel>
-                                <FormControl>
-                                    <RadioGroup
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                        className="flex flex-col space-y-2"
-                                    >
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="DRAFT" id="draft" />
-                                            <label
-                                                htmlFor="draft"
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                                Lưu bản nháp - Có thể chỉnh sửa sau
-                                            </label>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="PENDING" id="pending" />
-                                            <label
-                                                htmlFor="pending"
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                                Nộp đề tài - Chờ phê duyệt
-                                            </label>
-                                        </div>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
                 </div>
             </div>
         </div>
-    )
+    );
 }

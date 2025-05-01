@@ -1,47 +1,43 @@
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FormRichTextEditor } from "@/components/editor/text-editor"
-import { FormFileUploadPreview } from "@/components/file-upload-preview/file-upload-preview"
-import DynamicTable, { TableColumn } from "@/components/data-table/dynamic-row-table"
-import { useState } from "react"
-import { MultiSelect } from "@/components/multiple-select/multiple-select"
-import MultiFileUpload from "@/components/multiple-upload-file/multiple-upload-file"
-
-const productColumns: TableColumn[] = [
-    {
-        id: "productName",
-        header: "Tên sản phẩm dự kiến",
-        type: "text",
-        width: "400px",
-        required: true,
-        placeholder: "Nhập tên sản phẩm",
-    },
-    {
-        id: "criteria",
-        header: "Tiêu chí đánh giá (định lượng)",
-        type: "text",
-        width: "400px",
-        required: true,
-        placeholder: "Nhập tiêu chí",
-    },
-    {
-        id: "description",
-        header: "Ghi chú",
-        type: "text",
-        placeholder: "Nhập ghi chú (nếu có)",
-    },
-];
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { FormRichTextEditor } from "@/components/editor/text-editor";
+import { useState, useEffect } from "react";
+import { MultiSelect } from "@/components/multiple-select/multiple-select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SpecializationStep({ form }) {
     const [selectedTransferForm, setSelectedTransferForm] = useState([]);
+    const [productTypes, setProductTypes] = useState({
+        scientific: false,
+        training: false,
+        commercial: false,
+    });
 
     const transferFormOptions = [
         { value: "Chuyển giao nghiên cứu", label: "Chuyển giao nghiên cứu" },
         { value: "Chuyển giao sản phẩm", label: "Chuyển giao sản phẩm" },
         { value: "Chuyển giao công nghệ", label: "Chuyển giao công nghệ" },
-        { value: "Khác", label: "Khác" }
-    ]
+        { value: "Khác", label: "Khác" },
+    ];
+
+    useEffect(() => {
+        const expectedProducts = form.getValues("expectedProducts") || {};
+
+        setProductTypes({
+            scientific:
+                (expectedProducts.scientific?.domestic > 0 || expectedProducts.scientific?.international > 0) || false,
+            training:
+                (expectedProducts.training?.masters > 0 || expectedProducts.training?.students > 0) || false,
+            commercial: !!expectedProducts.commercial?.details || false,
+        });
+    }, [form]);
+
+    const handleProductTypeChange = (type, checked) => {
+        setProductTypes((prev) => ({
+            ...prev,
+            [type]: checked,
+        }));
+    };
 
     return (
         <div className="space-y-6">
@@ -70,31 +66,166 @@ export default function SpecializationStep({ form }) {
             />
 
             {/* Sản phẩm dự kiến */}
-            <FormField
-                control={form.control}
-                name="expectedProducts"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>
-                            Sản phẩm dự kiến <span className="text-destructive">*</span>
-                        </FormLabel>
-                        <FormControl>
-                            <DynamicTable
-                                columns={productColumns}
-                                value={field.value || []}
-                                onChange={(newValue) => {
-                                    field.onChange(newValue);
-                                    form.trigger("expectedProducts");
-                                }}
-                                control={form.control}
-                                name="expectedProducts"
+            <div>
+                <FormLabel>
+                    Sản phẩm dự kiến <span className="text-destructive">*</span>
+                </FormLabel>
+                <div className="space-y-4 mt-2">
+                    {/* Sản phẩm khoa học */}
+                    <div className="border rounded-md p-4">
+                        <div className="flex items-center space-x-2 mb-4">
+                            <Checkbox
+                                id="scientific"
+                                checked={productTypes.scientific}
+                                onCheckedChange={(checked) => handleProductTypeChange("scientific", checked)}
                             />
-                        </FormControl>
-                        <FormDescription>Liệt kê các sản phẩm dự kiến sau khi hoàn thành đề tài</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
+                            <FormLabel htmlFor="scientific" className="font-medium">
+                                Sản phẩm khoa học
+                            </FormLabel>
+                        </div>
+                        {productTypes.scientific && (
+                            <div className="space-y-4 ml-6">
+                                <FormField
+                                    control={form.control}
+                                    name="expectedProducts.scientific.domestic"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Số bài báo khoa học đăng trên tạp chí trong nước</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    placeholder="Nhập số lượng"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="expectedProducts.scientific.international"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Số bài báo khoa học đăng trên tạp chí quốc tế</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    placeholder="Nhập số lượng"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Sản phẩm đào tạo */}
+                    <div className="border rounded-md p-4">
+                        <div className="flex items-center space-x-2 mb-4">
+                            <Checkbox
+                                id="training"
+                                checked={productTypes.training}
+                                onCheckedChange={(checked) => handleProductTypeChange("training", checked)}
+                            />
+                            <FormLabel htmlFor="training" className="font-medium">
+                                Sản phẩm đào tạo
+                            </FormLabel>
+                        </div>
+                        {productTypes.training && (
+                            <div className="space-y-4 ml-6">
+                                <FormField
+                                    control={form.control}
+                                    name="expectedProducts.training.masters"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Số lượng cao học</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    placeholder="Nhập số lượng"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="expectedProducts.training.students"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Số lượng sinh viên tham gia</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    placeholder="Nhập số lượng"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Sản phẩm ứng dụng */}
+                    <div className="border rounded-md p-4">
+                        <div className="flex items-center space-x-2 mb-4">
+                            <Checkbox
+                                id="commercial"
+                                checked={productTypes.commercial}
+                                onCheckedChange={(checked) => handleProductTypeChange("commercial", checked)}
+                            />
+                            <FormLabel htmlFor="commercial" className="font-medium">
+                                Sản phẩm ứng dụng
+                            </FormLabel>
+                        </div>
+                        {productTypes.commercial && (
+                            <div className="space-y-4 ml-6">
+                                <FormField
+                                    control={form.control}
+                                    name="expectedProducts.commercial.details"
+                                    render={({ field, fieldState }) => (
+                                        <FormItem>
+                                            <FormLabel>Thông tin sản phẩm ứng dụng</FormLabel>
+                                            <FormControl>
+                                                <FormRichTextEditor
+                                                    label="Nhập thông tin sản phẩm ứng dụng"
+                                                    field={field}
+                                                    placeholder="Mô tả sản phẩm dự kiến, phạm vi, khả năng và địa chỉ ứng dụng..."
+                                                    height="400px"
+                                                    maxLength={5000}
+                                                    fieldState={fieldState}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Mô tả sản phẩm dự kiến, phạm vi, khả năng và địa chỉ ứng dụng.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <FormDescription>Lựa chọn và nhập thông tin chi tiết về các sản phẩm dự kiến</FormDescription>
+            </div>
 
             {/* Ứng dụng thực tiễn */}
             <FormField
@@ -143,30 +274,6 @@ export default function SpecializationStep({ form }) {
                     </FormItem>
                 )}
             />
-
-            {/* Tài liệu đính kèm */}
-            <FormField
-                control={form.control}
-                name="attachedDocuments"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Tài liệu đính kèm</FormLabel>
-                        <FormControl>
-                            <MultiFileUpload
-                                form={form}
-                                field={field}
-                                accept=".pdf,.docx"
-                                maxSize={10}
-                                label="Tài liệu đính kèm"
-                                placeholder="Chọn file"
-                                description="Tải lên tài liệu bổ sung (PDF, Word - tối đa 10MB)"
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
         </div>
-    )
-
+    );
 }

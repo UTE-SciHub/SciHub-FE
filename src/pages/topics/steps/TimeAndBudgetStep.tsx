@@ -152,7 +152,7 @@ export default function TimeAndBudgetStep({ form }) {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>
-                                    Tổng kinh phí (VND) <span className="text-destructive">*</span>
+                                    Tổng kinh phí dự kiến (VND) <span className="text-destructive">*</span>
                                 </FormLabel>
                                 <FormControl>
                                     <Input
@@ -203,38 +203,6 @@ export default function TimeAndBudgetStep({ form }) {
                                     </SelectContent>
                                 </Select>
                                 <FormDescription>Nguồn tài trợ cho đề tài</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    {/* Approved Budget */}
-                    <FormField
-                        control={form.control}
-                        name="approvedBudget"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Kinh phí được phê duyệt (VND)</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="text"
-                                        placeholder="Nhập kinh phí đã duyệt"
-                                        value={field.value !== undefined ? formatVND(field.value) : ""}
-                                        onChange={(e) => {
-                                            const rawValue = e.target.value === "" ? undefined : parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0;
-                                            field.onChange(rawValue);
-                                            form.trigger("approvedBudget");
-                                        }}
-                                        onBlur={(e) => {
-                                            const rawValue = e.target.value === "" ? undefined : parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0;
-                                            field.onChange(rawValue);
-                                            e.target.value = rawValue !== undefined ? formatVND(rawValue) : "";
-                                        }}
-                                    />
-                                </FormControl>
-                                <FormDescription>Kinh phí đã được duyệt (nếu có)</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}

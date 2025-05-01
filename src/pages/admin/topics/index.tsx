@@ -109,16 +109,15 @@ const TopicsPage = () => {
         COMPLETED: "Hoàn thành",
     };
 
-    // Colors for status chart
-    const statusColors: { [key: string]: string } = {
-        DRAFT: "#CBD5E1",
-        SUBMITTED: "#93C5FD",
-        PENDING_REVIEW: "#60A5FA",
-        APPROVED: "#34D399",
-        REJECTED: "#FCA5A5",
-        FUNDED: "#A5B4FC",
-        IN_PROGRESS: "#818CF8",
-        COMPLETED: "#86EFAC",
+    const statusColors: { [key in TopicStatus]: string } = {
+        [TopicStatus.DRAFT]: "#A5B4FC",
+        [TopicStatus.SUBMITTED]: "#93C5FD",
+        [TopicStatus.APPROVED]: "#6EE7B7",
+        [TopicStatus.REJECTED]: "#FCA5A5",
+        [TopicStatus.IN_PROGRESS]: "#67E8F9",
+        [TopicStatus.COMPLETED]: "#86EFAC",
+        [TopicStatus.CANCELLED]: "#F9A8D4",
+        [TopicStatus.ALL]: "#D1D5DB",
     };
 
     // Sync budgetDisplay with minBudget
@@ -471,8 +470,8 @@ const TopicsPage = () => {
                                     data={statusData}
                                     cx="50%"
                                     cy="50%"
-                                    labelLine={false}
-                                    outerRadius={100}
+                                    labelLine={true}
+                                    outerRadius={90}
                                     fill="#8884d8"
                                     dataKey="value"
                                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
@@ -482,7 +481,12 @@ const TopicsPage = () => {
                                     ))}
                                 </Pie>
                                 <Tooltip />
-                                <Legend />
+                                <Legend
+                                    layout="horizontal"
+                                    align="center"
+                                    verticalAlign="bottom"
+                                    wrapperStyle={{ paddingTop: "10px", fontSize: "14px" }}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -494,13 +498,21 @@ const TopicsPage = () => {
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={departmentData}>
+                            <BarChart
+                                data={departmentData}
+                                layout="vertical"
+                                margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                            >
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
+                                <XAxis type="number" />
+                                <YAxis
+                                    type="category"
+                                    dataKey="name"
+                                    tick={{ fontSize: 12 }}
+                                    width={140}
+                                />
                                 <Tooltip />
-                                <Legend />
-                                <Bar dataKey="value" name="Số đề tài" fill="#8884d8" />
+                                <Bar dataKey="value" fill="#A78BFA" />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -520,9 +532,8 @@ const TopicsPage = () => {
                         />
                     </div>
                     <Button
-                        variant="outline"
+                        variant="default"
                         onClick={() => setShowFilters(!showFilters)}
-                        className={showFilters ? "bg-blue-50" : ""}
                     >
                         <Filter className="w-4 h-4" />
                         Lọc

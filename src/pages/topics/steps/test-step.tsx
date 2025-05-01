@@ -91,18 +91,19 @@ export default function TestStep({ formValues }: PdfReviewProps) {
 
         setIsExporting(true);
 
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         try {
             window.scrollTo(0, 0);
 
-            // Capture the content with html2canvas
             const canvas = await html2canvas(pdfRef.current, {
-                scale: 2, // Higher scale for better quality
-                useCORS: true, // Handle cross-origin images (e.g., logo)
-                logging: true, // Enable logging for debugging
+                scale: 2,
+                useCORS: true,
+                logging: true,
                 scrollX: 0,
                 scrollY: 0,
-                windowWidth: 210 * 3.78, // Approximate pixel width of 210mm (A4 width) at 96 DPI
-                windowHeight: pdfRef.current.scrollHeight, // Ensure the entire height is captured
+                windowWidth: 210 * 3.78,
+                windowHeight: pdfRef.current.scrollHeight,
             });
 
             const imgData = canvas.toDataURL("image/png");
@@ -112,8 +113,8 @@ export default function TestStep({ formValues }: PdfReviewProps) {
                 format: "a4",
             });
 
-            const imgWidth = 210; // A4 width in mm
-            const pageHeight = 297; // A4 height in mm
+            const imgWidth = 210;
+            const pageHeight = 297;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             let heightLeft = imgHeight;
             let position = 0;
@@ -128,7 +129,6 @@ export default function TestStep({ formValues }: PdfReviewProps) {
                 heightLeft -= pageHeight;
             }
 
-            // Save the PDF
             pdf.save(`Đơn đăng ký đề tài - ${formValues.topicCode || "Mẫu"}.pdf`);
         } catch (error) {
             console.error("Error exporting PDF:", error);
@@ -137,6 +137,7 @@ export default function TestStep({ formValues }: PdfReviewProps) {
             setIsExporting(false);
         }
     };
+
     const currentDate = new Date();
 
     return (

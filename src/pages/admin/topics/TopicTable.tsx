@@ -12,6 +12,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatVND } from "@/utils/common";
+import { TopicStatus } from "@/models/enums/topic-status.enum";
 
 interface TopicsTableProps {
     topics: Topic[];
@@ -115,15 +116,18 @@ const TopicsTable = ({
         },
     ];
 
-    const getStatusClass = (status: string): string => {
-        const classes = {
-            "DRAFT": "bg-gray-100 text-gray-800 px-2 py-1 rounded",
-            "SUBMITTED": "bg-blue-100 text-blue-800 px-2 py-1 rounded",
-            "IN_PROGRESS": "bg-indigo-100 text-indigo-800 px-2 py-1 rounded",
-            "COMPLETED": "bg-green-100 text-green-800 px-2 py-1 rounded",
-            "REJECTED": "bg-red-100 text-red-800 px-2 py-1 rounded",
+    const getStatusClass = (status: TopicStatus): string => {
+        const classes: { [key in TopicStatus]: string } = {
+            [TopicStatus.DRAFT]: "bg-indigo-100 text-indigo-700 px-2 py-1 rounded",
+            [TopicStatus.SUBMITTED]: "bg-blue-100 text-blue-700 px-2 py-1 rounded",
+            [TopicStatus.APPROVED]: "bg-green-100 text-green-700 px-2 py-1 rounded",
+            [TopicStatus.REJECTED]: "bg-red-100 text-red-700 px-2 py-1 rounded",
+            [TopicStatus.IN_PROGRESS]: "bg-cyan-100 text-cyan-700 px-2 py-1 rounded",
+            [TopicStatus.COMPLETED]: "bg-emerald-100 text-emerald-700 px-2 py-1 rounded",
+            [TopicStatus.CANCELLED]: "bg-pink-100 text-pink-700 px-2 py-1 rounded",
+            [TopicStatus.ALL]: "bg-gray-100 text-gray-700 px-2 py-1 rounded",
         };
-        return classes[status as keyof typeof classes] || "bg-gray-100 text-gray-800 px-2 py-1 rounded";
+        return classes[status] || "bg-gray-100 text-gray-700 px-2 py-1 rounded";
     };
 
     const getStatusName = (status: string): string => {

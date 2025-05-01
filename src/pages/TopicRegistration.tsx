@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileTextIcon, PlusCircle, Search, Calendar, Bell, FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,27 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-
-const registrationPeriods = [
-  {
-    id: '2023-2',
-    title: 'Đợt đăng ký đề tài NCKH 2023 - Đợt 2',
-    status: 'Đang mở',
-    startDate: '01/09/2023',
-    endDate: '30/09/2023',
-    description: 'Đợt đăng ký dành cho giảng viên và nghiên cứu sinh.',
-    remainingDays: 15,
-  },
-  {
-    id: '2023-1',
-    title: 'Đợt đăng ký đề tài NCKH 2023 - Đợt 1',
-    status: 'Đã đóng',
-    startDate: '01/03/2023',
-    endDate: '30/03/2023',
-    description: 'Đợt đăng ký dành cho giảng viên và nghiên cứu sinh.',
-    remainingDays: 0,
-  },
-];
+import { RegistrationPeriod } from '@/models/registraion-period';
+import { RegistrationPeriodStatus } from '@/models/enums/registration-period-status';
+import { RegistrationService } from '@/service/registration-service';
+import { toast } from '@/hooks/use-toast';
+import { formatTimeAgo } from '@/utils/dateTimeFormat';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const myTopics = [
   {
@@ -47,7 +31,44 @@ const myTopics = [
 ];
 
 const TopicRegistration = () => {
+  const [registrationPeriods, setRegistrationPeriods] = useState<RegistrationPeriod[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 2019 }, (_, i) => (currentYear - i).toString());
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await RegistrationService.getAll({
+        p: 1,
+        s: 10000,
+        sort: "createdAt",
+        order: "desc",
+        year: selectedYear ? parseInt(selectedYear) : undefined,
+      });
+
+      setRegistrationPeriods(response.data.data);
+    } catch (error) {
+      console.error("Error fetching registration periods:", error);
+      toast({
+        title: "Có lỗi trong quá trình lấy dữ liệu!",
+        description: "Không thể tải dữ liệu đợt đăng ký. Vui lòng thử lại sau.",
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedYear, searchQuery]);
+
   const navigate = useNavigate();
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
@@ -56,11 +77,27 @@ const TopicRegistration = () => {
           <p className="text-muted-foreground">Quản lý đợt đăng ký và đề xuất đề tài nghiên cứu khoa học</p>
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <Input
+          {/* <Input
             placeholder="Tìm kiếm đề tài..."
             className="md:w-64 w-full"
-          />
-          <Button className="bg-primary-600 hover:bg-primary-700 transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          /> */}
+          <Select onValueChange={(value) => setSelectedYear(value === "all" ? null : value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Chọn năm" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả năm</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            className="bg-primary-600 hover:bg-primary-700 transition-all"
             onClick={() => navigate('/topic-proposal')}
           >
             <FilePlus className="h-4 w-4" />
@@ -71,68 +108,92 @@ const TopicRegistration = () => {
 
       <Tabs defaultValue="registration-periods" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-          <TabsTrigger value="registration-periods">Đợt đăng ký</TabsTrigger>
           <TabsTrigger value="my-topics">Đề tài của tôi</TabsTrigger>
         </TabsList>
 
         <TabsContent value="registration-periods" className="animate-fade-in space-y-4 mt-4">
-          {registrationPeriods.map((period, i) => (
-            <Card key={i} className={`animate-scale-in overflow-hidden ${i === 0 ? 'border-primary-100' : ''}`} style={{ animationDelay: `${i * 100}ms` }}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary-600" />
-                    <CardTitle className="text-lg">{period.title}</CardTitle>
-                    <Badge variant={period.status === 'Đang mở' ? 'default' : 'secondary'}>
-                      {period.status}
-                    </Badge>
-                  </div>
-                  {period.status === 'Đang mở' && (
-                    <Badge variant="outline" className="bg-primary-50">
-                      Còn {period.remainingDays} ngày
-                    </Badge>
-                  )}
-                </div>
-                <CardDescription className="pt-1">
-                  {period.description}
-                </CardDescription>
+          {registrationPeriods.length === 0 ? (
+            <Card className="text-center py-8">
+              <CardHeader>
+                <CardTitle className="text-lg">Không có đợt đăng ký nào</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Thời gian:</span>
-                    <span className="text-sm text-muted-foreground">
-                      {period.startDate} - {period.endDate}
-                    </span>
-                  </div>
-
-                  {period.status === 'Đang mở' ? (
-                    <Button className="w-full md:w-auto">
-                      <FileTextIcon className="mr-2 h-4 w-4" />
-                      Đăng ký đề tài
-                    </Button>
-                  ) : (
-                    <Button variant="outline" disabled className="w-full md:w-auto">
-                      Đã kết thúc
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-              {period.status === 'Đang mở' && (
-                <div className="h-1.5 bg-primary-100 w-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary-600"
-                    style={{ width: `${(1 - period.remainingDays / 30) * 100}%` }}
-                  />
-                </div>
-              )}
             </Card>
-          ))}
+          ) : (
+            registrationPeriods.map((period, i) => (
+              <Card
+                key={i}
+                className={`animate-scale-in overflow-hidden ${i === 0 ? 'border-primary-100' : ''}`}
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-primary-600" />
+                      <CardTitle className="text-lg">{period.title}</CardTitle>
+                      <Badge variant={period.status === RegistrationPeriodStatus.OPEN ? 'default' : 'secondary'}>
+                        {period.status}
+                      </Badge>
+                    </div>
+                    {period.status === RegistrationPeriodStatus.OPEN && (
+                      <Badge variant="outline" className="bg-primary-50">
+                        Còn {formatTimeAgo(period.endDate)}
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col justify-between md:flex-row md:items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Thời gian:</span>
+                      <span className="text-sm text-muted-foreground">
+                        {period.startDate} - {period.endDate}
+                      </span>
+                    </div>
+
+                    {period.status === RegistrationPeriodStatus.OPEN ? (
+                      <Button className="w-full md:w-auto">
+                        <FileTextIcon className="h-4 w-4" />
+                        Nộp đề tài
+                      </Button>
+                    ) : (
+                      <Button variant="outline" disabled className="w-full md:w-auto">
+                        Đã kết thúc
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+                {period.status === RegistrationPeriodStatus.OPEN && (
+                  <div className="h-1.5 bg-primary-100 w-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary-600"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.max(
+                            0,
+                            ((new Date().getTime() - new Date(period.startDate).getTime()) /
+                              (new Date(period.endDate).getTime() - new Date(period.startDate).getTime())) *
+                            100
+                          )
+                        ).toFixed(2)}%`,
+                      }}
+                    />
+
+                  </div>
+                )}
+              </Card>
+            ))
+          )}
         </TabsContent>
+
 
         <TabsContent value="my-topics" className="animate-fade-in space-y-4 mt-4">
           {myTopics.map((topic, i) => (
-            <Card key={i} className="animate-scale-in hover:shadow-md transition-all" style={{ animationDelay: `${i * 100}ms` }}>
+            <Card
+              key={i}
+              className="animate-scale-in hover:shadow-md transition-all"
+              style={{ animationDelay: `${i * 100}ms` }}
+            >
               <CardHeader className="pb-2">
                 <div className="flex justify-between">
                   <div className="flex items-center gap-2">

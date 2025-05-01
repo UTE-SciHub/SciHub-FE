@@ -20,6 +20,7 @@ export class RegistrationService {
         status?: string;
         startDate?: string;
         endDate?: string;
+        year?: number;
     }) {
         return axiosClient.get(`${BASE_URL}registration-period`, { params });
     }
