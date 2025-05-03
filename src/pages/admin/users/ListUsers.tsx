@@ -85,8 +85,6 @@ const AdminUsers = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
-  const BASE_URL = import.meta.env.VITE_BASE_URL;
-
   const fetchData = async (params: {
     p: number
     s: number
@@ -255,23 +253,54 @@ const AdminUsers = () => {
     })
   }
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "ACTIVE":
-        return (
-          <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-            Hoạt động
-          </Badge>
-        )
-      case "BLOCKED":
-        return (
-          <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200">
-            Đã khóa
-          </Badge>
-        )
-      default:
-        return <Badge variant="outline">{status}</Badge>
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<
+      string,
+      { label: string; className: string }
+    > = {
+      ACTIVE: {
+        label: "Hoạt động",
+        className: "bg-green-50 text-green-600 border-green-200",
+      },
+      BLOCKED: {
+        label: "Đã khóa",
+        className: "bg-red-50 text-red-600 border-red-200",
+      },
+      STUDENT: {
+        label: "Sinh viên",
+        className: "bg-blue-50 text-blue-600 border-blue-200",
+      },
+      TEACHER: {
+        label: "Giảng viên",
+        className: "bg-purple-50 text-purple-600 border-purple-200",
+      },
+      ADMIN: {
+        label: "Quản trị viên",
+        className: "bg-yellow-50 text-yellow-600 border-yellow-200",
+      },
+      BGH: {
+        label: "Ban giám hiệu",
+        className: "bg-pink-50 text-pink-600 border-pink-200",
+      },
+      PQLKHHTQT: {
+        label: "P.QLKH & HTQT",
+        className: "bg-indigo-50 text-indigo-600 border-indigo-200",
+      },
+      BCNKHOA: {
+        label: "BCN Khoa",
+        className: "bg-orange-50 text-orange-600 border-orange-200",
+      },
     }
+
+    const badge = statusMap[status]
+    return (
+      <Badge
+        variant="outline"
+        className={badge?.className || "bg-gray-50 text-gray-800 border-gray-200"}
+      >
+        {badge?.label || status}
+      </Badge>
+    )
   }
 
   const getRoleBadge = (role) => {
@@ -300,7 +329,7 @@ const AdminUsers = () => {
   const columns: Column[] = [
     {
       key: "name",
-      title: "Người dùng",
+      title: "Tên tài khoản",
       width: "250px",
       sortable: true,
       render: (_, record) => (

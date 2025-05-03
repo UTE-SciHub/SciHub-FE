@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Filter, Download, RefreshCcw } from "lucide-react";
+import { Search, Filter, Download, RefreshCcw, FileText, Clock, CheckCircle, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Topic } from "@/models/topic";
@@ -22,14 +22,20 @@ import { Department } from "@/models/department";
 import { ResearchType } from "@/models/research-type";
 import { ResearchField } from "@/models/research-field";
 import { Category } from "@/models/category";
-import { TopicStatus } from "@/models/enums/topic-status.enum";
+import { getBadge, TopicStatus } from "@/models/enums/topic-status.enum";
 import useDebounce from "@/hooks/use-debounce";
 import { formatVND } from "@/utils/common";
 import { useLocation, useNavigate } from "react-router-dom";
+import useUserStore from "@/store/userStore";
+import { Roles } from "@/models/enums/roles.enum";
 
 const TopicsPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const user = useUserStore((state) => state.user);
+    const roles = (user?.roles || []).map((role: { id: string; name: string }) => role.name);
+    const isAdmin = roles.includes(Roles.ADMIN);
+    const userEmail = user?.email || "";
 
     const params = new URLSearchParams(location.search);
     const initialPage = Number(params.get("p")) || 1;
@@ -97,35 +103,25 @@ const TopicsPage = () => {
 
     const debouncedSearchQuery = useDebounce(searchTerm, 300);
 
-    // Map status to Vietnamese names
-    const statusNameMap: { [key: string]: string } = {
-        DRAFT: "Nháp",
-        SUBMITTED: "Đã nộp",
-        PENDING_REVIEW: "Chờ xét duyệt",
-        APPROVED: "Đã phê duyệt",
-        REJECTED: "Từ chối",
-        FUNDED: "Đã cấp kinh phí",
-        IN_PROGRESS: "Đang thực hiện",
-        COMPLETED: "Hoàn thành",
-    };
-
     const statusColors: { [key in TopicStatus]: string } = {
         [TopicStatus.DRAFT]: "#A5B4FC",
         [TopicStatus.SUBMITTED]: "#93C5FD",
+        [TopicStatus.REVIEWED]: "#BFDBFE",
+        [TopicStatus.NEED_REVISION]: "#BFDBFE",
         [TopicStatus.APPROVED]: "#6EE7B7",
+        [TopicStatus.ASSIGNED]: "#FBBF24",
         [TopicStatus.REJECTED]: "#FCA5A5",
         [TopicStatus.IN_PROGRESS]: "#67E8F9",
         [TopicStatus.COMPLETED]: "#86EFAC",
         [TopicStatus.CANCELLED]: "#F9A8D4",
+        [TopicStatus.DELETED]: "#FBBF24",
         [TopicStatus.ALL]: "#D1D5DB",
     };
 
-    // Sync budgetDisplay with minBudget
     useEffect(() => {
         setBudgetDisplay(formatVND(minBudget));
     }, [minBudget]);
 
-    // Update appliedFilters when debounced search term changes
     useEffect(() => {
         setAppliedFilters((prev: any) => ({
             ...prev,
@@ -135,7 +131,6 @@ const TopicsPage = () => {
         setCurrentPage(1);
     }, [debouncedSearchQuery]);
 
-    // Fetch departments, research types, fields, categories, and statistics
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
@@ -183,15 +178,14 @@ const TopicsPage = () => {
                 setCompletedCount(statisticsResponse.data.completedCount);
                 setTotalBudget(statisticsResponse.data.totalBudget);
 
-                // Map status distribution to chart format
-                const statusChartData = statisticsResponse.data.statusDistribution.map(item => ({
-                    name: statusNameMap[item.status] || item.status,
+                const statusChartData = statisticsResponse.data.statusDistribution.map((item: any) => ({
+                    name: getBadge(item.status),
                     value: item.count,
                     fill: statusColors[item.status] || "#8884d8",
                 }));
                 setStatusData(statusChartData);
 
-                const departmentChartData = statisticsResponse.data.departmentDistribution.map(item => ({
+                const departmentChartData = statisticsResponse.data.departmentDistribution.map((item: any) => ({
                     name: item.departmentName,
                     value: item.count,
                 }));
@@ -249,11 +243,10 @@ const TopicsPage = () => {
         navigate({ search: searchParams.toString() }, { replace: true });
     };
 
-    // Fetch topics based on applied filters
     const fetchTopics = async () => {
         setIsLoading(true);
         try {
-            const response = await TopicService.getAll({
+            const params = {
                 p: appliedFilters.currentPage,
                 s: appliedFilters.itemsPerPage,
                 sort: appliedFilters.sortField,
@@ -268,7 +261,11 @@ const TopicsPage = () => {
                 endDate: appliedFilters.endDate ? appliedFilters.endDate.toISOString().split("T")[0] : undefined,
                 minBudget: appliedFilters.minBudget,
                 investigator: appliedFilters.investigator || undefined,
-            });
+            };
+
+            const response = isAdmin
+                ? await TopicService.getAll(params)
+                : await TopicService.getTopicByDepartment(userEmail, params)
 
             setTopics(response.data.data);
             setTotalItems(response.data.totalItems);
@@ -283,12 +280,11 @@ const TopicsPage = () => {
         }
     };
 
-    // Trigger fetchTopics when appliedFilters change
+
     useEffect(() => {
         fetchTopics();
-    }, [appliedFilters]);
+    }, [appliedFilters, isAdmin, userEmail]);
 
-    // Update URL when filter state changes
     useEffect(() => {
         updateUrl();
     }, [
@@ -394,6 +390,18 @@ const TopicsPage = () => {
         fetchTopics();
     };
 
+    const handleViewDetail = (topicId: string, status: TopicStatus): void => {
+        navigate(`/admin/topics/${topicId}`);
+    };
+
+    const handleAssign = (topicId: string) => {
+        navigate(`/admin/topics/assign/${topicId}`);
+    }
+
+    const handleReview = (topicId: string) => {
+        navigate(`/admin/topics/review/${topicId}`);
+    }
+
     return (
         <div className="space-y-6">
             {/* Header Section */}
@@ -412,112 +420,132 @@ const TopicsPage = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Tổng số đề tài
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totalTopics}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Đề tài đang thực hiện
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">{inProgressCount}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Đề tài đã hoàn thành
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{completedCount}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Tổng kinh phí
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-purple-600">
-                            {formatVND(totalBudget)}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            <>
+                {isAdmin && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <Card>
+                            <CardHeader className="pb-2 pt-4 flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Tổng số đề tài
+                                </CardTitle>
+                                <div className="p-2 rounded-full bg-blue-100 text-blue-800">
+                                    <FileText className="h-4 w-4" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{totalTopics}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2 pt-4 flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Đề tài đang thực hiện
+                                </CardTitle>
+                                <div className="p-2 rounded-full bg-amber-100 text-amber-800">
+                                    <Clock className="h-4 w-4" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-blue-600">{inProgressCount}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2 pt-4 flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Đề tài đã hoàn thành
+                                </CardTitle>
+                                <div className="p-2 rounded-full bg-green-100 text-green-800">
+                                    <CheckCircle className="h-4 w-4" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-green-600">{completedCount}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2 pt-4 flex flex-row items-center justify-between space-y-0">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Tổng kinh phí
+                                </CardTitle>
+                                <div className="p-2 rounded-full bg-purple-100 text-purple-800">
+                                    <DollarSign className="h-4 w-4" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-purple-600">
+                                    {formatVND(totalBudget)}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Phân bố theo trạng thái</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={statusData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={true}
-                                    outerRadius={90}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                >
-                                    {statusData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend
-                                    layout="horizontal"
-                                    align="center"
-                                    verticalAlign="bottom"
-                                    wrapperStyle={{ paddingTop: "10px", fontSize: "14px" }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+            <>
+                {isAdmin && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Phân bố theo trạng thái</CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={statusData}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={true}
+                                            outerRadius={90}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                        >
+                                            {statusData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                        <Legend
+                                            layout="horizontal"
+                                            align="center"
+                                            verticalAlign="bottom"
+                                            wrapperStyle={{ paddingTop: "10px", fontSize: "14px" }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Phân bố theo đơn vị</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={departmentData}
-                                layout="vertical"
-                                margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis type="number" />
-                                <YAxis
-                                    type="category"
-                                    dataKey="name"
-                                    tick={{ fontSize: 12 }}
-                                    width={140}
-                                />
-                                <Tooltip />
-                                <Bar dataKey="value" fill="#A78BFA" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Phân bố theo đơn vị</CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={departmentData}
+                                        layout="vertical"
+                                        margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis type="number" />
+                                        <YAxis
+                                            type="category"
+                                            dataKey="name"
+                                            tick={{ fontSize: 12 }}
+                                            width={140}
+                                        />
+                                        <Tooltip />
+                                        <Bar dataKey="value" fill="#A78BFA" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </>
 
             {/* Actions Bar */}
             <div className="flex flex-col md:flex-row gap-4">
@@ -531,13 +559,17 @@ const TopicsPage = () => {
                             onChange={handleSearchChange}
                         />
                     </div>
-                    <Button
-                        variant="default"
-                        onClick={() => setShowFilters(!showFilters)}
-                    >
-                        <Filter className="w-4 h-4" />
-                        Lọc
-                    </Button>
+                    <>
+                        {isAdmin && (
+                            <Button
+                                variant="default"
+                                onClick={() => setShowFilters(!showFilters)}
+                            >
+                                <Filter className="w-4 h-4" />
+                                Lọc
+                            </Button>
+                        )}
+                    </>
                 </div>
                 <Button variant="outline" onClick={handleExport}>
                     <Download className="w-4 h-4" />
@@ -593,6 +625,9 @@ const TopicsPage = () => {
                     onPageSizeChange={handlePageSizeChange}
                     onSortChange={handleSortChange}
                     onSelectionChange={handleSelectionChange}
+                    onViewDetail={handleViewDetail}
+                    onAssign={handleAssign}
+                    onReview={handleReview}
                 />
             </div>
         </div>

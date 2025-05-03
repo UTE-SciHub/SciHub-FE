@@ -1,18 +1,18 @@
-import StepNavigation from "@/components/step/StepNavigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import GeneralInformationStep from "@/pages/topics/steps/GeneralInformationStep"
-import SpecializationStep from "@/pages/topics/steps/SpecializationStep"
-import TimeAndBudgetStep from "@/pages/topics/steps/TimeAndBudgetStep"
-import ReviewStep from "@/pages/topics/steps/ReviewStep"
-import { ArrowLeft, ArrowRight, ClipboardCheck, CornerUpLeft, Loader2, RotateCcw, Save, Trash2, X } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
-import { Path, useForm } from "react-hook-form"
-import { z } from "zod"
-import { Form } from "@/components/ui/form"
-import { toast } from "@/hooks/use-toast"
-import CryptoJS from "crypto-js"
+import StepNavigation from "@/components/step/StepNavigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import GeneralInformationStep from "@/pages/topics/steps/GeneralInformationStep";
+import SpecializationStep from "@/pages/topics/steps/SpecializationStep";
+import TimeAndBudgetStep from "@/pages/topics/steps/TimeAndBudgetStep";
+import ReviewStep from "@/pages/topics/steps/ReviewStep";
+import { ArrowLeft, ArrowRight, ClipboardCheck, CornerUpLeft, Loader2, RotateCcw, Save, Trash2, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Path, useForm } from "react-hook-form";
+import { z } from "zod";
+import { Form } from "@/components/ui/form";
+import { toast } from "@/hooks/use-toast";
+import CryptoJS from "crypto-js";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -22,23 +22,23 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { useNavigate } from "react-router-dom"
-import { TopicService } from "@/service/topic-service"
-import { DepartmentService } from "@/service/department-service"
-import { Department } from "@/models/department"
-import { ResearchType } from "@/models/research-type"
-import { ResearchField } from "@/models/research-field"
-import { ResearchTypeService } from "@/service/research-type-service"
-import { ResearchFieldService } from "@/service/research-field-service"
-import Loading from "@/components/loading/loading"
-import { zodResolver } from "@hookform/resolvers/zod"
-import TestStep from "@/pages/topics/steps/test-step"
-import { Category } from "@/models/category"
-import { CategoryService } from "@/service/category-service"
-import { RegistrationPeriod } from "@/models/registraion-period"
-import { RegistrationService } from "@/service/registration-service"
-import AttachedDocuments from "@/pages/topics/steps/AttachedDocuments"
+} from "@/components/ui/alert-dialog";
+import { useNavigate, useParams } from "react-router-dom";
+import { TopicService } from "@/service/topic-service";
+import { DepartmentService } from "@/service/department-service";
+import { Department } from "@/models/department";
+import { ResearchType } from "@/models/research-type";
+import { ResearchField } from "@/models/research-field";
+import { ResearchTypeService } from "@/service/research-type-service";
+import { ResearchFieldService } from "@/service/research-field-service";
+import Loading from "@/components/loading/loading";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Category } from "@/models/category";
+import { CategoryService } from "@/service/category-service";
+import { RegistrationPeriod } from "@/models/registraion-period";
+import { RegistrationService } from "@/service/registration-service";
+import AttachedDocuments from "@/pages/topics/steps/AttachedDocuments";
+import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status";
 
 const topicFormSchema = z
     .object({
@@ -127,7 +127,7 @@ const topicFormSchema = z
         }
     );
 
-type TopicFormValues = z.infer<typeof topicFormSchema>
+type TopicFormValues = z.infer<typeof topicFormSchema>;
 
 const steps = [
     { id: 1, title: "Thông tin chung" },
@@ -135,98 +135,95 @@ const steps = [
     { id: 3, title: "Thời gian & kinh phí" },
     { id: 4, title: "Biểu mẫu đính kèm" },
     { id: 5, title: "Xác nhận & hoàn tất" },
-]
+];
 
-const SECRET_KEY = import.meta.env.VITE_APP_SECRET_KEY || "my-secure-16-byte-key-1234567890"
+const SECRET_KEY = import.meta.env.VITE_APP_SECRET_KEY || "my-secure-16-byte-key-1234567890";
 
 const saveDraftToLocalStorage = (data: TopicFormValues) => {
     try {
         const serializedData = {
             ...data,
             startDate: data.startDate ? data.startDate.toISOString() : null,
-        }
-        const dataString = JSON.stringify(serializedData)
+        };
+        const dataString = JSON.stringify(serializedData);
 
-        // Tạo IV ngẫu nhiên
-        const iv = CryptoJS.lib.WordArray.random(16)
+        const iv = CryptoJS.lib.WordArray.random(16);
         const encrypted = CryptoJS.AES.encrypt(dataString, CryptoJS.enc.Utf8.parse(SECRET_KEY), {
             iv: iv,
             mode: CryptoJS.mode.CBC,
             padding: CryptoJS.pad.Pkcs7,
-        })
+        });
 
-        // Lưu ciphertext và IV
         const draft = {
             ciphertext: encrypted.ciphertext.toString(CryptoJS.enc.Base64),
             iv: iv.toString(CryptoJS.enc.Base64),
-        }
-        localStorage.setItem("topicProposalDraft", JSON.stringify(draft))
-        return true
+        };
+        localStorage.setItem("topicEditDraft", JSON.stringify(draft));
+        return true;
     } catch (error) {
-        console.error("Lỗi khi lưu bản nháp:", error)
-        return false
+        console.error("Lỗi khi lưu bản nháp:", error);
+        return false;
     }
-}
+};
 
 const getDraftFromLocalStorage = (): TopicFormValues | null => {
     try {
-        const draft = localStorage.getItem("topicProposalDraft")
-        if (!draft) return null
+        const draft = localStorage.getItem("topicEditDraft");
+        if (!draft) return null;
 
-        let parsedDraft
+        let parsedDraft;
         try {
-            parsedDraft = JSON.parse(draft)
+            parsedDraft = JSON.parse(draft);
         } catch (e) {
-            console.error("Dữ liệu bản nháp không phải JSON hợp lệ:", e)
-            localStorage.removeItem("topicProposalDraft")
-            return null
+            console.error("Dữ liệu bản nháp không phải JSON hợp lệ:", e);
+            localStorage.removeItem("topicEditDraft");
+            return null;
         }
 
         if (!parsedDraft || typeof parsedDraft !== "object" || !parsedDraft.ciphertext || !parsedDraft.iv) {
-            console.error("Dữ liệu bản nháp không đúng định dạng:", parsedDraft)
-            localStorage.removeItem("topicProposalDraft")
-            return null
+            console.error("Dữ liệu bản nháp không đúng định dạng:", parsedDraft);
+            localStorage.removeItem("topicEditDraft");
+            return null;
         }
 
         if (typeof parsedDraft.ciphertext !== "string" || typeof parsedDraft.iv !== "string") {
-            console.error("Ciphertext hoặc IV không phải chuỗi hợp lệ:", parsedDraft)
-            localStorage.removeItem("topicProposalDraft")
-            return null
+            console.error("Ciphertext hoặc IV không phải chuỗi hợp lệ:", parsedDraft);
+            localStorage.removeItem("topicEditDraft");
+            return null;
         }
 
         let ciphertext, iv;
         try {
-            ciphertext = CryptoJS.enc.Base64.parse(parsedDraft.ciphertext)
-            iv = CryptoJS.enc.Base64.parse(parsedDraft.iv)
+            ciphertext = CryptoJS.enc.Base64.parse(parsedDraft.ciphertext);
+            iv = CryptoJS.enc.Base64.parse(parsedDraft.iv);
         } catch (e) {
-            console.error("Lỗi khi parse base64:", e)
-            localStorage.removeItem("topicProposalDraft")
-            return null
+            console.error("Lỗi khi parse base64:", e);
+            localStorage.removeItem("topicEditDraft");
+            return null;
         }
 
         const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, CryptoJS.enc.Utf8.parse(SECRET_KEY), {
             iv: iv,
             mode: CryptoJS.mode.CBC,
             padding: CryptoJS.pad.Pkcs7,
-        })
+        });
 
-        const decryptedData = decrypted.toString(CryptoJS.enc.Utf8)
+        const decryptedData = decrypted.toString(CryptoJS.enc.Utf8);
         if (!decryptedData) {
-            console.error("Giải mã thất bại: Dữ liệu trống hoặc khóa không đúng")
-            localStorage.removeItem("topicProposalDraft")
-            return null
+            console.error("Giải mã thất bại: Dữ liệu trống hoặc khóa không đúng");
+            localStorage.removeItem("topicEditDraft");
+            return null;
         }
 
-        let parsed
+        let parsed;
         try {
-            parsed = JSON.parse(decryptedData)
+            parsed = JSON.parse(decryptedData);
         } catch (e) {
-            console.error("Dữ liệu giải mã không phải JSON hợp lệ:", e)
-            localStorage.removeItem("topicProposalDraft")
-            return null
+            console.error("Dữ liệu giải mã không phải JSON hợp lệ:", e);
+            localStorage.removeItem("topicEditDraft");
+            return null;
         }
 
-        // Kiểm tra và chuyển đổi expectedProducts nếu cần
         if (parsed.expectedProducts && Array.isArray(parsed.expectedProducts)) {
             const convertedProducts = {
                 scientific: { domestic: 0, international: 0 },
@@ -248,7 +245,6 @@ const getDraftFromLocalStorage = (): TopicFormValues | null => {
 
             parsed.expectedProducts = convertedProducts;
         } else if (!parsed.expectedProducts) {
-            // Nếu expectedProducts không tồn tại, đặt về giá trị mặc định
             parsed.expectedProducts = {
                 scientific: { domestic: 0, international: 0 },
                 training: { masters: 0, students: 0 },
@@ -257,41 +253,41 @@ const getDraftFromLocalStorage = (): TopicFormValues | null => {
         }
 
         if (parsed.startDate) {
-            parsed.startDate = new Date(parsed.startDate)
+            parsed.startDate = new Date(parsed.startDate);
         }
 
-        return parsed
+        return parsed;
     } catch (error) {
-        console.error("Lỗi khi khôi phục bản nháp:", error)
-        localStorage.removeItem("topicProposalDraft")
-        return null
+        console.error("Lỗi khi khôi phục bản nháp:", error);
+        localStorage.removeItem("topicEditDraft");
+        return null;
     }
-}
+};
 
 const clearDraftFromLocalStorage = () => {
-    localStorage.removeItem("topicProposalDraft")
-}
+    localStorage.removeItem("topicEditDraft");
+};
 
-export default function TopicProposal() {
-    const [currentStep, setCurrentStep] = useState(1)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [showSaveDraftConfirm, setShowSaveDraftConfirm] = useState(false)
-    const [showRegistrationConfirm, setShowRegistrationConfirm] = useState(false)
-    const [showExitConfirm, setShowExitConfirm] = useState(false)
-    const [exitAction, setExitAction] = useState<(() => void) | null>(null)
-    const [isReloading, setIsReloading] = useState(false)
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-    const [hasSavedDraft, setHasSavedDraft] = useState(false)
-    const [researchTypes, setResearchTypes] = useState<ResearchType[]>([])
-    const [researchFields, setResearchFields] = useState<ResearchField[]>([])
-    const [categories, setCategories] = useState<Category[]>([])
-    const [periods, setPeriods] = useState<RegistrationPeriod[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+export default function EditTopic() {
+    const [currentStep, setCurrentStep] = useState(1);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showSaveDraftConfirm, setShowSaveDraftConfirm] = useState(false);
+    const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [exitAction, setExitAction] = useState<(() => void) | null>(null);
+    const [isReloading, setIsReloading] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [hasSavedDraft, setHasSavedDraft] = useState(false);
+    const [researchTypes, setResearchTypes] = useState<ResearchType[]>([]);
+    const [researchFields, setResearchFields] = useState<ResearchField[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [periods, setPeriods] = useState<RegistrationPeriod[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
 
     const stepFieldsToValidate: Path<TopicFormValues>[][] = [
-        // Step 1: Thông tin chung
         [
             "vietnameseName",
             "englishName",
@@ -306,13 +302,9 @@ export default function TopicProposal() {
             "field",
             "researchType",
         ],
-        // Step 2: Kết quả nghiên cứu (dự kiến)
         ["transferForm", "expectedProducts", "expectedRisks", "practicalApplications"],
-        // Step 3: Thời gian & kinh phí
         ["startDate", "durationInMonths", "endYear", "fundingSource", "budgetBreakdown"],
-        // Step 4: Biểu mẫu đính kèm
         ["attachedDocuments"],
-        // Step 5: Xác nhận & hoàn tất
         ["commitment"],
     ];
 
@@ -333,26 +325,12 @@ export default function TopicProposal() {
             researchType: "",
             transferForm: [],
             expectedProducts: {
-                scientific: {
-                    domestic: 0,
-                    international: 0,
-                },
-                training: {
-                    masters: 0,
-                    students: 0,
-                },
-                commercial: {
-                    details: "",
-                },
+                scientific: { domestic: 0, international: 0 },
+                training: { masters: 0, students: 0 },
+                commercial: { details: "" },
             },
             practicalApplications: "",
-            attachedDocuments: [{
-                file: undefined,
-                description: "",
-                url: "",
-                id: "",
-                originalFileName: "",
-            }],
+            attachedDocuments: [],
             expectedRisks: "",
             startDate: new Date(),
             durationInMonths: 12,
@@ -360,25 +338,75 @@ export default function TopicProposal() {
             totalBudget: 0,
             remainingBudget: 0,
             fundingSource: "",
-            budgetBreakdown: [{
-                category: "",
-                amount: 0,
-                description: "",
-            }],
+            budgetBreakdown: [{ category: "", amount: 0, description: "" }],
             status: "DRAFT",
             commitment: false,
             additionalNotes: "",
         },
         mode: "onChange",
-    })
+    });
+
+    const fetchTopicData = async () => {
+        if (!id) {
+            toast({
+                title: "Không tìm thấy đề tài",
+                description: "Vui lòng kiểm tra lại thông tin đề tài.",
+                variant: "error",
+            });
+            navigate("/my-topics");
+            return;
+        }
+
+        try {
+            const response = await TopicService.getById(id);
+            const topicData = response.data.data;
+
+            const formattedData: TopicFormValues = {
+                ...topicData,
+                startDate: topicData.startDate ? new Date(topicData.startDate) : new Date(),
+                department: topicData.department?.id ? String(topicData.department.id) : "",
+                category: topicData.category?.id ? String(topicData.category.id) : "",
+                period: topicData.registrationPeriod?.id ? String(topicData.registrationPeriod.id) : "",
+                field: topicData.field?.id ? String(topicData.field.id) : "",
+                researchType: topicData.researchType?.id ? String(topicData.researchType.id) : "",
+                keywords: topicData.keywords || [],
+                topicCode: topicData.topicCode ?? "",
+                expectedProducts: topicData.expectedProducts
+                    ? JSON.parse(topicData.expectedProducts)
+                    : {
+                        scientific: { domestic: 0, international: 0 },
+                        training: { masters: 0, students: 0 },
+                        commercial: { details: "" },
+                    },
+                budgetBreakdown: topicData.budgetBreakdown
+                    ? JSON.parse(topicData.budgetBreakdown)
+                    : [{ category: "", amount: 0, description: "" }],
+                transferForm: topicData.transferForm || [],
+                attachedDocuments: topicData.attachedDocuments?.map(doc => ({
+                    file: undefined,
+                    description: doc.description || "",
+                    url: doc.filePath || "",
+                    id: doc.publicId || "",
+                    originalFileName: doc.originalFileName || "",
+                })) || [],
+            };
+
+            form.reset(formattedData);
+            setHasUnsavedChanges(false);
+        } catch (error) {
+            console.error("Lỗi khi lấy dữ liệu đề tài:", error);
+            toast({
+                title: "Lỗi khi tải dữ liệu",
+                description: "Không thể tải thông tin đề tài. Vui lòng thử lại.",
+                variant: "error",
+            });
+            navigate("/my-topics");
+        }
+    };
 
     useEffect(() => {
-        const draft = getDraftFromLocalStorage()
-        if (draft) {
-            form.reset(draft)
-            setHasUnsavedChanges(false)
-        }
-    }, [form])
+        fetchTopicData();
+    }, [id, form, navigate]);
 
     useEffect(() => {
         const fetchOptions = async () => {
@@ -411,8 +439,9 @@ export default function TopicProposal() {
                         s: 1000,
                         sort: "startDate",
                         order: "desc",
+                        status: RegistrationPeriodStatus.OPEN,
                         year: new Date().getFullYear(),
-                    })
+                    }),
                 ]);
 
                 setResearchTypes(researchTypeResponse.data.data);
@@ -437,58 +466,50 @@ export default function TopicProposal() {
     }, []);
 
     const handleSaveDraft = async () => {
-        setIsSubmitting(true)
+        setIsSubmitting(true);
         const formData = {
             ...form.getValues(),
             status: "DRAFT" as "DRAFT" | "PENDING",
-        }
-        const success = saveDraftToLocalStorage(formData)
+        };
+        const success = saveDraftToLocalStorage(formData);
         if (success) {
             toast({
                 title: "Lưu bản nháp thành công",
                 description: "Bạn có thể tiếp tục chỉnh sửa bản nháp sau.",
                 variant: "success",
-            })
-            form.reset(formData, { keepValues: true })
-            setHasUnsavedChanges(false)
+            });
+            form.reset(formData, { keepValues: true });
+            setHasUnsavedChanges(false);
         } else {
             toast({
                 title: "Lỗi khi lưu bản nháp",
                 description: "Vui lòng thử lại sau.",
                 variant: "error",
-            })
+            });
         }
-        setIsSubmitting(false)
-        setShowSaveDraftConfirm(false)
-        setHasSavedDraft(true)
-    }
+        setIsSubmitting(false);
+        setShowSaveDraftConfirm(false);
+        setHasSavedDraft(true);
+    };
 
     const handlePrevious = () => {
-        if (currentStep > 1 && hasUnsavedChanges) {
-            setExitAction(() => () => {
-                setCurrentStep((prev) => prev - 1)
-                window.scrollTo(0, 0)
-            })
-        } else if (currentStep > 1) {
-            setCurrentStep((prev) => prev - 1)
-            window.scrollTo(0, 0)
-        }
+        goToStep(currentStep - 1);
     }
 
     const handleBack = () => {
         if (!hasSavedDraft) {
-            setShowExitConfirm(true)
+            setShowExitConfirm(true);
         } else {
-            navigate(-1)
+            navigate(-1);
         }
-    }
+    };
 
     const goToStep = (step: number) => {
-        setCurrentStep(step)
-        window.scrollTo(0, 0)
-    }
+        setCurrentStep(step);
+        window.scrollTo(0, 0);
+    };
 
-    const formValues = form.watch()
+    const formValues = form.watch();
     const handleNext = async () => {
         if (currentStep < steps.length) {
             setCurrentStep(currentStep + 1);
@@ -497,23 +518,31 @@ export default function TopicProposal() {
     };
 
     const onSubmit = async (data: TopicFormValues) => {
+        if (!id) {
+            toast({
+                title: "Không tìm thấy đề tài",
+                description: "Vui lòng kiểm tra lại thông tin đề tài.",
+                variant: "error",
+            });
+            return;
+        }
+
         try {
-            setIsSubmitting(true)
+            setIsSubmitting(true);
             const formData = new FormData();
 
-            console.log("Dữ liệu trước khi gửi:", data)
-
             const topicData = {
+                id: id,
                 vietnameseName: data.vietnameseName,
                 englishName: data.englishName,
-                topicCode: data.topicCode,
+                topicCode: data.topicCode ?? "",
                 principalInvestigator: data.principalInvestigator,
                 objectives: data.objectives,
                 mainContent: data.mainContent,
                 urgency: data.urgency,
                 keywords: data.keywords,
                 category: data.category,
-                registrationPeriod: data.period,
+                registrationPeriod: data.period ?? "",
                 field: data.field,
                 researchType: data.researchType,
                 transferForm: data.transferForm,
@@ -532,58 +561,54 @@ export default function TopicProposal() {
                 additionalNotes: data.additionalNotes,
             };
 
-            console.log("Dữ liệu sau khi xử lý:", topicData)
-
             const jsonBlob = new Blob([JSON.stringify(topicData)], {
                 type: "application/json",
-            })
+            });
             formData.append("data", jsonBlob, "topicData.json");
 
             if (data.attachedDocuments && data.attachedDocuments.length > 0) {
-                const validDocs = data.attachedDocuments.filter(doc => doc.file instanceof File);
+                const newFiles = data.attachedDocuments.filter(doc => doc.file instanceof File);
+                const existingFiles = data.attachedDocuments.filter(doc => doc.url);
 
-                if (validDocs.length > 0) {
-                    const descriptions = validDocs.map((doc) => ({
-                        id: null,
-                        description: doc.description,
-                        url: null,
-                    }));
+                const descriptions = data.attachedDocuments.map((doc) => ({
+                    id: doc.id || null,
+                    description: doc.description,
+                    url: doc.url || null,
+                }));
 
-                    const descriptionsBlob = new Blob([JSON.stringify(descriptions)], {
-                        type: "application/json",
-                    });
-                    formData.append("descriptions", descriptionsBlob, "descriptions.json");
+                const descriptionsBlob = new Blob([JSON.stringify(descriptions)], {
+                    type: "application/json",
+                });
+                formData.append("descriptions", descriptionsBlob, "descriptions.json");
 
-                    validDocs.forEach((doc) => {
-                        if (doc.file) {
-                            formData.append("files", doc.file);
-                        }
-                    });
-                }
+                newFiles.forEach((doc) => {
+                    if (doc.file) {
+                        formData.append("files", doc.file);
+                    }
+                });
             }
 
-            const response = await TopicService.create(formData);
+            const response = await TopicService.update(id, formData);
 
-            if (response.data.code === 1000 && response.data.status === 201) {
+            if (response.data.code === 1000 && response.data.status === 200) {
                 toast({
-                    title: "Đăng ký thành công",
-                    description: "Đề tài đã được gửi đi thành công.",
+                    title: "Cập nhật thành công",
+                    description: "Đề tài đã được cập nhật thành công.",
                     variant: "success",
                 });
 
                 clearDraftFromLocalStorage();
             } else {
                 toast({
-                    title: "Đăng ký thất bại",
-                    description: "Có lỗi xảy ra khi gửi đề tài. Vui lòng thử lại.",
+                    title: "Cập nhật thất bại",
+                    description: "Có lỗi xảy ra khi cập nhật đề tài. Vui lòng thử lại.",
                     variant: "error",
                 });
             }
-
         } catch (error) {
-            console.error("Lỗi khi gửi dữ liệu:", error);
+            console.error("Lỗi khi cập nhật dữ liệu:", error);
             toast({
-                title: "Lỗi khi gửi dữ liệu",
+                title: "Lỗi khi cập nhật dữ liệu",
                 description: "Vui lòng thử lại sau.",
                 variant: "error",
             });
@@ -591,27 +616,25 @@ export default function TopicProposal() {
             setIsSubmitting(false);
             setHasUnsavedChanges(false);
             setShowExitConfirm(false);
-            setShowRegistrationConfirm(false);
+            setShowUpdateConfirm(false);
             navigate("/my-topics");
         }
-    }
+    };
 
     const handleExitWithSave = async () => {
-        await handleSaveDraft()
-        setShowExitConfirm(false)
-        navigate(-1)
-    }
+        await handleSaveDraft();
+        setShowExitConfirm(false);
+        navigate(-1);
+    };
 
     const handleExitWithoutSave = () => {
-        setShowExitConfirm(false)
-        setHasUnsavedChanges(false)
-        navigate(-1)
-    }
+        setShowExitConfirm(false);
+        setHasUnsavedChanges(false);
+        navigate(-1);
+    };
 
     if (isSubmitting || isLoading) {
-        return (
-            <Loading />
-        )
+        return <Loading />;
     }
 
     return (
@@ -620,8 +643,8 @@ export default function TopicProposal() {
                 <CardHeader className="sticky top-16 bg-white z-10 shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Đăng ký đề tài nghiên cứu khoa học</CardTitle>
-                            <CardDescription>Vui lòng điền đầy đủ thông tin để đăng ký đề tài nghiên cứu khoa học</CardDescription>
+                            <CardTitle>Chỉnh sửa đề tài nghiên cứu khoa học</CardTitle>
+                            <CardDescription>Cập nhật thông tin đề tài nghiên cứu khoa học</CardDescription>
                         </div>
                         <div>
                             <Button variant="outline" className="text-rose-500" onClick={handleBack}>
@@ -637,7 +660,7 @@ export default function TopicProposal() {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <CardContent className="pt-4">
-                            {currentStep === 1 &&
+                            {currentStep === 1 && (
                                 <GeneralInformationStep
                                     form={form}
                                     researchTypeOptions={researchTypes}
@@ -645,15 +668,17 @@ export default function TopicProposal() {
                                     categoriesOptions={categories}
                                     periodsOptions={periods}
                                     isLoadingOptions={isLoading}
-                                />}
+                                />
+                            )}
                             {currentStep === 2 && <SpecializationStep form={form} />}
                             {currentStep === 3 && <TimeAndBudgetStep form={form} />}
                             {currentStep === 4 && <AttachedDocuments form={form} />}
-                            {currentStep === 5 &&
+                            {currentStep === 5 && (
                                 <ReviewStep
                                     formValues={formValues}
                                     researchFields={researchFields}
-                                />}
+                                />
+                            )}
                         </CardContent>
 
                         <Separator />
@@ -681,13 +706,13 @@ export default function TopicProposal() {
                                 {currentStep === steps.length ? (
                                     <Button
                                         type="button"
-                                        onClick={() => { setShowRegistrationConfirm(true) }}
+                                        onClick={() => setShowUpdateConfirm(true)}
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting && form.getValues("status") === "PENDING" && (
                                             <Loader2 className="h-4 w-4 animate-spin" />
                                         )}
-                                        <ClipboardCheck className="h-4 w-4" /> Đăng ký
+                                        <ClipboardCheck className="h-4 w-4" /> Cập nhật
                                     </Button>
                                 ) : (
                                     <Button type="button" onClick={handleNext}>
@@ -710,11 +735,13 @@ export default function TopicProposal() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isSubmitting} className="text-rose-500"><X className="h-4 w-4" /> Hủy</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isSubmitting} className="text-rose-500">
+                            <X className="h-4 w-4" /> Hủy
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={(e) => {
-                                e.preventDefault()
-                                handleSaveDraft()
+                                e.preventDefault();
+                                handleSaveDraft();
                             }}
                             disabled={isSubmitting}
                             className="bg-primary"
@@ -778,17 +805,19 @@ export default function TopicProposal() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Confirm Dialog cho Đăng ký */}
-            <AlertDialog open={showRegistrationConfirm} onOpenChange={setShowRegistrationConfirm}>
+            {/* Confirm Dialog cho Cập nhật */}
+            <AlertDialog open={showUpdateConfirm} onOpenChange={setShowUpdateConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Gửi đơn đăng ký đề tài</AlertDialogTitle>
+                        <AlertDialogTitle>Cập nhật đề tài</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn có chắc chắn muốn Gửi đơn đăng ký đề tài?
+                            Bạn có chắc chắn muốn cập nhật đề tài này?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isSubmitting} className="text-rose-500"><X className="h-4 w-4" /> Hủy</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isSubmitting} className="text-rose-500">
+                            <X className="h-4 w-4" /> Hủy
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={async (e) => {
                                 e.preventDefault();
@@ -803,14 +832,14 @@ export default function TopicProposal() {
                                             title: "Thông tin chưa hoàn thiện",
                                             description: "Vui lòng nhập đầy đủ các trường bắt buộc (có dấu * đỏ).",
                                             variant: "error",
-                                        })
+                                        });
                                     })();
                                 } catch (error) {
                                     toast({
                                         title: "Lỗi",
-                                        description: "Có lỗi xảy ra khi gửi đơn. Vui lòng thử lại.",
+                                        description: "Có lỗi xảy ra khi cập nhật đề tài. Vui lòng thử lại.",
                                         variant: "error",
-                                    })
+                                    });
                                 }
                             }}
                             disabled={isSubmitting}
@@ -818,11 +847,11 @@ export default function TopicProposal() {
                         >
                             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                             {!isSubmitting && <Save className="h-4 w-4" />}
-                            {isSubmitting ? "Đang gửi..." : "Xác nhận"}
+                            {isSubmitting ? "Đang cập nhật..." : "Xác nhận"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>
-    )
+    );
 }

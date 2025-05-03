@@ -1,12 +1,21 @@
+import { Category } from "@/models/category";
 import { Department } from "@/models/department";
+import { TopicStatus } from "@/models/enums/topic-status.enum";
 import { ResearchField } from "@/models/research-field";
 import { ResearchType } from "@/models/research-type";
 
 export interface ExpectedProduct {
-    id?: string;
-    productName: string;
-    criteria: string;
-    description: string;
+    scientific: {
+        domestic?: number;
+        international?: number;
+    };
+    training: {
+        masters?: number;
+        students?: number;
+    };
+    commercial: {
+        details?: string;
+    };
 }
 
 export interface BudgetBreakdown {
@@ -25,23 +34,21 @@ export interface Topic {
     objectives?: string;
     mainContent?: string;
     practicalApplications?: string;
-    expectedProducts: ExpectedProduct[];
-    novelty?: string;
+    expectedProducts: ExpectedProduct;
+    urgency: string;
     expectedRisks?: string;
     keywords: string[];
     department?: Department;
+    category?: Category;
     field?: ResearchField;
     researchType?: ResearchType;
-    category?: string;
     transferForm: string[];
     attachedDocuments?: string[];
-    status: string;
+    status: TopicStatus;
     startDate: string;
     durationInMonths: number;
     endYear: number;
     totalBudget: number;
-    approvedBudget: number;
-    remainingBudget: number;
     fundingSource?: string;
     budgetBreakdown: BudgetBreakdown[];
     additionalNotes?: string;

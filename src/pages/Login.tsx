@@ -1,20 +1,23 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Checkbox } from "../components/ui/checkbox";
-import { useId } from "react";
-import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { EyeIcon, EyeOff } from "lucide-react";
 import Loading from "@/components/loading/loading";
 import { login, introspectToken, refreshToken } from "@/service/auth-service";
 import Cookies from "js-cookie";
 import { toast } from "@/hooks/use-toast";
 import useUserStore from "@/store/userStore";
 import { Roles } from "@/models/enums/roles.enum";
-import { EyeIcon, EyeOff } from "lucide-react";
 import { UserService } from "@/service/user-service";
 
+// Schema validation với zod
 const loginSchema = z.object({
     email: z
         .string()
@@ -35,24 +38,35 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
-    const emailId = useId();
-    const passwordId = useId();
     const [isLoading, setIsLoading] = useState(true);
-    const [isError, setIsError] = useState(false);
-    const [formData, setFormData] = useState<LoginFormData>({
-        email: "",
-        password: "",
-        remember: false,
-    });
-    const [showPassword, setShowPassword] = useState(false);
     const [showLogin, setShowLogin] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
+    // Sử dụng react-hook-form để quản lý form
+    const form = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: localStorage.getItem("email") || "",
+            password: "",
+            remember: !!localStorage.getItem("email"),
+        },
+        mode: "onBlur",
+    });
+
+    const redirectBasedOnRoles = (roles: string[], from: string) => {
+        if (!roles.length || roles.includes(Roles.STUDENT)) {
+            navigate(from.includes("/admin") ? "/" : from, { replace: true });
+        } else {
+            navigate(from.includes("/admin") ? from : "/admin", { replace: true });
+        }
+    };
 
     useEffect(() => {
         const checkTokens = async () => {
             const accessToken = Cookies.get("access-token");
             const refreshTokenValue = Cookies.get("refresh-token");
 
-            // Case 1: No tokens, show login page
+            // Case 1: Không có token, hiển thị trang login
             if (!accessToken || !refreshTokenValue) {
                 setShowLogin(true);
                 setIsLoading(false);
@@ -60,33 +74,26 @@ export default function Login() {
             }
 
             try {
-                // Case 2: Check access token validity
+                // Case 2: Kiểm tra access token
                 const accessTokenResponse = await introspectToken(accessToken);
                 if (accessTokenResponse.status === 200 && accessTokenResponse.data) {
-                    // Access token is valid, fetch user and redirect
                     const userResponse = await UserService.getCurrentUsers({ token: accessToken });
                     if (userResponse.code === 1000) {
                         const user = userResponse.data;
                         useUserStore.getState().setUser(user);
 
-                        const roles = user.roles || [];
+                        const roles = (user.roles || []).map((role: { id: number; name: string }) => role.name);
                         const from = location.state?.from?.pathname || "/";
-
-                        if (roles.includes(Roles.TEACHER) || roles.includes(Roles.ADMIN)) {
-                            navigate(from.includes("/admin") ? from : "/admin", { replace: true });
-                        } else {
-                            navigate(from.includes("/admin") ? "/" : from, { replace: true });
-                        }
+                        redirectBasedOnRoles(roles, from);
                     }
                     return;
                 }
 
-                // Case 3: Access token invalid, check refresh token
+                // Case 3: Access token không hợp lệ, kiểm tra refresh token
                 const refreshTokenResponse = await introspectToken(refreshTokenValue);
                 if (refreshTokenResponse.status === 200 && refreshTokenResponse.data) {
-                    // Refresh token is valid, refresh access token
                     const refreshResponse = await refreshToken({ refreshToken: refreshTokenValue });
-                    if (refreshResponse.status === 200 || refreshResponse.data.code === 1000) {
+                    if (refreshResponse.status === 200 && refreshResponse.data.code === 1000) {
                         Cookies.set("access-token", refreshResponse.data.accessToken, { secure: true, sameSite: "Strict" });
                         Cookies.set("refresh-token", refreshResponse.data.refreshToken, { secure: true, sameSite: "Strict" });
 
@@ -95,39 +102,18 @@ export default function Login() {
                             const user = userResponse.data;
                             useUserStore.getState().setUser(user);
 
-                            const roles = user.roles || [];
+                            const roles = (user.roles || []).map((role: { id: number; name: string }) => role.name);
                             const from = location.state?.from?.pathname || "/";
-
-                            if (roles.includes(Roles.TEACHER) || roles.includes(Roles.ADMIN)) {
-                                navigate(from.includes("/admin") ? from : "/admin", { replace: true });
-                            } else {
-                                navigate(from.includes("/admin") ? "/" : from, { replace: true });
-                            }
+                            redirectBasedOnRoles(roles, from);
                         }
                     }
                 } else {
-                    // Case 4: Both tokens invalid, show login with session expired message
-                    Cookies.remove("access-token");
-                    Cookies.remove("refresh-token");
-                    setShowLogin(true);
-                    toast({
-                        title: "Phiên đăng nhập hết hạn",
-                        description: "Vui lòng đăng nhập lại.",
-                        variant: "error",
-                        duration: 3000,
-                    });
+                    // Case 4: Cả hai token không hợp lệ
+                    handleInvalidSession();
                 }
             } catch (error) {
                 console.error("Token check failed:", error);
-                Cookies.remove("access-token");
-                Cookies.remove("refresh-token");
-                setShowLogin(true);
-                toast({
-                    title: "Phiên đăng nhập hết hạn",
-                    description: "Vui lòng đăng nhập lại.",
-                    variant: "error",
-                    duration: 3000,
-                });
+                handleInvalidSession();
             } finally {
                 setIsLoading(false);
             }
@@ -136,107 +122,41 @@ export default function Login() {
         checkTokens();
     }, [navigate, location]);
 
-    useEffect(() => {
-        const savedEmail = localStorage.getItem("email");
-        if (savedEmail) {
-            setFormData((prev) => ({
-                ...prev,
-                email: savedEmail,
-                remember: true,
-            }));
-        }
-    }, []);
-
-    const [errors, setErrors] = useState<{
-        email?: string;
-        password?: string;
-    }>({});
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
-
-        if (errors[name as keyof typeof errors]) {
-            setErrors({
-                ...errors,
-                [name]: undefined,
-            });
-        }
-    };
-
-    const handleCheckboxChange = (checked: boolean) => {
-        setFormData({
-            ...formData,
-            remember: checked,
+    // Xử lý khi session không hợp lệ
+    const handleInvalidSession = () => {
+        Cookies.remove("access-token");
+        Cookies.remove("refresh-token");
+        setShowLogin(true);
+        toast({
+            title: "Phiên đăng nhập hết hạn",
+            description: "Vui lòng đăng nhập lại.",
+            variant: "error",
+            duration: 3000,
         });
     };
 
-    const validateField = (name: string, value: string) => {
-        try {
-            z.object({ [name]: loginSchema.shape[name] }).parse({ [name]: value });
-            setErrors((prevErrors) => ({
-                ...prevErrors,
-                [name]: undefined,
-            }));
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                setErrors((prevErrors) => ({
-                    ...prevErrors,
-                    [name]: error.errors[0]?.message,
-                }));
-            }
-        }
-    };
-
-    const validateForm = () => {
-        try {
-            loginSchema.parse(formData);
-            setErrors({});
-            return true;
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                const formattedErrors: Record<string, string> = {};
-                error.errors.forEach((err) => {
-                    if (err.path[0]) {
-                        formattedErrors[err.path[0] as string] = err.message;
-                    }
-                });
-                setErrors(formattedErrors);
-            }
-            return false;
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        if (!validateForm()) {
-            return;
-        }
-
+    // Xử lý submit form đăng nhập
+    const handleSubmit = async (data: LoginFormData) => {
         setIsLoading(true);
-
         try {
-            if (formData.remember) {
-                localStorage.setItem("email", formData.email);
+            if (data.remember) {
+                localStorage.setItem("email", data.email);
             } else {
                 localStorage.removeItem("email");
             }
+
             const response = await login({
-                email: formData.email.trim(),
-                password: formData.password,
+                email: data.email.trim(),
+                password: data.password,
             });
 
             if (response.status === 200 || response.code === 1000) {
                 Cookies.set("access-token", response.data.accessToken, { secure: true, sameSite: "Strict" });
                 Cookies.set("refresh-token", response.data.refreshToken, { secure: true, sameSite: "Strict" });
 
-                const res = await UserService.getCurrentUsers({ token: response.data.accessToken });
-                if (res.status === 200 || res.code === 1000) {
-                    const user = res.data;
+                const userResponse = await UserService.getCurrentUsers({ token: response.data.accessToken });
+                if (userResponse.status === 200 || userResponse.code === 1000) {
+                    const user = userResponse.data;
                     useUserStore.getState().setUser(user);
 
                     toast({
@@ -247,18 +167,12 @@ export default function Login() {
 
                     const roles = (user.roles || []).map((role: { id: number; name: string }) => role.name);
                     const from = location.state?.from?.pathname || "/";
-
-                    if (roles.includes(Roles.TEACHER) || roles.includes(Roles.ADMIN)) {
-                        navigate(from.includes("/admin") ? from : "/admin", { replace: true });
-                    } else {
-                        navigate(from.includes("/admin") ? "/" : from, { replace: true });
-                    }
+                    redirectBasedOnRoles(roles, from);
                 }
             } else if (response.status === 401 || response.code === 1401) {
-                setIsError(true);
                 toast({
                     title: "Thông báo",
-                    description: response.message,
+                    description: response.message || "Thông tin đăng nhập không chính xác!",
                     variant: "error",
                     duration: 2000,
                 });
@@ -268,24 +182,20 @@ export default function Login() {
                 title: "Thông báo",
                 description: "Thông tin đăng nhập không chính xác!",
                 variant: "error",
+                duration: 2000,
             });
-            setIsError(true);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleCancelLoading = () => {
-        setIsLoading(false);
-    };
-
     if (!showLogin) {
-        return <Loading onCancel={handleCancelLoading} />;
+        return <Loading onCancel={() => setIsLoading(false)} />;
     }
 
     return (
         <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-            {isLoading && <Loading onCancel={handleCancelLoading} />}
+            {isLoading && <Loading onCancel={() => setIsLoading(false)} />}
             <section className="hidden lg:flex flex-col items-center justify-center bg-[#f0f9ff] p-8">
                 <div className="max-w-[500px] text-center">
                     <Link to="/">
@@ -322,78 +232,82 @@ export default function Login() {
                         <p className="text-base text-gray-600">Chào mừng trở lại! Vui lòng nhập thông tin đăng nhập.</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {isError && (
-                            <p className="text-md text-red-500">
-                                Thông tin đăng nhập không chính xác!
-                            </p>
-                        )}
-                        <div className="space-y-2">
-                            <Label htmlFor={emailId} className="text-gray-700">
-                                Email
-                            </Label>
-                            <Input
-                                id={emailId}
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                            <FormField
+                                control={form.control}
                                 name="email"
-                                type="text"
-                                value={formData.email}
-                                onChange={handleInputChange}
-                                onBlur={(e) => validateField(e.target.name, e.target.value)}
-                                placeholder="Nhập email của bạn"
-                                className={`h-11 border-gray-200 ${errors.email && "border-red-500"}`}
-                            />
-                            {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
-                        </div>
-
-                        <div className="space-y-2 relative">
-                            <Label htmlFor={passwordId} className="text-gray-700">
-                                Mật khẩu
-                            </Label>
-                            <Input
-                                id={passwordId}
-                                name="password"
-                                type={showPassword ? "text" : "password"}
-                                value={formData.password}
-                                onChange={handleInputChange}
-                                onBlur={(e) => validateField(e.target.name, e.target.value)}
-                                placeholder="••••••••"
-                                className={`h-11 border-gray-200 ${errors.password && "border-red-500"}`}
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-3 top-1/2 text-gray-500 hover:text-gray-700"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? (
-                                    <EyeOff className="h-4 w-4" />
-                                ) : (
-                                    <EyeIcon className="h-4 w-4" />
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-gray-700">Email</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="text"
+                                                placeholder="Nhập email của bạn"
+                                                className="h-11 border-gray-200"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}
-                            </button>
-                            {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
-                        </div>
+                            />
 
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="remember"
-                                    checked={formData.remember}
-                                    onCheckedChange={handleCheckboxChange}
-                                    className="border-gray-200 rounded data-[state=checked]:bg-[#0056a6] data-[state=checked]:border-[#0056a6]"
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-gray-700">Mật khẩu</FormLabel>
+                                        <FormControl>
+                                            <div className="relative h-11">
+                                                <Input
+                                                    {...field}
+                                                    type={showPassword ? "text" : "password"}
+                                                    placeholder="••••••••"
+                                                    className="h-full pr-10 border-gray-200"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                >
+                                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                                                </button>
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="flex items-center justify-between">
+                                <FormField
+                                    control={form.control}
+                                    name="remember"
+                                    render={({ field }) => (
+                                        <FormItem className="flex items-center gap-2">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                    className="border-gray-200 rounded data-[state=checked]:bg-[#0056a6] data-[state=checked]:border-[#0056a6]"
+                                                />
+                                            </FormControl>
+                                            <FormLabel className="text-sm text-gray-600">Ghi nhớ đăng nhập</FormLabel>
+                                        </FormItem>
+                                    )}
                                 />
-                                <Label htmlFor="remember" className="text-sm text-gray-600">
-                                    Ghi nhớ đăng nhập
-                                </Label>
+                                <Link to="/forgot-password" className="text-sm text-[#0056a6] hover:underline">
+                                    Quên mật khẩu?
+                                </Link>
                             </div>
-                            <Link to="/forgot-password" className="text-sm text-[#0056a6] hover:underline">
-                                Quên mật khẩu?
-                            </Link>
-                        </div>
 
-                        <Button type="submit" className="w-full h-11 bg-[#0056a6] hover:bg-[#0056a6]/90" disabled={isLoading}>
-                            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
-                        </Button>
-                    </form>
+                            <Button type="submit" className="w-full h-11 bg-[#0056a6] hover:bg-[#0056a6]/90" disabled={isLoading}>
+                                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+                            </Button>
+                        </form>
+                    </Form>
                 </div>
             </section>
         </div>

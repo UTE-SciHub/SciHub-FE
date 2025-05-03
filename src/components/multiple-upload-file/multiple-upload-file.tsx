@@ -28,10 +28,11 @@ interface MultiFileUploadProps<TFieldValues extends FieldValues> {
         name: FieldPath<TFieldValues>;
     };
     accept?: string;
-    maxSize?: number; // in MB
+    maxSize?: number;
     placeholder?: string;
     description?: string;
     label?: string;
+    readOnly?: boolean;
 }
 
 export default function MultiFileUpload<TFieldValues extends FieldValues>({
@@ -42,6 +43,7 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
     placeholder = "Tải lên tài liệu",
     description = "Tải lên tài liệu bổ sung (PDF, Word - tối đa 10MB)",
     label = "Tài liệu đính kèm",
+    readOnly = false,
 }: MultiFileUploadProps<TFieldValues>) {
     const [sessions, setSessions] = useState<UploadSession[]>([{ id: "1", name: "", files: [] }]);
     const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
@@ -68,28 +70,28 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
     }, [sessions, field]);
 
     const handleAddSession = () => {
+        if (readOnly) return;
         setSessions([...sessions, { id: Date.now().toString(), name: "", files: [] }]);
     };
 
     const handleRemoveSession = (sessionId: string) => {
-        if (sessions.length <= 1) return;
+        if (readOnly || sessions.length <= 1) return;
         setSessions(sessions.filter((session) => session.id !== sessionId));
     };
 
     const handleSessionNameChange = (sessionId: string, name: string) => {
+        if (readOnly) return;
         setSessions(sessions.map((session) => (session.id === sessionId ? { ...session, name } : session)));
     };
 
     const handleFileSelect = (sessionId: string, selectedFiles: FileList | null) => {
-        if (!selectedFiles) return;
+        if (readOnly || !selectedFiles) return;
 
-        // Chỉ lấy file đầu tiên vì mỗi section chỉ cho phép 1 file
         const file = selectedFiles[0];
         if (!file) return;
 
-        const maxSizeBytes = maxSize * 1024 * 1024; // Convert MB to bytes
+        const maxSizeBytes = maxSize * 1024 * 1024;
         const acceptedTypes = accept.split(",").map((type) => type.trim().toLowerCase());
-
         const fileExtension = `.${file.name.split(".").pop()?.toLowerCase()}`;
         const isValidType = acceptedTypes.includes(fileExtension) || acceptedTypes.includes(file.type);
         const isValidSize = file.size <= maxSizeBytes;
@@ -120,7 +122,7 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
                 if (session.id === sessionId) {
                     return {
                         ...session,
-                        files: [newFile], // Chỉ lưu 1 file duy nhất
+                        files: [newFile],
                     };
                 }
                 return session;
@@ -135,6 +137,7 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
     };
 
     const handleRemoveFile = (sessionId: string, fileId: string) => {
+        if (readOnly) return;
         setSessions(
             sessions.map((session) => {
                 if (session.id === sessionId) {
@@ -187,43 +190,17 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
     };
 
     const getStatusBadge = (status: FileStatus) => {
+        const baseClass =
+            "text-xs font-medium px-2 py-0.5 rounded border";
         switch (status) {
             case "pending":
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-amber-50 text-amber-700 border-amber-200 text-xs font-medium px-2 py-0.5 rounded"
-                    >
-                        Pending
-                    </Badge>
-                );
+                return <Badge className={`${baseClass} bg-amber-50 text-amber-700 border-amber-200`}>Pending</Badge>;
             case "uploading":
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-medium px-2 py-0.5 rounded"
-                    >
-                        Uploading
-                    </Badge>
-                );
+                return <Badge className={`${baseClass} bg-blue-50 text-blue-700 border-blue-200`}>Uploading</Badge>;
             case "complete":
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-green-50 text-green-700 border-green-200 text-xs font-medium px-2 py-0.5 rounded"
-                    >
-                        Complete
-                    </Badge>
-                );
+                return <Badge className={`${baseClass} bg-green-50 text-green-700 border-green-200`}>Complete</Badge>;
             case "error":
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-red-50 text-red-700 border-red-200 text-xs font-medium px-2 py-0.5 rounded"
-                    >
-                        Error
-                    </Badge>
-                );
+                return <Badge className={`${baseClass} bg-red-50 text-red-700 border-red-200`}>Error</Badge>;
         }
     };
 
@@ -240,7 +217,7 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
             <div className="space-y-6">
                 {sessions.map((session, index) => (
                     <div key={session.id} className="border rounded-md overflow-hidden relative">
-                        {sessions.length > 1 && (
+                        {!readOnly && sessions.length > 1 && (
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -259,39 +236,41 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
                                     value={session.name}
                                     onChange={(e) => handleSessionNameChange(session.id, e.target.value)}
                                     className="max-w-xs h-8 text-sm"
+                                    readOnly={readOnly}
                                 />
                             </div>
                         </div>
+
                         <div className="p-4 bg-white">
-                            <div className="mb-4">
-                                <input
-                                    type="file"
-                                    // Bỏ multiple để chỉ cho phép chọn 1 file
-                                    accept={accept}
-                                    className="hidden"
-                                    ref={(el) => (fileInputRefs.current[session.id] = el)}
-                                    onChange={(e) => handleFileSelect(session.id, e.target.files)}
-                                />
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        if (session.files.length > 0) {
-                                            form.setError(field.name, {
-                                                type: "manual",
-                                                message: "Mỗi mục chỉ được tải lên 1 file duy nhất.",
-                                            });
-                                            return;
-                                        }
-                                        fileInputRefs.current[session.id]?.click();
-                                    }}
-                                    className="flex items-center gap-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border-none"
-                                >
-                                    <Plus size={16} />
-                                    {placeholder}
-                                </Button>
-                            </div>
+                            {!readOnly && (
+                                <div className="mb-4">
+                                    <input
+                                        type="file"
+                                        accept={accept}
+                                        className="hidden"
+                                        ref={(el) => (fileInputRefs.current[session.id] = el)}
+                                        onChange={(e) => handleFileSelect(session.id, e.target.files)}
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (session.files.length > 0) {
+                                                form.setError(field.name, {
+                                                    type: "manual",
+                                                    message: "Mỗi mục chỉ được tải lên 1 file duy nhất.",
+                                                });
+                                                return;
+                                            }
+                                            fileInputRefs.current[session.id]?.click();
+                                        }}
+                                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 font-semibold text-white border-none"
+                                    >
+                                        <Plus size={16} />
+                                        {placeholder}
+                                    </Button>
+                                </div>
+                            )}
 
                             {session.files.length > 0 ? (
                                 <div className="space-y-3">
@@ -311,17 +290,19 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="ml-4">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleRemoveFile(session.id, file.id)}
-                                                    className="h-8 w-8 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    <X size={16} />
-                                                </Button>
-                                            </div>
+                                            {!readOnly && (
+                                                <div className="ml-4">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleRemoveFile(session.id, file.id)}
+                                                        className="h-8 w-8 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                                    >
+                                                        <X size={16} />
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -338,21 +319,24 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
                 ))}
             </div>
 
-            <div className="flex justify-center mt-4">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddSession}
-                    className="border-dashed border-gray-300 text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                >
-                    <Plus size={16} className="mr-1" />
-                </Button>
-            </div>
+            {!readOnly && (
+                <div className="flex justify-center mt-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAddSession}
+                        className="border-dashed border-gray-300 text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    >
+                        <Plus size={16} className="mr-1" />
+                    </Button>
+                </div>
+            )}
 
-            {/* Thêm phần note đỏ */}
-            <p className="text-sm text-red-500 mt-2">
-                Kéo thả file vào đây để tải lên. (Cần chữ ký của các biểu mẫu trước khi upload lên)
-            </p>
+            {!readOnly && (
+                <p className="text-sm text-red-500 mt-2">
+                    Kéo thả file vào đây để tải lên. (Cần chữ ký của các biểu mẫu trước khi upload lên)
+                </p>
+            )}
         </div>
     );
 }

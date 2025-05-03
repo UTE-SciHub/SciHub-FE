@@ -51,6 +51,7 @@ interface DynamicTableProps {
     cellClassName?: string;
     addButtonText?: string;
     noDataText?: string;
+    readOnly?: boolean;
 }
 
 export default function DynamicTable({
@@ -68,6 +69,7 @@ export default function DynamicTable({
     headerClassName,
     cellClassName,
     noDataText = "Chưa có dữ liệu. Nhấn nút '+' để thêm dòng mới.",
+    readOnly = false,
 }: DynamicTableProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const firstInputRef = useRef<HTMLElement | null>(null);
@@ -91,31 +93,20 @@ export default function DynamicTable({
     };
 
     const handleAddRow = () => {
-        if (maxRows !== undefined && value.length >= maxRows) {
-            return;
-        }
-
+        if (maxRows !== undefined && value.length >= maxRows) return;
         const newRow = createEmptyRow();
         onChange?.([...value, newRow]);
         setEditingId(newRow.id);
-
         setTimeout(() => {
-            if (firstInputRef.current) {
-                firstInputRef.current.focus();
-            }
+            if (firstInputRef.current) firstInputRef.current.focus();
         }, 0);
     };
 
     const handleDeleteRow = (id: string) => {
-        if (value.length <= minRows) {
-            return;
-        }
-
+        if (value.length <= minRows) return;
         const newRows = value.filter((row) => row.id !== id);
         onChange?.(newRows);
-        if (editingId === id) {
-            setEditingId(null);
-        }
+        if (editingId === id) setEditingId(null);
     };
 
     const renderInputField = (row: TableRow, column: TableColumn, rowIndex: number, isFirstColumn: boolean) => {
@@ -140,10 +131,10 @@ export default function DynamicTable({
                                                 onChange={(e) => field.onChange(e.target.value)}
                                                 placeholder={column.placeholder}
                                                 required={column.required}
-                                                className={cn("min-h-[40px] border-blue-200 focus:border-blue-500", fieldState.error && "border-red-500 focus:border-red-500", column.className)}
+                                                disabled={readOnly}
+                                                className={cn("min-h-[40px] border-blue-200", fieldState.error && "border-red-500", column.className)}
                                             />
                                         );
-
                                     case "number":
                                         return (
                                             <Input
@@ -160,24 +151,22 @@ export default function DynamicTable({
                                                     field.onChange(rawValue);
                                                     e.target.value = formatVND(rawValue);
                                                 }}
-                                                min={column.min}
-                                                max={column.max}
-                                                step={column.step || 1}
+                                                disabled={readOnly}
                                                 placeholder={column.placeholder}
                                                 required={column.required}
-                                                className={cn("border-blue-200 focus:border-blue-500", fieldState.error && "border-red-500 focus:border-red-500", column.className)}
+                                                className={cn("border-blue-200", fieldState.error && "border-red-500", column.className)}
                                             />
                                         );
-
                                     case "select":
                                         return (
                                             <Select
                                                 {...field}
+                                                disabled={readOnly}
                                                 value={field.value?.toString() || ""}
                                                 onValueChange={(val) => field.onChange(val)}
                                             >
                                                 <SelectTrigger
-                                                    className={cn("border-blue-200 focus:border-blue-500", fieldState.error && "border-red-500 focus:border-red-500", column.className)}
+                                                    className={cn("border-blue-200", fieldState.error && "border-red-500", column.className)}
                                                     ref={isFirstInput ? (firstInputRef as React.RefObject<HTMLButtonElement>) : null}
                                                 >
                                                     <SelectValue placeholder={column.placeholder || "Chọn..."} />
@@ -191,7 +180,6 @@ export default function DynamicTable({
                                                 </SelectContent>
                                             </Select>
                                         );
-
                                     case "checkbox":
                                         return (
                                             <div className="flex items-center justify-center">
@@ -199,12 +187,12 @@ export default function DynamicTable({
                                                     {...field}
                                                     checked={!!field.value}
                                                     onCheckedChange={(checked) => field.onChange(checked)}
+                                                    disabled={readOnly}
                                                     ref={isFirstInput ? (firstInputRef as React.RefObject<HTMLButtonElement>) : null}
                                                     className={cn("data-[state=checked]:bg-blue-500", fieldState.error && "border-red-500", column.className)}
                                                 />
                                             </div>
                                         );
-
                                     case "date":
                                         return (
                                             <Input
@@ -215,10 +203,10 @@ export default function DynamicTable({
                                                 onChange={(e) => field.onChange(e.target.value)}
                                                 placeholder={column.placeholder}
                                                 required={column.required}
-                                                className={cn("border-blue-200 focus:border-blue-500", fieldState.error && "border-red-500 focus:border-red-500", column.className)}
+                                                disabled={readOnly}
+                                                className={cn("border-blue-200", fieldState.error && "border-red-500", column.className)}
                                             />
                                         );
-
                                     case "text":
                                     default:
                                         return (
@@ -229,13 +217,14 @@ export default function DynamicTable({
                                                 onChange={(e) => field.onChange(e.target.value)}
                                                 placeholder={column.placeholder}
                                                 required={column.required}
-                                                className={cn("border-blue-200 focus:border-blue-500", fieldState.error && "border-red-500 focus:border-red-500", column.className)}
+                                                disabled={readOnly}
+                                                className={cn("border-blue-200", fieldState.error && "border-red-500", column.className)}
                                             />
                                         );
                                 }
                             })()}
                         </FormControl>
-                        {fieldState.error && (
+                        {!readOnly && fieldState.error && (
                             <div className="text-red-500 text-xs mt-1 absolute -bottom-5 left-0 w-full">
                                 {fieldState.error.message}
                             </div>
@@ -246,8 +235,8 @@ export default function DynamicTable({
         );
     };
 
-    const canAddMoreRows = maxRows === undefined || value.length < maxRows;
-    const canDeleteRows = value.length > minRows;
+    const canAddMoreRows = !readOnly && (maxRows === undefined || value.length < maxRows);
+    const canDeleteRows = !readOnly && value.length > minRows;
 
     return (
         <div className={cn("w-full mx-auto p-4 border rounded-lg bg-white", className)}>
@@ -269,7 +258,7 @@ export default function DynamicTable({
                                     {column.required && <span className="text-red-500 ml-1">*</span>}
                                 </th>
                             ))}
-                            <th className="border p-2 text-center w-24">Thao tác</th>
+                            {!readOnly && <th className="border p-2 text-center w-24">Thao tác</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -283,38 +272,40 @@ export default function DynamicTable({
                                         </div>
                                     </td>
                                 ))}
-                                <td className={cn("border p-2", cellClassName)}>
-                                    <div className="flex flex-col items-center gap-2">
-                                        {canDeleteRows && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                onClick={() => handleDeleteRow(row.id)}
-                                                title="Xóa dòng"
-                                            >
-                                                <X size={18} />
-                                            </Button>
-                                        )}
-                                        {canAddMoreRows && (
-                                            <Button
-                                                type="button"
-                                                variant="default"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                                onClick={handleAddRow}
-                                                title="Thêm dòng"
-                                            >
-                                                <Plus size={18} />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </td>
+                                {!readOnly && (
+                                    <td className={cn("border p-2", cellClassName)}>
+                                        <div className="flex flex-col items-center gap-2">
+                                            {canDeleteRows && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() => handleDeleteRow(row.id)}
+                                                    title="Xóa dòng"
+                                                >
+                                                    <X size={18} />
+                                                </Button>
+                                            )}
+                                            {canAddMoreRows && (
+                                                <Button
+                                                    type="button"
+                                                    variant="default"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={handleAddRow}
+                                                    title="Thêm dòng"
+                                                >
+                                                    <Plus size={18} />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                         {value.length === 0 && (
                             <tr>
-                                <td colSpan={columns.length + 2} className="border p-4 text-center text-gray-500">
+                                <td colSpan={columns.length + (readOnly ? 1 : 2)} className="border p-4 text-center text-gray-500">
                                     {noDataText}
                                 </td>
                             </tr>

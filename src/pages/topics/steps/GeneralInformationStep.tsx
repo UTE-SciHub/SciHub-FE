@@ -11,22 +11,22 @@ import { ResearchType } from "@/models/research-type"
 
 interface GeneralInformationStepProps {
     form: any;
-    departmentOptions: Department[];
     researchTypeOptions: ResearchType[];
     researchFieldOptions: ResearchField[];
     categoriesOptions: Category[];
     periodsOptions: RegistrationPeriod[];
     isLoadingOptions: boolean;
+    readOnly?: boolean;
 }
 
 export default function GeneralInformationStep({
     form,
-    departmentOptions,
     researchTypeOptions,
     researchFieldOptions,
     categoriesOptions,
     periodsOptions,
     isLoadingOptions,
+    readOnly = false,
 }: GeneralInformationStepProps) {
 
     return (
@@ -43,7 +43,11 @@ export default function GeneralInformationStep({
                             Tên tiếng Việt <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
-                            <Input placeholder="Nhập tên đề tài bằng tiếng Việt" {...field} />
+                            <Input
+                                placeholder="Nhập tên đề tài bằng tiếng Việt"
+                                {...field}
+                                disabled={readOnly}
+                            />
                         </FormControl>
                         <FormDescription>Tên của đề tài bằng tiếng Việt</FormDescription>
                         <FormMessage />
@@ -61,7 +65,11 @@ export default function GeneralInformationStep({
                             Tên tiếng Anh <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
-                            <Input placeholder="Nhập tên đề tài bằng tiếng Anh" {...field} />
+                            <Input
+                                placeholder="Nhập tên đề tài bằng tiếng Anh"
+                                {...field}
+                                disabled={readOnly}
+                            />
                         </FormControl>
                         <FormDescription>Tên của đề tài bằng tiếng Anh</FormDescription>
                         <FormMessage />
@@ -69,7 +77,7 @@ export default function GeneralInformationStep({
                 )}
             />
 
-            <FormField
+            {/* <FormField
                 control={form.control}
                 name="period"
                 render={({ field }) => (
@@ -77,7 +85,11 @@ export default function GeneralInformationStep({
                         <FormLabel>
                             Đợt đăng ký <span className="text-destructive">*</span>
                         </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}>
+                        <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLoadingOptions || readOnly}
+                        >
                             <FormControl>
                                 <SelectTrigger>
                                     <SelectValue placeholder={isLoadingOptions ? "Đang tải..." : "Chọn đợt đăng ký"} />
@@ -96,15 +108,15 @@ export default function GeneralInformationStep({
                                 ))}
                             </SelectContent>
                         </Select>
-                        <FormDescription>Khoa quản lý đề tài</FormDescription>
+                        <FormDescription>Đợt đăng ký đề tài</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}
-            />
+            /> */}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Department */}
-                <FormField
+                {/* <FormField
                     control={form.control}
                     name="department"
                     render={({ field }) => (
@@ -112,7 +124,11 @@ export default function GeneralInformationStep({
                             <FormLabel>
                                 Khoa <span className="text-destructive">*</span>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}>
+                            <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={isLoadingOptions || readOnly}
+                            >
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder={isLoadingOptions ? "Đang tải..." : "Chọn khoa"} />
@@ -135,7 +151,7 @@ export default function GeneralInformationStep({
                             <FormMessage />
                         </FormItem>
                     )}
-                />
+                /> */}
 
                 {/* Field */}
                 <FormField
@@ -147,7 +163,9 @@ export default function GeneralInformationStep({
                                 Lĩnh vực <span className="text-destructive">*</span>
                             </FormLabel>
                             <Select
-                                onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={isLoadingOptions || readOnly}
                             >
                                 <FormControl>
                                     <SelectTrigger>
@@ -185,7 +203,9 @@ export default function GeneralInformationStep({
                                 Loại hình nghiên cứu <span className="text-destructive">*</span>
                             </FormLabel>
                             <Select
-                                onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={isLoadingOptions || readOnly}
                             >
                                 <FormControl>
                                     <SelectTrigger>
@@ -221,7 +241,9 @@ export default function GeneralInformationStep({
                                 Loại đề tài <span className="text-destructive">*</span>
                             </FormLabel>
                             <Select
-                                onValueChange={field.onChange} value={field.value} disabled={isLoadingOptions}
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={isLoadingOptions || readOnly}
                             >
                                 <FormControl>
                                     <SelectTrigger>
@@ -263,6 +285,7 @@ export default function GeneralInformationStep({
                                 placeholder="Nhập từ khóa"
                                 description="Các từ khóa liên quan đến đề tài"
                                 required={true}
+                                readOnly={readOnly}
                             />
                         </FormControl>
                         <FormDescription>Các từ khóa liên quan đến đề tài</FormDescription>
@@ -288,6 +311,7 @@ export default function GeneralInformationStep({
                                 height="400px"
                                 maxLength={5000}
                                 fieldState={fieldState}
+                                readOnly={readOnly}
                             />
                         </FormControl>
                         <FormDescription>Mô tả mục tiêu chung và cụ thể của đề tài</FormDescription>
@@ -313,6 +337,7 @@ export default function GeneralInformationStep({
                                 height="400px"
                                 maxLength={5000}
                                 fieldState={fieldState}
+                                readOnly={readOnly}
                             />
                         </FormControl>
                         <FormDescription>Mô tả chi tiết nội dung sẽ thực hiện trong đề tài</FormDescription>
@@ -338,6 +363,7 @@ export default function GeneralInformationStep({
                                 height="400px"
                                 maxLength={5000}
                                 fieldState={fieldState}
+                                readOnly={readOnly}
                             />
                         </FormControl>
                         <FormDescription>Mô tả tính cấp thiết và đóng góp khoa học của đề tài</FormDescription>

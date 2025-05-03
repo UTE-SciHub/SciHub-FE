@@ -5,7 +5,15 @@ import { useState, useEffect } from "react";
 import { MultiSelect } from "@/components/multiple-select/multiple-select";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export default function SpecializationStep({ form }) {
+interface SpecializationStepProps {
+    form: any;
+    readOnly?: boolean;
+}
+
+export default function SpecializationStep({
+    form,
+    readOnly = false
+}: SpecializationStepProps) {
     const [selectedTransferForm, setSelectedTransferForm] = useState([]);
     const [productTypes, setProductTypes] = useState({
         scientific: false,
@@ -32,7 +40,8 @@ export default function SpecializationStep({ form }) {
         });
     }, [form]);
 
-    const handleProductTypeChange = (type, checked) => {
+    const handleProductTypeChange = (type: string, checked: boolean) => {
+        if (readOnly) return; // Prevent changes in readOnly mode
         setProductTypes((prev) => ({
             ...prev,
             [type]: checked,
@@ -43,7 +52,7 @@ export default function SpecializationStep({ form }) {
         <div className="space-y-6">
             <div className="text-2xl font-semibold text-center">Kết quả nghiên cứu dự kiến</div>
 
-            {/* Hình thức chuyển giao */}
+            {/* Transfer Form */}
             <FormField
                 control={form.control}
                 name="transferForm"
@@ -57,6 +66,7 @@ export default function SpecializationStep({ form }) {
                                 onChange={(values) => field.onChange(values)}
                                 placeholder="Chọn hình thức chuyển giao..."
                                 searchPlaceholder="Tìm kiếm..."
+                                disabled={readOnly}
                             />
                         </FormControl>
                         <FormDescription>Mô tả hình thức chuyển giao kết quả nghiên cứu (nếu có)</FormDescription>
@@ -65,19 +75,44 @@ export default function SpecializationStep({ form }) {
                 )}
             />
 
-            {/* Sản phẩm dự kiến */}
+            {/* Expected Risks */}
+            <FormField
+                control={form.control}
+                name="expectedRisks"
+                render={({ field, fieldState }) => (
+                    <FormItem>
+                        <FormLabel>Kết quả dự kiến <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                            <FormRichTextEditor
+                                label="Nhập rủi ro dự kiến"
+                                field={field}
+                                placeholder="Mô tả các kết quả dự kiến của nghiên cứu"
+                                height="400px"
+                                maxLength={5000}
+                                fieldState={fieldState}
+                                readOnly={readOnly}
+                            />
+                        </FormControl>
+                        <FormDescription>Mô tả các kết quả dự kiến của nghiên cứu</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+
+            {/* Expected Products */}
             <div>
                 <FormLabel>
                     Sản phẩm dự kiến <span className="text-destructive">*</span>
                 </FormLabel>
                 <div className="space-y-4 mt-2">
-                    {/* Sản phẩm khoa học */}
+                    {/* Scientific Products */}
                     <div className="border rounded-md p-4">
                         <div className="flex items-center space-x-2 mb-4">
                             <Checkbox
                                 id="scientific"
                                 checked={productTypes.scientific}
-                                onCheckedChange={(checked) => handleProductTypeChange("scientific", checked)}
+                                onCheckedChange={(checked) => handleProductTypeChange("scientific", !!checked)}
+                                disabled={readOnly}
                             />
                             <FormLabel htmlFor="scientific" className="font-medium">
                                 Sản phẩm khoa học
@@ -98,6 +133,7 @@ export default function SpecializationStep({ form }) {
                                                     placeholder="Nhập số lượng"
                                                     {...field}
                                                     onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                                    disabled={readOnly}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -117,6 +153,7 @@ export default function SpecializationStep({ form }) {
                                                     placeholder="Nhập số lượng"
                                                     {...field}
                                                     onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                                    disabled={readOnly}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -127,13 +164,14 @@ export default function SpecializationStep({ form }) {
                         )}
                     </div>
 
-                    {/* Sản phẩm đào tạo */}
+                    {/* Training Products */}
                     <div className="border rounded-md p-4">
                         <div className="flex items-center space-x-2 mb-4">
                             <Checkbox
                                 id="training"
                                 checked={productTypes.training}
-                                onCheckedChange={(checked) => handleProductTypeChange("training", checked)}
+                                onCheckedChange={(checked) => handleProductTypeChange("training", !!checked)}
+                                disabled={readOnly}
                             />
                             <FormLabel htmlFor="training" className="font-medium">
                                 Sản phẩm đào tạo
@@ -154,6 +192,7 @@ export default function SpecializationStep({ form }) {
                                                     placeholder="Nhập số lượng"
                                                     {...field}
                                                     onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                                    disabled={readOnly}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -173,6 +212,7 @@ export default function SpecializationStep({ form }) {
                                                     placeholder="Nhập số lượng"
                                                     {...field}
                                                     onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                                    disabled={readOnly}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -183,13 +223,14 @@ export default function SpecializationStep({ form }) {
                         )}
                     </div>
 
-                    {/* Sản phẩm ứng dụng */}
+                    {/* Commercial Products */}
                     <div className="border rounded-md p-4">
                         <div className="flex items-center space-x-2 mb-4">
                             <Checkbox
                                 id="commercial"
                                 checked={productTypes.commercial}
-                                onCheckedChange={(checked) => handleProductTypeChange("commercial", checked)}
+                                onCheckedChange={(checked) => handleProductTypeChange("commercial", !!checked)}
+                                disabled={readOnly}
                             />
                             <FormLabel htmlFor="commercial" className="font-medium">
                                 Sản phẩm ứng dụng
@@ -211,6 +252,7 @@ export default function SpecializationStep({ form }) {
                                                     height="400px"
                                                     maxLength={5000}
                                                     fieldState={fieldState}
+                                                    readOnly={readOnly}
                                                 />
                                             </FormControl>
                                             <FormDescription>
@@ -227,7 +269,7 @@ export default function SpecializationStep({ form }) {
                 <FormDescription>Lựa chọn và nhập thông tin chi tiết về các sản phẩm dự kiến</FormDescription>
             </div>
 
-            {/* Ứng dụng thực tiễn */}
+            {/* Practical Applications */}
             <FormField
                 control={form.control}
                 name="practicalApplications"
@@ -244,32 +286,10 @@ export default function SpecializationStep({ form }) {
                                 height="400px"
                                 maxLength={5000}
                                 fieldState={fieldState}
+                                readOnly={readOnly}
                             />
                         </FormControl>
                         <FormDescription>Mô tả ứng dụng của kết quả nghiên cứu vào thực tiễn</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-
-            {/* Rủi ro dự kiến */}
-            <FormField
-                control={form.control}
-                name="expectedRisks"
-                render={({ field, fieldState }) => (
-                    <FormItem>
-                        <FormLabel>Rủi ro dự kiến</FormLabel>
-                        <FormControl>
-                            <FormRichTextEditor
-                                label="Nhập rủi ro dự kiến"
-                                field={field}
-                                placeholder="Mô tả các rủi ro có thể xảy ra và cách xử lý"
-                                height="400px"
-                                maxLength={5000}
-                                fieldState={fieldState}
-                            />
-                        </FormControl>
-                        <FormDescription>Liệt kê các rủi ro có thể xảy ra và biện pháp khắc phục</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}

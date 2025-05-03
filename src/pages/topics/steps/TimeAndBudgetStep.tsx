@@ -18,7 +18,15 @@ const budgetColumns: TableColumn[] = [
     { id: "description", header: "Ghi chú", type: "text" },
 ];
 
-export default function TimeAndBudgetStep({ form }) {
+interface TimeAndBudgetStepProps {
+    form: any;
+    readOnly?: boolean;
+}
+
+export default function TimeAndBudgetStep({
+    form,
+    readOnly = false
+}: TimeAndBudgetStepProps) {
     const fundingSourceOptions = [
         { value: "GOVERNMENT", label: "Nhà nước" },
         { value: "ENTERPRISE", label: "Doanh nghiệp" },
@@ -49,11 +57,12 @@ export default function TimeAndBudgetStep({ form }) {
                                 Ngày bắt đầu <span className="text-destructive">*</span>
                             </FormLabel>
                             <Popover>
-                                <PopoverTrigger asChild>
+                                <PopoverTrigger asChild disabled={readOnly}>
                                     <FormControl>
                                         <Button
                                             variant="outline"
                                             className={cn("w-full pl-3 text-left font-normal h-10", !field.value && "text-muted-foreground")}
+                                            disabled={readOnly}
                                         >
                                             {field.value ? format(field.value, "dd/MM/yyyy", { locale: enUS }) : <span>Chọn ngày</span>}
                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -73,6 +82,7 @@ export default function TimeAndBudgetStep({ form }) {
                                             }
                                         }}
                                         initialFocus
+                                        disabled={readOnly}
                                     />
                                 </PopoverContent>
                             </Popover>
@@ -107,6 +117,7 @@ export default function TimeAndBudgetStep({ form }) {
                                             form.setValue("endYear", endYear);
                                         }
                                     }}
+                                    disabled={readOnly}
                                 />
                             </FormControl>
                             <FormDescription>Thời gian thực hiện đề tài (đơn vị: tháng)</FormDescription>
@@ -132,6 +143,7 @@ export default function TimeAndBudgetStep({ form }) {
                                     className="h-10"
                                     {...field}
                                     onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                    disabled={readOnly}
                                 />
                             </FormControl>
                             <FormDescription>Năm dự kiến kết thúc đề tài</FormDescription>
@@ -171,6 +183,7 @@ export default function TimeAndBudgetStep({ form }) {
                                             field.onChange(rawValue);
                                             e.target.value = formatVND(rawValue);
                                         }}
+                                        disabled={readOnly}
                                     />
                                 </FormControl>
                                 <FormDescription>Tổng kinh phí dự kiến thực hiện đề tài</FormDescription>
@@ -188,7 +201,11 @@ export default function TimeAndBudgetStep({ form }) {
                                 <FormLabel>
                                     Nguồn kinh phí <span className="text-destructive">*</span>
                                 </FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    disabled={readOnly}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Chọn nguồn kinh phí" />
@@ -228,6 +245,7 @@ export default function TimeAndBudgetStep({ form }) {
                                     }}
                                     control={form.control}
                                     name="budgetBreakdown"
+                                    readOnly={readOnly}
                                 />
                             </FormControl>
                             <FormDescription>

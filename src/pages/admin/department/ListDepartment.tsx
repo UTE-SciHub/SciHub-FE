@@ -182,7 +182,7 @@ const ListDepartment = () => {
                 </div>
             ),
         },
-        { key: "name", title: "Tên khoa", width: "200px", sortable: true },
+        { key: "name", title: "Tên đơn vị", width: "200px", sortable: true },
         { key: "description", title: "Mô tả", width: "150px" },
         { key: "phoneNumber", title: "Số điện thoại", width: "100px" },
         { key: "email", title: "Email", width: "150px" },
@@ -292,7 +292,8 @@ const ListDepartment = () => {
         <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Danh sách khoa</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Danh sách đơn vị</h1>
+                    <p className="text-muted-foreground">Tổng số đơn vị: {totalItems}</p>
                 </div>
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
                     <Button variant="outline" onClick={handleExportExcel}>
@@ -300,7 +301,7 @@ const ListDepartment = () => {
                         Xuất excel
                     </Button>
                     <Button onClick={() => setIsAddModalOpen(true)}>
-                        <CirclePlus className="h-4 w-4" /> Thêm mới khoa
+                        <CirclePlus className="h-4 w-4" /> Thêm mới đơn vị
                     </Button>
                 </div>
 

@@ -1,7 +1,7 @@
-import type React from "react"
-import { useState, useEffect } from "react"
-import { NavLink, useNavigate, useLocation } from "react-router-dom"
-import { motion, AnimatePresence } from "framer-motion"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   FileText,
@@ -16,23 +16,25 @@ import {
   Microscope,
   BookOpen,
   ChevronDown,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { logout } from "@/service/auth-service"
-import Cookies from "js-cookie"
-import { toast } from "@/hooks/use-toast"
-import useUserStore from "@/store/userStore"
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { logout } from "@/service/auth-service";
+import Cookies from "js-cookie";
+import { toast } from "@/hooks/use-toast";
+import useUserStore from "@/store/userStore";
+import { Roles } from "@/models/enums/roles.enum";
 
 interface SidebarItem {
-  title: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  subItems?: SidebarItem[]
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  subItems?: SidebarItem[];
+  allowedRoles: Roles[];
 }
 
 interface AdminSidebarProps {
-  collapsed: boolean
-  onToggle: () => void
+  collapsed: boolean;
+  onToggle: () => void;
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -40,136 +42,131 @@ const sidebarItems: SidebarItem[] = [
     title: "Bảng điều khiển",
     href: "/admin",
     icon: Home,
+    allowedRoles: [Roles.ADMIN, Roles.BGH, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER],
   },
   {
     title: "Báo cáo thống kê",
     href: "/admin/reports",
     icon: BarChart2,
     subItems: [
-      {
-        title: "Báo cáo tổng quan",
-        href: "/admin/reports/overview",
-        icon: BarChart2,
-      },
-      {
-        title: "Báo cáo chi tiết",
-        href: "/admin/reports/details",
-        icon: BarChart2,
-      },
-      {
-        title: "Báo cáo theo lĩnh vực",
-        href: "/admin/reports/fields",
-        icon: BarChart2,
-      },
-      {
-        title: "Báo cáo theo loại hình",
-        href: "/admin/reports/types",
-        icon: BarChart2,
-      },
-    ]
+      { title: "Báo cáo tổng quan", href: "/admin/reports/overview", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.BGH] },
+      { title: "Báo cáo chi tiết", href: "/admin/reports/details", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.BGH] },
+      { title: "Báo cáo theo lĩnh vực", href: "/admin/reports/fields", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.BGH] },
+      { title: "Báo cáo theo loại hình", href: "/admin/reports/types", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.BGH] },
+    ],
+    allowedRoles: [Roles.ADMIN, Roles.BGH],
   },
   {
     title: "Thông báo",
     href: "/admin/announcements",
     icon: Bell,
+    allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.TEACHER],
   },
   {
     title: "Quản lý đề tài",
     href: "/admin/topics",
     icon: FileText,
     subItems: [
-      {
-        title: "Danh sách đề tài",
-        href: "/admin/topics",
-        icon: List,
-      },
-      {
-        title: "Đăng ký đề tài",
-        href: "/admin/topic-proposal",
-        icon: FileText,
-      },
+      { title: "Danh sách đề tài", href: "/admin/topics", icon: List, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER] },
+      { title: "Đăng ký đề tài", href: "/admin/topic-proposal", icon: FileText, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.TEACHER] },
     ],
+    allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER],
   },
   {
     title: "Danh mục đề tài",
     href: "/admin/categories",
     icon: List,
+    allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT],
   },
   {
     title: "Quản lý hợp đồng",
     href: "/admin/contracts",
     icon: FileSignature,
+    allowedRoles: [Roles.ADMIN],
   },
   {
     title: "Quản lý tài chính",
     href: "/admin/finance",
     icon: DollarSign,
+    allowedRoles: [Roles.ADMIN, Roles.BGH],
   },
   {
     title: "Quản lý đợt đăng ký",
     href: "/admin/registration",
     icon: FileText,
+    allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT],
   },
   {
     title: "Quản lý tài khoản",
     href: "/admin/users",
     icon: Users,
+    allowedRoles: [Roles.ADMIN],
   },
   {
-    title: "Danh sách khoa",
+    title: "Danh sách đơn vị",
     href: "/admin/departments",
     icon: List,
+    allowedRoles: [Roles.ADMIN],
   },
   {
     title: "Quản lý lĩnh vực nghiên cứu",
     href: "/admin/research-fields",
     icon: Microscope,
+    allowedRoles: [Roles.ADMIN],
   },
   {
     title: "Quản lý loại hình nghiên cứu",
     href: "/admin/research-types",
     icon: BookOpen,
+    allowedRoles: [Roles.ADMIN],
   },
   {
     title: "Cài đặt hệ thống",
     href: "/admin/settings",
     icon: Settings,
+    allowedRoles: [Roles.ADMIN, Roles.BGH],
   },
-]
+];
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null)
-  const navigate = useNavigate()
-  const location = useLocation()
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const user = useUserStore((state) => state.user);
+  const roles = (user?.roles || []).map((role: { id: string; name: string }) => role.name);
+
+  // Kiểm tra xem user có quyền truy cập menu không
+  const hasAccess = (item: SidebarItem) => {
+    return item.allowedRoles.some((role) => roles.includes(role));
+  };
 
   // Determine if a parent menu should be active based on current path
   const isParentActive = (item: SidebarItem): boolean => {
-    if (location.pathname === item.href) return true
+    if (location.pathname === item.href) return true;
     if (item.subItems) {
-      return item.subItems.some((subItem) => location.pathname === subItem.href)
+      return item.subItems.some((subItem) => location.pathname === subItem.href);
     }
-    return false
-  }
+    return false;
+  };
 
   // Open submenu automatically when a child route is active
   useEffect(() => {
     const activeParent = sidebarItems.find((item) =>
-      item.subItems?.some((subItem) => location.pathname === subItem.href),
-    )
-    if (activeParent) {
-      setOpenSubmenu(activeParent.title)
+      item.subItems?.some((subItem) => location.pathname === subItem.href && hasAccess(subItem)),
+    );
+    if (activeParent && hasAccess(activeParent)) {
+      setOpenSubmenu(activeParent.title);
     }
-  }, [location.pathname])
+  }, [location.pathname, roles]);
 
   const toggleSubmenu = (title: string, event: React.MouseEvent) => {
-    if (collapsed) return // Disable submenu toggle when collapsed
+    if (collapsed || !hasAccess(sidebarItems.find((item) => item.title === title)!)) return;
 
-    // Prevent navigation when clicking on items with submenus
     if (sidebarItems.find((item) => item.title === title)?.subItems) {
-      event.preventDefault()
-      setOpenSubmenu(openSubmenu === title ? null : title)
+      event.preventDefault();
+      setOpenSubmenu(openSubmenu === title ? null : title);
     }
-  }
+  };
 
   const clearUser = useUserStore((state) => state.clearUser);
 
@@ -210,120 +207,122 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
       className="fixed left-0 top-0 h-screen bg-primary-900 border-r z-40 pt-14 shadow-sm flex flex-col"
     >
       <nav className="p-2 space-y-1.5 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-primary-700 scrollbar-track-transparent">
-        {sidebarItems.map((item) => {
-          const isActive = isParentActive(item)
+        {sidebarItems
+          .filter((item) => hasAccess(item))
+          .map((item) => {
+            const isActive = isParentActive(item);
 
-          return (
-            <div key={item.href} className="relative">
-              {/* Active indicator bar */}
-              {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-100 rounded-full" />}
+            return (
+              <div key={item.href} className="relative">
+                {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-100 rounded-full" />}
 
-              {item.subItems ? (
-                <div
-                  className={cn(
-                    "flex items-center gap-3 text-sm font-medium px-3 py-3 rounded-md transition-all duration-300 cursor-pointer",
-                    isActive
-                      ? "bg-primary-800/60 text-white"
-                      : "text-white/90 hover:bg-primary-800/40 hover:text-white",
-                    collapsed && "justify-center px-2",
-                    isActive && "pl-5",
-                  )}
-                  onClick={(e) => toggleSubmenu(item.title, e)}
-                  title={collapsed ? item.title : undefined}
-                >
-                  <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-primary-100" : "text-white/80")} />
-                  <motion.span
-                    initial={{ opacity: collapsed ? 0 : 1 }}
-                    animate={{ opacity: collapsed ? 0 : 1 }}
-                    transition={{ duration: 0.2 }}
-                    className={`overflow-hidden whitespace-nowrap ${collapsed ? "w-0" : "w-auto"}`}
-                  >
-                    {item.title}
-                  </motion.span>
-                  {item.subItems && !collapsed && (
-                    <motion.div
-                      animate={{ rotate: openSubmenu === item.title ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="ml-auto"
-                    >
-                      <ChevronDown className="h-4 w-4 text-white/70" />
-                    </motion.div>
-                  )}
-                </div>
-              ) : (
-                <NavLink
-                  to={item.href}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 text-sm font-medium px-3 py-3 rounded-md transition-all duration-300",
+                {item.subItems ? (
+                  <div
+                    className={cn(
+                      "flex items-center gap-3 text-sm font-medium px-3 py-3 rounded-md transition-all duration-300 cursor-pointer",
                       isActive
-                        ? "bg-primary-800/60 text-white pl-5"
+                        ? "bg-primary-800/60 text-white"
                         : "text-white/90 hover:bg-primary-800/40 hover:text-white",
                       collapsed && "justify-center px-2",
-                    )
-                  }
-                  title={collapsed ? item.title : undefined}
-                  end
-                >
-                  {({ isActive }) => (
-                    <>
-                      <item.icon
-                        className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-primary-100" : "text-white/80")}
-                      />
-                      <motion.span
-                        initial={{ opacity: collapsed ? 0 : 1 }}
-                        animate={{ opacity: collapsed ? 0 : 1 }}
-                        transition={{ duration: 0.2 }}
-                        className={`overflow-hidden whitespace-nowrap ${collapsed ? "w-0" : "w-auto"}`}
-                      >
-                        {item.title}
-                      </motion.span>
-                    </>
-                  )}
-                </NavLink>
-              )}
-              <AnimatePresence>
-                {item.subItems && openSubmenu === item.title && !collapsed && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="pl-8 space-y-1.5 mt-1 mb-1.5"
+                      isActive && "pl-5",
+                    )}
+                    onClick={(e) => toggleSubmenu(item.title, e)}
+                    title={collapsed ? item.title : undefined}
                   >
-                    {item.subItems.map((subItem) => (
-                      <NavLink
-                        key={subItem.href}
-                        to={subItem.href}
-                        className={({ isActive }) =>
-                          cn(
-                            "flex items-center gap-3 text-sm font-medium px-3 py-2.5 rounded-md transition-all duration-300",
-                            isActive
-                              ? "bg-primary-800/60 text-white"
-                              : "text-white/80 hover:bg-primary-800/40 hover:text-white",
-                          )
-                        }
-                        end
+                    <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-primary-100" : "text-white/80")} />
+                    <motion.span
+                      initial={{ opacity: collapsed ? 0 : 1 }}
+                      animate={{ opacity: collapsed ? 0 : 1 }}
+                      transition={{ duration: 0.2 }}
+                      className={`overflow-hidden whitespace-nowrap ${collapsed ? "w-0" : "w-auto"}`}
+                    >
+                      {item.title}
+                    </motion.span>
+                    {item.subItems && !collapsed && (
+                      <motion.div
+                        animate={{ rotate: openSubmenu === item.title ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="ml-auto"
                       >
-                        {({ isActive }) => (
-                          <>
-                            <subItem.icon
-                              className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary-100" : "text-white/70")}
-                            />
-                            <span>{subItem.title}</span>
-                          </>
-                        )}
-                      </NavLink>
-                    ))}
-                  </motion.div>
+                        <ChevronDown className="h-4 w-4 text-white/70" />
+                      </motion.div>
+                    )}
+                  </div>
+                ) : (
+                  <NavLink
+                    to={item.href}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 text-sm font-medium px-3 py-3 rounded-md transition-all duration-300",
+                        isActive
+                          ? "bg-primary-800/60 text-white pl-5"
+                          : "text-white/90 hover:bg-primary-800/40 hover:text-white",
+                        collapsed && "justify-center px-2",
+                      )
+                    }
+                    title={collapsed ? item.title : undefined}
+                    end
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <item.icon
+                          className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-primary-100" : "text-white/80")}
+                        />
+                        <motion.span
+                          initial={{ opacity: collapsed ? 0 : 1 }}
+                          animate={{ opacity: collapsed ? 0 : 1 }}
+                          transition={{ duration: 0.2 }}
+                          className={`overflow-hidden whitespace-nowrap ${collapsed ? "w-0" : "w-auto"}`}
+                        >
+                          {item.title}
+                        </motion.span>
+                      </>
+                    )}
+                  </NavLink>
                 )}
-              </AnimatePresence>
-            </div>
-          )
-        })}
+                <AnimatePresence>
+                  {item.subItems && openSubmenu === item.title && !collapsed && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="pl-8 space-y-1.5 mt-1 mb-1.5"
+                    >
+                      {item.subItems
+                        .filter((subItem) => hasAccess(subItem))
+                        .map((subItem) => (
+                          <NavLink
+                            key={subItem.href}
+                            to={subItem.href}
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center gap-3 text-sm font-medium px-3 py-2.5 rounded-md transition-all duration-300",
+                                isActive
+                                  ? "bg-primary-800/60 text-white"
+                                  : "text-white/80 hover:bg-primary-800/40 hover:text-white",
+                              )
+                            }
+                            end
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <subItem.icon
+                                  className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary-100" : "text-white/70")}
+                                />
+                                <span>{subItem.title}</span>
+                              </>
+                            )}
+                          </NavLink>
+                        ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
       </nav>
 
-      {/* Separator and logout section */}
       <div className="mt-auto w-full">
         <div className="mx-2 my-2">
           <div className="border-t border-primary-700/50"></div>
@@ -351,7 +350,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
         </div>
       </div>
     </motion.aside>
-  )
-}
+  );
+};
 
-export default AdminSidebar
+export default AdminSidebar;

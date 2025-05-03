@@ -12,11 +12,13 @@ import useUserStore from "@/store/userStore";
 interface ReviewStepProps {
     formValues: any;
     researchFields: ResearchField[];
+    readOnly?: boolean;
 }
 
 export default function ReviewStep({
     formValues,
     researchFields,
+    readOnly = false,
 }: ReviewStepProps) {
     const [isExporting, setIsExporting] = useState(false);
     const pdfRef = useRef<HTMLDivElement>(null);
@@ -84,7 +86,11 @@ export default function ReviewStep({
             <div className="flex justify-between items-center">
                 <h3 className="text-xl font-semibold"></h3>
                 <div className="flex gap-2">
-                    <Button onClick={exportToPdf} disabled={isExporting} className="flex items-center">
+                    <Button
+                        onClick={exportToPdf}
+                        disabled={isExporting || readOnly}
+                        className="flex items-center"
+                    >
                         <Download className="h-4 w-4" />
                         {isExporting ? "Đang xuất..." : "Xuất PDF"}
                     </Button>
@@ -176,56 +182,52 @@ export default function ReviewStep({
                         {/* 6. Sản phẩm và kết quả dự kiến */}
                         <div>
                             <p className="font-bold">6. Sản phẩm và kết quả dự kiến:</p>
+
                             <div className="ml-4 space-y-2">
+                                <p className="ml-2">6.1. Kết quả dự kiến</p>
+                                <div className="ml-4">
+                                    {formValues.expectedRisks ? renderContent(formValues.expectedRisks) : ""}
+                                </div>
+                                <p className="ml-2">6.2. Sản phẩm</p>
                                 {/* Sản phẩm khoa học */}
-                                {(formValues.expectedProducts?.scientific?.domestic > 0 || formValues.expectedProducts?.scientific?.international > 0) && (
-                                    <div>
-                                        <div className="flex items-center space-x-2">
-                                            <span>Sản phẩm khoa học</span>
-                                        </div>
-                                        <div className="ml-6">
-                                            <p>
-                                                - Số bài báo khoa học đăng trên tạp chí trong nước:{" "}
-                                                {formValues.expectedProducts?.scientific?.domestic || ""}
+                                {(formValues.expectedProducts?.scientific?.international > 0 || formValues.expectedProducts?.scientific?.domestic > 0) && (
+                                    <div className="ml-6">
+                                        <p>- Sản phẩm khoa học:</p>
+                                        {formValues.expectedProducts?.scientific?.international > 0 && (
+                                            <p className="ml-4">
+                                                + Số bài báo khoa học đăng trên tạp chí nước ngoài:{" "}
+                                                {formValues.expectedProducts.scientific.international}
                                             </p>
-                                            <p>
-                                                - Số bài báo khoa học đăng trên tạp chí quốc tế:{" "}
-                                                {formValues.expectedProducts?.scientific?.international || ""}
+                                        )}
+                                        {formValues.expectedProducts?.scientific?.domestic > 0 && (
+                                            <p className="ml-4">
+                                                + Số bài báo khoa học đăng trên tạp chí trong nước:{" "}
+                                                {formValues.expectedProducts.scientific.domestic}
                                             </p>
-                                        </div>
+                                        )}
                                     </div>
                                 )}
 
                                 {/* Sản phẩm đào tạo */}
                                 {(formValues.expectedProducts?.training?.masters > 0 || formValues.expectedProducts?.training?.students > 0) && (
-                                    <div>
-                                        <div className="flex items-center space-x-2">
-                                            <span>Sản phẩm đào tạo</span>
-                                        </div>
-                                        <div className="ml-6">
-                                            <p>
-                                                - Số lượng cao học: {formValues.expectedProducts?.training?.masters || ""}
-                                            </p>
-                                            <p>
-                                                - Số lượng sinh viên tham gia:{" "}
-                                                {formValues.expectedProducts?.training?.students || ""}
-                                            </p>
-                                        </div>
+                                    <div className="ml-6">
+                                        <p>- Sản phẩm đào tạo: Số lượng cao học, số lượng sinh viên tham gia</p>
+                                        {formValues.expectedProducts?.training?.masters > 0 && (
+                                            <p className="ml-4">+ Số lượng cao học: {formValues.expectedProducts.training.masters}</p>
+                                        )}
+                                        {formValues.expectedProducts?.training?.students > 0 && (
+                                            <p className="ml-4">+ Số lượng sinh viên tham gia: {formValues.expectedProducts.training.students}</p>
+                                        )}
                                     </div>
                                 )}
 
                                 {/* Sản phẩm ứng dụng */}
                                 {formValues.expectedProducts?.commercial?.details && (
-                                    <div>
-                                        <div className="flex items-center space-x-2">
-                                            <span>Sản phẩm ứng dụng:</span>
-                                        </div>
-                                        <div className="ml-6">
-                                            <p>
-                                                - Thông tin sản phẩm ứng dụng:{" "}
-                                                {formValues.expectedProducts?.commercial?.details ? renderContent(formValues.expectedProducts.commercial.details) : ""}
-                                            </p>
-                                        </div>
+                                    <div className="ml-6">
+                                        <p>- Sản phẩm ứng dụng: Mô tả tóm tắt về sản phẩm dự kiến, phạm vi, khả năng và địa chỉ ứng dụng,...</p>
+                                        <p className="ml-4">
+                                            {renderContent(formValues.expectedProducts.commercial.details)}
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -296,7 +298,7 @@ export default function ReviewStep({
                             </div>
                         </div>
 
-                        {/* Ký tên */}
+                        {/* Signature */}
                         <div className="mt-8">
                             <div className="flex justify-end">
                                 <div className="text-center">

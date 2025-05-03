@@ -14,6 +14,8 @@ import useUserStore from "@/store/userStore";
 import { toast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
 import { logout } from "@/service/auth-service";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitialsAvt } from "@/utils/common";
 
 interface AdminHeaderProps {
   collapsed: boolean;
@@ -92,7 +94,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
           </div>
 
           <span className="text-sm font-medium">
-            Xin chào, {user?.email || "Guest"}
+            Xin chào, {user?.name || "Guest"}
           </span>
 
           <DropdownMenu>
@@ -153,7 +155,11 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="h-5 w-5" />
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.imageUrl} alt="Ảnh đại diện" />
+                  <AvatarFallback>{getInitialsAvt(user.name)}</AvatarFallback>
+                </Avatar>
+
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

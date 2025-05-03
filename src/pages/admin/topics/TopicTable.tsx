@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Column } from "@/models/column";
 import { Topic } from "@/models/topic";
-import { Eye, MoreHorizontal } from "lucide-react";
+import { Check, Eye, MoreHorizontal, Save } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatVND } from "@/utils/common";
-import { TopicStatus } from "@/models/enums/topic-status.enum";
+import { getBadge, getStatusClass, TopicStatus } from "@/models/enums/topic-status.enum";
 
 interface TopicsTableProps {
     topics: Topic[];
@@ -26,6 +26,9 @@ interface TopicsTableProps {
     onPageSizeChange: (newPageSize: number) => void;
     onSortChange: (field: string, order: string) => void;
     onSelectionChange: (keys: string[], rows: any[]) => void;
+    onViewDetail: (topicId: string, status: TopicStatus) => void;
+    onAssign: (topicId: string) => void;
+    onReview: (topicId: string) => void;
 }
 
 const TopicsTable = ({
@@ -40,6 +43,9 @@ const TopicsTable = ({
     onPageSizeChange,
     onSortChange,
     onSelectionChange,
+    onViewDetail,
+    onAssign,
+    onReview,
 }: TopicsTableProps) => {
     const columns: Column[] = [
         {
@@ -57,21 +63,21 @@ const TopicsTable = ({
         {
             key: "principalInvestigator",
             title: "Chủ nhiệm",
-            width: "200px",
+            width: "150px",
             sortable: true,
         },
         {
             key: "department",
             title: "Đơn vị",
-            width: "150px",
-            render: (_, record) => record.department?.name,
+            width: "200px",
+            render: (_, record) => record.department?.name || "Chưa phân công",
         },
         {
             key: "status",
             title: "Trạng thái",
             width: "120px",
             render: (status) => (
-                <span className={getStatusClass(status)}>{getStatusName(status)}</span>
+                <span className={getStatusClass(status)}>{getBadge(status)}</span>
             ),
         },
         {
@@ -106,40 +112,29 @@ const TopicsTable = ({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[200px]">
-                        <DropdownMenuItem className="cursor-pointer">
+                        <DropdownMenuItem onClick={() => onViewDetail(record.id, record.status)} className="cursor-pointer">
                             <Eye className="mr-2 h-4 w-4" />
                             Xem chi tiết
+                        </DropdownMenuItem>
+                        {record.status === TopicStatus.SUBMITTED && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => onReview(record.id)} className="cursor-pointer">
+                                    <Check className="mr-2 h-4 w-4" />
+                                    Đánh giá đề tài
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onAssign(record.id)} className="cursor-pointer">
+                            <Save className="mr-2 h-4 w-4" />
+                            Phân công đề tài
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),
         },
     ];
-
-    const getStatusClass = (status: TopicStatus): string => {
-        const classes: { [key in TopicStatus]: string } = {
-            [TopicStatus.DRAFT]: "bg-indigo-100 text-indigo-700 px-2 py-1 rounded",
-            [TopicStatus.SUBMITTED]: "bg-blue-100 text-blue-700 px-2 py-1 rounded",
-            [TopicStatus.APPROVED]: "bg-green-100 text-green-700 px-2 py-1 rounded",
-            [TopicStatus.REJECTED]: "bg-red-100 text-red-700 px-2 py-1 rounded",
-            [TopicStatus.IN_PROGRESS]: "bg-cyan-100 text-cyan-700 px-2 py-1 rounded",
-            [TopicStatus.COMPLETED]: "bg-emerald-100 text-emerald-700 px-2 py-1 rounded",
-            [TopicStatus.CANCELLED]: "bg-pink-100 text-pink-700 px-2 py-1 rounded",
-            [TopicStatus.ALL]: "bg-gray-100 text-gray-700 px-2 py-1 rounded",
-        };
-        return classes[status] || "bg-gray-100 text-gray-700 px-2 py-1 rounded";
-    };
-
-    const getStatusName = (status: string): string => {
-        const statusNames = {
-            "DRAFT": "Nháp",
-            "SUBMITTED": "Đã nộp",
-            "IN_PROGRESS": "Đang thực hiện",
-            "COMPLETED": "Hoàn thành",
-            "REJECTED": "Từ chối",
-        };
-        return statusNames[status as keyof typeof statusNames] || status;
-    };
 
     return (
         <DataTable
