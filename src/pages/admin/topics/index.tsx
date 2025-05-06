@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Filter, Download, RefreshCcw, FileText, Clock, CheckCircle, DollarSign } from "lucide-react";
+import { Search, Filter, Download, RefreshCcw, FileText, Clock, CheckCircle, DollarSign, X, ListCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Topic } from "@/models/topic";
@@ -28,6 +28,10 @@ import { formatVND } from "@/utils/common";
 import { useLocation, useNavigate } from "react-router-dom";
 import useUserStore from "@/store/userStore";
 import { Roles } from "@/models/enums/roles.enum";
+import { RegistrationService } from "@/service/registration-service";
+import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status";
+import AssignCategoryModal from "@/pages/admin/topics/manage/AssignCategoryModal";
+import { RegistrationPeriod } from "@/models/registraion-period";
 
 const TopicsPage = () => {
     const location = useLocation();
@@ -48,6 +52,7 @@ const TopicsPage = () => {
     const initialResearchTypeId = Number(params.get("researchTypeId")) || 0;
     const initialResearchFieldId = Number(params.get("researchFieldId")) || 0;
     const initialCategoryId = Number(params.get("categoryId")) || 0;
+    const initialRegistrationPeriodId = params.get("periodId") || "";
     const initialStartDate = params.get("startDate") ? new Date(params.get("startDate")) : undefined;
     const initialEndDate = params.get("endDate") ? new Date(params.get("endDate")) : undefined;
     const initialMinBudget = Number(params.get("minBudget")) || undefined;
@@ -59,6 +64,7 @@ const TopicsPage = () => {
     const [researchTypes, setResearchTypes] = useState<ResearchType[]>([]);
     const [researchFields, setResearchFields] = useState<ResearchField[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [registrationPeriods, setRegistrationPeriods] = useState<RegistrationPeriod[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [topics, setTopics] = useState<Topic[]>([]);
     const [totalItems, setTotalItems] = useState(0);
@@ -71,6 +77,7 @@ const TopicsPage = () => {
     const [researchTypeId, setResearchTypeId] = useState(initialResearchTypeId);
     const [researchFieldId, setResearchFieldId] = useState(initialResearchFieldId);
     const [categoryId, setCategoryId] = useState(initialCategoryId);
+    const [registrationPeriodId, setRegistrationPeriodId] = useState(initialRegistrationPeriodId);
     const [startDate, setStartDate] = useState<Date | undefined>(initialStartDate);
     const [endDate, setEndDate] = useState<Date | undefined>(initialEndDate);
     const [minBudget, setMinBudget] = useState<number | undefined>(initialMinBudget);
@@ -84,6 +91,7 @@ const TopicsPage = () => {
         researchTypeId: initialResearchTypeId,
         researchFieldId: initialResearchFieldId,
         categoryId: initialCategoryId,
+        registrationPeriodId: initialRegistrationPeriodId,
         startDate: initialStartDate,
         endDate: initialEndDate,
         minBudget: initialMinBudget,
@@ -100,23 +108,29 @@ const TopicsPage = () => {
     const [totalBudget, setTotalBudget] = useState(0);
     const [statusData, setStatusData] = useState<any[]>([]);
     const [departmentData, setDepartmentData] = useState<any[]>([]);
+    const [isAssignCategoryModalOpen, setIsAssignCategoryModalOpen] = useState(false);
 
     const debouncedSearchQuery = useDebounce(searchTerm, 300);
-
     const statusColors: { [key in TopicStatus]: string } = {
-        [TopicStatus.DRAFT]: "#A5B4FC",
-        [TopicStatus.SUBMITTED]: "#93C5FD",
-        [TopicStatus.REVIEWED]: "#BFDBFE",
-        [TopicStatus.NEED_REVISION]: "#BFDBFE",
-        [TopicStatus.APPROVED]: "#6EE7B7",
-        [TopicStatus.ASSIGNED]: "#FBBF24",
-        [TopicStatus.REJECTED]: "#FCA5A5",
-        [TopicStatus.IN_PROGRESS]: "#67E8F9",
-        [TopicStatus.COMPLETED]: "#86EFAC",
-        [TopicStatus.CANCELLED]: "#F9A8D4",
-        [TopicStatus.DELETED]: "#FBBF24",
-        [TopicStatus.ALL]: "#D1D5DB",
+        [TopicStatus.DRAFT]: "#6366F1",          // Indigo-500
+        [TopicStatus.SUBMITTED]: "#3B82F6",      // Blue-500
+        [TopicStatus.REVIEWED]: "#60A5FA",       // Blue-400
+        [TopicStatus.NEED_REVISION]: "#F59E0B",  // Amber-500
+        [TopicStatus.ASSIGNED]: "#EAB308",       // Yellow-500
+        [TopicStatus.APPROVED]: "#22C55E",       // Green-500
+        [TopicStatus.REJECTED]: "#EF4444",       // Red-500
+        [TopicStatus.IN_CATALOG]: "#A855F7",     // Purple-500
+        [TopicStatus.IN_PROGRESS]: "#06B6D4",    // Cyan-500
+        [TopicStatus.COMPLETED]: "#10B981",      // Emerald-500
+        [TopicStatus.CANCELLED]: "#EC4899",      // Pink-500
+        [TopicStatus.DELETED]: "#6B7280",        // Gray-500
+        [TopicStatus.ALL]: "#9CA3AF",            // Gray-400
     };
+
+    // Lấy danh sách đề tài hợp lệ (SUBMITTED hoặc REVIEWED) để truyền vào modal
+    const validSelectedTopicIds = selectedRows
+        .filter(row => row.status === TopicStatus.SUBMITTED || row.status === TopicStatus.REVIEWED)
+        .map(row => row.id);
 
     useEffect(() => {
         setBudgetDisplay(formatVND(minBudget));
@@ -135,7 +149,7 @@ const TopicsPage = () => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [departmentResponse, researchTypeResponse, researchFieldResponse, categoryResponse, statisticsResponse] = await Promise.all([
+                const [departmentResponse, researchTypeResponse, researchFieldResponse, categoryResponse, registrationPeriodResponse, statisticsResponse] = await Promise.all([
                     DepartmentService.getAll({
                         p: 1,
                         s: 1000,
@@ -164,6 +178,13 @@ const TopicsPage = () => {
                         order: "asc",
                         delFlag: false,
                     }),
+                    RegistrationService.getAll({
+                        p: 1,
+                        s: 1000,
+                        sort: "startDate",
+                        order: "desc",
+                        status: RegistrationPeriodStatus.OPEN,
+                    }),
                     TopicService.getStatistics(),
                 ]);
 
@@ -171,6 +192,7 @@ const TopicsPage = () => {
                 setResearchTypes(researchTypeResponse.data.data);
                 setResearchFields(researchFieldResponse.data.data);
                 setCategories(categoryResponse.data.data);
+                setRegistrationPeriods(registrationPeriodResponse.data.data);
 
                 // Update statistics
                 setTotalTopics(statisticsResponse.data.totalTopics);
@@ -201,6 +223,7 @@ const TopicsPage = () => {
                 setResearchTypes([]);
                 setResearchFields([]);
                 setCategories([]);
+                setRegistrationPeriods([]);
                 setStatusData([]);
                 setDepartmentData([]);
             } finally {
@@ -218,20 +241,30 @@ const TopicsPage = () => {
             s: itemsPerPage,
             sort: sortField,
             order: sortOrder,
-            q: searchTerm,
+            q: searchTerm || undefined,
             status: statusFilter !== TopicStatus.ALL ? statusFilter : undefined,
             departmentId: departmentId !== 0 ? departmentId : undefined,
             researchTypeId: researchTypeId !== 0 ? researchTypeId : undefined,
             researchFieldId: researchFieldId !== 0 ? researchFieldId : undefined,
             categoryId: categoryId !== 0 ? categoryId : undefined,
-            startDate,
-            endDate,
-            minBudget,
+            periodId: registrationPeriodId !== "" ? registrationPeriodId : undefined,
+            startDate: startDate,
+            endDate: endDate,
+            minBudget: minBudget,
             investigator: investigator || undefined,
         };
 
+        const basicFields = [
+            "p",
+            "s",
+            "sort",
+            "order",
+            "q",
+            "status",
+        ];
+
         Object.entries(params).forEach(([key, value]) => {
-            if (value !== undefined && value !== "") {
+            if (basicFields.includes(key) && value !== undefined && value !== "") {
                 if (value instanceof Date) {
                     searchParams.set(key, value.toISOString().split("T")[0]);
                 } else {
@@ -257,6 +290,7 @@ const TopicsPage = () => {
                 researchTypeId: appliedFilters.researchTypeId !== 0 ? appliedFilters.researchTypeId : undefined,
                 researchFieldId: appliedFilters.researchFieldId !== 0 ? appliedFilters.researchFieldId : undefined,
                 categoryId: appliedFilters.categoryId !== 0 ? appliedFilters.categoryId : undefined,
+                periodId: appliedFilters.registrationPeriodId !== "" ? appliedFilters.registrationPeriodId : undefined,
                 startDate: appliedFilters.startDate ? appliedFilters.startDate.toISOString().split("T")[0] : undefined,
                 endDate: appliedFilters.endDate ? appliedFilters.endDate.toISOString().split("T")[0] : undefined,
                 minBudget: appliedFilters.minBudget,
@@ -265,7 +299,7 @@ const TopicsPage = () => {
 
             const response = isAdmin
                 ? await TopicService.getAll(params)
-                : await TopicService.getTopicByDepartment(userEmail, params)
+                : await TopicService.getTopicByDepartment(userEmail, params);
 
             setTopics(response.data.data);
             setTotalItems(response.data.totalItems);
@@ -279,7 +313,6 @@ const TopicsPage = () => {
             setIsLoading(false);
         }
     };
-
 
     useEffect(() => {
         fetchTopics();
@@ -298,6 +331,7 @@ const TopicsPage = () => {
         researchTypeId,
         researchFieldId,
         categoryId,
+        registrationPeriodId,
         startDate,
         endDate,
         minBudget,
@@ -312,6 +346,7 @@ const TopicsPage = () => {
             researchTypeId: filters.researchType ? Number(filters.researchType) : 0,
             researchFieldId: filters.researchField ? Number(filters.researchField) : 0,
             categoryId: filters.category ? Number(filters.category) : 0,
+            registrationPeriodId: filters.registrationPeriodId || "",
             startDate: filters.startDate,
             endDate: filters.endDate,
             minBudget: filters.budget,
@@ -323,6 +358,7 @@ const TopicsPage = () => {
         setResearchTypeId(filters.researchType ? Number(filters.researchType) : 0);
         setResearchFieldId(filters.researchField ? Number(filters.researchField) : 0);
         setCategoryId(filters.category ? Number(filters.category) : 0);
+        setRegistrationPeriodId(filters.registrationPeriodId || "");
         setStartDate(filters.startDate);
         setEndDate(filters.endDate);
         setMinBudget(filters.budget);
@@ -337,6 +373,7 @@ const TopicsPage = () => {
         setResearchTypeId(0);
         setResearchFieldId(0);
         setCategoryId(0);
+        setRegistrationPeriodId("");
         setStartDate(undefined);
         setEndDate(undefined);
         setMinBudget(undefined);
@@ -382,8 +419,14 @@ const TopicsPage = () => {
     };
 
     const handleSelectionChange = (keys: string[], rows: any[]) => {
+        // Cho phép chọn tất cả mà không giới hạn trạng thái
         setSelectedRowKeys(keys);
         setSelectedRows(rows);
+    };
+
+    const handleClearSelection = () => {
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
     };
 
     const handleRefresh = () => {
@@ -396,11 +439,16 @@ const TopicsPage = () => {
 
     const handleAssign = (topicId: string) => {
         navigate(`/admin/topics/assign/${topicId}`);
-    }
+    };
 
     const handleReview = (topicId: string) => {
         navigate(`/admin/topics/review/${topicId}`);
-    }
+    };
+
+    const handleCategoryAssigned = () => {
+        fetchTopics(); // Refresh the topic list after assigning category
+        handleClearSelection(); // Clear selection after assigning
+    };
 
     return (
         <div className="space-y-6">
@@ -561,13 +609,43 @@ const TopicsPage = () => {
                     </div>
                     <>
                         {isAdmin && (
-                            <Button
-                                variant="default"
-                                onClick={() => setShowFilters(!showFilters)}
-                            >
-                                <Filter className="w-4 h-4" />
-                                Lọc
-                            </Button>
+                            <>
+                                <Button
+                                    variant="default"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                >
+                                    <Filter className="w-4 h-4" />
+                                    Lọc
+                                </Button>
+                                {selectedRows.length > 0 && (
+                                    <>
+                                        <Button
+                                            variant="default"
+                                            className="bg-green-600 hover:bg-green-700"
+                                            onClick={() => {
+                                                toast({
+                                                    title: "Thông báo",
+                                                    description: "Chỉ những đề tài đã được duyệt mới có thể xác định danh mục.",
+                                                    variant: "info",
+                                                })
+                                                setIsAssignCategoryModalOpen(true);
+                                            }}
+                                            disabled={validSelectedTopicIds.length === 0}
+                                        >
+                                            <ListCheck className="w-4 h-4" />
+                                            Xác định danh mục
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            className="text-rose-500"
+                                            onClick={handleClearSelection}
+                                        >
+                                            <X className="w-4 h-4" />
+                                            Hủy chọn
+                                        </Button>
+                                    </>
+                                )}
+                            </>
                         )}
                     </>
                 </div>
@@ -587,6 +665,7 @@ const TopicsPage = () => {
                         researchTypes={researchTypes}
                         researchFields={researchFields}
                         categories={categories}
+                        registrationPeriods={registrationPeriods}
                         status={statusFilter}
                         setStatus={setStatusFilter}
                         department={departmentId ? String(departmentId) : ""}
@@ -597,6 +676,8 @@ const TopicsPage = () => {
                         setResearchField={(value) => setResearchFieldId(value ? Number(value) : 0)}
                         category={categoryId ? String(categoryId) : ""}
                         setCategory={(value) => setCategoryId(value ? Number(value) : 0)}
+                        registrationPeriodId={registrationPeriodId}
+                        setRegistrationPeriod={(value) => setRegistrationPeriodId(value ? value : "")}
                         startDate={startDate}
                         setStartDate={setStartDate}
                         endDate={endDate}
@@ -630,6 +711,16 @@ const TopicsPage = () => {
                     onReview={handleReview}
                 />
             </div>
+
+            {/* Assign Category Modal */}
+            <AssignCategoryModal
+                open={isAssignCategoryModalOpen}
+                onOpenChange={setIsAssignCategoryModalOpen}
+                categories={categories}
+                selectedTopicIds={validSelectedTopicIds}
+                selectedTopics={selectedRows.filter(row => row.status === TopicStatus.SUBMITTED || row.status === TopicStatus.REVIEWED)}
+                onCategoryAssigned={handleCategoryAssigned}
+            />
         </div>
     );
 };

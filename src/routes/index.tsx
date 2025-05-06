@@ -34,6 +34,10 @@ import { AuthGuard } from "@/middleware/AuthGuard";
 import AssignTopicPage from "@/pages/admin/topics/manage/AssignTopicPage";
 import ManageTopicPage from "@/pages/admin/topics/manage/ManageTopicPage";
 import ReviewTopicPage from "@/pages/admin/topics/manage/ReviewTopicPage";
+import EvaluateTopicPage from "@/pages/admin/topics/manage/EvaluateTopicPage";
+import ReviewTopic from "@/pages/admin/topics/manage/review/ReviewTopic";
+import PMReviewPage from "@/pages/admin/topics/manage/PMReview/PMReviewPage";
+import RegisterCNDTPage from "@/pages/admin/registration-cndt/RegistrationCNDTPage";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -76,7 +80,9 @@ const routers = createBrowserRouter([
           { path: ":id", element: <ViewTopic /> },
           { path: "assign/:id", element: <AssignTopicPage /> },
           { path: "manage/:id", element: <ManageTopicPage /> },
-          { path: "review/:id", element: <ReviewTopicPage /> },
+          { path: "review/:id", element: <ReviewTopic /> },
+          { path: "evaluate", element: <EvaluateTopicPage /> },
+          { path: "pm-evaluate/:id", element: <PMReviewPage /> },
         ],
       },
       { path: "contracts", element: <AdminContracts /> },
@@ -95,6 +101,7 @@ const routers = createBrowserRouter([
       { path: "research-fields", element: <ListResearchField /> },
       { path: "research-types", element: <ListResearchType /> },
       { path: "categories", element: <ListCategory /> },
+      { path: "registration-cndt", element: <RegisterCNDTPage /> }
     ],
   },
   { path: "*", element: <NotFoundPage /> },

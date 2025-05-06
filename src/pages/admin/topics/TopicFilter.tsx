@@ -24,6 +24,7 @@ import { Category } from "@/models/category";
 import { getAllStatuses, TopicStatus } from "@/models/enums/topic-status.enum";
 import { formatVND, parseVND } from '@/utils/common';
 import { formatDate } from '@/utils/dateTimeFormat';
+import { RegistrationPeriod } from '@/models/registraion-period';
 
 interface TopicsFilterProps {
     onFilter: (filters: any) => void;
@@ -32,6 +33,7 @@ interface TopicsFilterProps {
     researchTypes: ResearchType[];
     researchFields: ResearchField[];
     categories: Category[];
+    registrationPeriods: RegistrationPeriod[];
     status: TopicStatus | string;
     setStatus: (value: TopicStatus | string) => void;
     department: string;
@@ -42,6 +44,8 @@ interface TopicsFilterProps {
     setResearchField: (value: string) => void;
     category: string;
     setCategory: (value: string) => void;
+    registrationPeriodId: string; // Sửa từ periodId thành registrationPeriodId
+    setRegistrationPeriod: (value: string) => void;
     startDate: Date | undefined;
     setStartDate: (value: Date | undefined) => void;
     endDate: Date | undefined;
@@ -61,6 +65,7 @@ const TopicsFilter: React.FC<TopicsFilterProps> = ({
     researchTypes,
     researchFields,
     categories,
+    registrationPeriods,
     status,
     setStatus,
     department,
@@ -71,6 +76,8 @@ const TopicsFilter: React.FC<TopicsFilterProps> = ({
     setResearchField,
     category,
     setCategory,
+    registrationPeriodId, // Sửa từ periodId thành registrationPeriodId
+    setRegistrationPeriod,
     startDate,
     setStartDate,
     endDate,
@@ -82,7 +89,6 @@ const TopicsFilter: React.FC<TopicsFilterProps> = ({
     investigator,
     setInvestigator,
 }) => {
-
     const statuses = getAllStatuses();
 
     const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +109,7 @@ const TopicsFilter: React.FC<TopicsFilterProps> = ({
             researchType,
             researchField,
             category,
+            registrationPeriodId, // Sửa từ periodId thành registrationPeriodId
             startDate,
             endDate,
             budget,
@@ -115,6 +122,7 @@ const TopicsFilter: React.FC<TopicsFilterProps> = ({
     const clearResearchType = useCallback(() => setResearchType(''), [setResearchType]);
     const clearResearchField = useCallback(() => setResearchField(''), [setResearchField]);
     const clearCategory = useCallback(() => setCategory(''), [setCategory]);
+    const clearRegistrationPeriod = useCallback(() => setRegistrationPeriod(''), [setRegistrationPeriod]);
     const clearStartDate = useCallback(() => setStartDate(undefined), [setStartDate]);
     const clearEndDate = useCallback(() => setEndDate(undefined), [setEndDate]);
     const clearBudget = useCallback(() => {
@@ -267,6 +275,34 @@ const TopicsFilter: React.FC<TopicsFilterProps> = ({
                                 size="icon"
                                 className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
                                 onClick={clearCategory}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Đợt đăng ký</label>
+                    <div className="relative">
+                        <Select value={registrationPeriodId} onValueChange={setRegistrationPeriod}>
+                            <SelectTrigger className="h-9 pr-8">
+                                <SelectValue placeholder="Chọn đợt đăng ký" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {registrationPeriods.map((period) => (
+                                    <SelectItem key={period.id} value={String(period.id)}>
+                                        {period.title} ({format(new Date(period.startDate), 'dd/MM/yyyy', { locale: vi })} - {format(new Date(period.endDate), 'dd/MM/yyyy', { locale: vi })})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {registrationPeriodId && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                                onClick={clearRegistrationPeriod}
                             >
                                 <X className="h-4 w-4" />
                             </Button>

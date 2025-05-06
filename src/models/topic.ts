@@ -1,8 +1,10 @@
 import { Category } from "@/models/category";
 import { Department } from "@/models/department";
 import { TopicStatus } from "@/models/enums/topic-status.enum";
+import { RegistrationPeriod } from "@/models/registraion-period";
 import { ResearchField } from "@/models/research-field";
 import { ResearchType } from "@/models/research-type";
+import { TopicMember } from "@/models/topic-member";
 
 export interface ExpectedProduct {
     scientific: {
@@ -44,6 +46,8 @@ export interface Topic {
     researchType?: ResearchType;
     transferForm: string[];
     attachedDocuments?: string[];
+    registrationPeriod: RegistrationPeriod;
+    members?: TopicMember[];
     status: TopicStatus;
     startDate: string;
     durationInMonths: number;

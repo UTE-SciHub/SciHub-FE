@@ -52,7 +52,7 @@
     "embla-carousel-react": "^8.3.0",
     "framer-motion": "^12.5.0",
     "html-react-parser": "^5.2.2",
-    "html2canvas": "^1.4.1",
+    "html2canvas-pro": "^1.5.10",
     "input-otp": "^1.2.4",
     "js-cookie": "^3.0.5",
     "jspdf": "^3.0.1",

@@ -189,7 +189,7 @@ const ListCategory = () => {
     };
 
     const columns: Column[] = [
-        { key: "name", title: "Tên danh mục", width: "100px", sortable: true },
+        { key: "name", title: "Loại đề tài", width: "100px", sortable: true },
         { key: "description", title: "Mô tả", width: "200px" },
         { key: "level", title: "Cấp", width: "80px" },
         { key: "delFlag", title: "Trạng thái", width: "50px", render: (_, record) => getStatusBadge(record.delFlag) },

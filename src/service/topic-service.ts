@@ -18,6 +18,7 @@ interface GetTopicsParams {
     endDate?: string;
     minBudget?: number;
     investigator?: string;
+    periodId?: string;
 }
 
 export class TopicService {
@@ -85,5 +86,25 @@ export class TopicService {
 
     static async reviewTopic(id: string, data: { status: TopicStatus, notes: string }) {
         return axiosClient.post(`${BASE_URL}topics/${id}/review`, data);
+    }
+
+    static async newReviewTopic(id: string, formData: FormData) {
+        return axiosClient.post(`${BASE_URL}topics/${id}/review`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+    }
+
+    static async publishCategories() {
+        return axiosClient.get(`${BASE_URL}topics/categories/publish`);
+    }
+
+    static async evaluateTopic(id: string, data: { notes: string }) {
+        return axiosClient.post(`${BASE_URL}topics/${id}/evaluate`, data);
+    }
+
+    static async assignCategory(data: { topicIds: string[], categoryId: number }) {
+        return axiosClient.post(`${BASE_URL}topics/assign-category`, data);
     }
 }

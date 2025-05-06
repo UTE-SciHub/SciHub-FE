@@ -121,6 +121,12 @@ const sidebarItems: SidebarItem[] = [
     allowedRoles: [Roles.ADMIN],
   },
   {
+    title: "Đăng ký CNDT",
+    href: "/admin/registration-cndt",
+    icon: FileText,
+    allowedRoles: [Roles.ADMIN, Roles.TEACHER],
+  },
+  {
     title: "Cài đặt hệ thống",
     href: "/admin/settings",
     icon: Settings,
@@ -135,12 +141,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
   const user = useUserStore((state) => state.user);
   const roles = (user?.roles || []).map((role: { id: string; name: string }) => role.name);
 
-  // Kiểm tra xem user có quyền truy cập menu không
   const hasAccess = (item: SidebarItem) => {
     return item.allowedRoles.some((role) => roles.includes(role));
   };
 
-  // Determine if a parent menu should be active based on current path
   const isParentActive = (item: SidebarItem): boolean => {
     if (location.pathname === item.href) return true;
     if (item.subItems) {
