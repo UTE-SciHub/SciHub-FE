@@ -16,6 +16,12 @@ import {
   Microscope,
   BookOpen,
   ChevronDown,
+  Folder,
+  Calendar,
+  Building,
+  Book,
+  FilePlus,
+  UserCogIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/service/auth-service";
@@ -65,7 +71,7 @@ const sidebarItems: SidebarItem[] = [
   {
     title: "Quản lý đề tài",
     href: "/admin/topics",
-    icon: FileText,
+    icon: Folder,
     subItems: [
       { title: "Danh sách đề tài", href: "/admin/topics", icon: List, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER] },
       { title: "Đăng ký đề tài", href: "/admin/topic-proposal", icon: FileText, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.TEACHER] },
@@ -93,19 +99,19 @@ const sidebarItems: SidebarItem[] = [
   {
     title: "Quản lý đợt đăng ký",
     href: "/admin/registration",
-    icon: FileText,
+    icon: Calendar,
     allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT],
   },
   {
     title: "Quản lý tài khoản",
     href: "/admin/users",
-    icon: Users,
+    icon: UserCogIcon,
     allowedRoles: [Roles.ADMIN],
   },
   {
     title: "Danh sách đơn vị",
     href: "/admin/departments",
-    icon: List,
+    icon: Building,
     allowedRoles: [Roles.ADMIN],
   },
   {
@@ -117,14 +123,20 @@ const sidebarItems: SidebarItem[] = [
   {
     title: "Quản lý loại hình nghiên cứu",
     href: "/admin/research-types",
-    icon: BookOpen,
+    icon: Book,
     allowedRoles: [Roles.ADMIN],
   },
   {
     title: "Đăng ký CNDT",
     href: "/admin/registration-cndt",
-    icon: FileText,
+    icon: FilePlus,
     allowedRoles: [Roles.ADMIN, Roles.TEACHER],
+  },
+  {
+    title: "Danh sách hội đồng",
+    href: "/admin/councils",
+    icon: Users,
+    allowedRoles: [Roles.ADMIN, Roles.TEACHER, Roles.BGH, Roles.PQLKHHTQT, Roles.COUNCIL_MEMBER],
   },
   {
     title: "Cài đặt hệ thống",

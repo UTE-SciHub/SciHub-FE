@@ -57,4 +57,8 @@ export class TopicApplicationService {
     static async delete(id: string) {
         return axiosClient.delete(`${BASE_URL}topic-applications/${id}`);
     }
+
+    static async getApplicationsByTopic(topicId: string) {
+        return axiosClient.get(`${BASE_URL}topic-applications/topic/${topicId}`);
+    }
 }

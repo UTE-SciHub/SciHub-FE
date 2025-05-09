@@ -32,12 +32,18 @@ import MyTopic from "@/pages/topics/MyTopic";
 import ViewTopic from "@/pages/topics/view/ViewTopic";
 import { AuthGuard } from "@/middleware/AuthGuard";
 import AssignTopicPage from "@/pages/admin/topics/manage/AssignTopicPage";
-import ManageTopicPage from "@/pages/admin/topics/manage/ManageTopicPage";
+import InitialReviewTopicPage from "@/pages/admin/topics/manage/InitialReviewTopicPage";
 import ReviewTopicPage from "@/pages/admin/topics/manage/ReviewTopicPage";
 import EvaluateTopicPage from "@/pages/admin/topics/manage/EvaluateTopicPage";
 import ReviewTopic from "@/pages/admin/topics/manage/review/ReviewTopic";
 import PMReviewPage from "@/pages/admin/topics/manage/PMReview/PMReviewPage";
 import RegisterCNDTPage from "@/pages/admin/registration-cndt/RegistrationCNDTPage";
+import CreateCouncilPage from "@/pages/admin/council/create/CreateCouncilPage";
+import CouncilManagementPage from "@/pages/admin/council/CouncilsManagePage";
+import CouncilDetailPage from "@/pages/admin/council/CouncilDetailPage";
+import EditCouncilPage from "@/pages/admin/council/EditCouncilPage";
+import CouncilTopicsPage from "@/pages/admin/council/evaluation/CouncilTopicsPage";
+import MeetingMinutesPage from "@/pages/admin/council/MeetingMinutes";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -79,11 +85,21 @@ const routers = createBrowserRouter([
           { index: true, element: <ListTopics /> },
           { path: ":id", element: <ViewTopic /> },
           { path: "assign/:id", element: <AssignTopicPage /> },
-          { path: "manage/:id", element: <ManageTopicPage /> },
-          { path: "review/:id", element: <ReviewTopic /> },
-          { path: "evaluate", element: <EvaluateTopicPage /> },
+          { path: "initial-review/:id", element: <InitialReviewTopicPage /> },
+          { path: "classification", element: <EvaluateTopicPage /> },
+          { path: ":id/classification", element: <ReviewTopic /> },
           { path: "pm-evaluate/:id", element: <PMReviewPage /> },
         ],
+      },
+      {
+        path: "councils", children: [
+          { index: true, element: <CouncilManagementPage /> },
+          { path: "create", element: <CreateCouncilPage /> },
+          { path: ":id", element: <CouncilDetailPage /> },
+          { path: ":id/topics", element: <CouncilTopicsPage /> },
+          { path: "edit/:id", element: <EditCouncilPage /> },
+          { path: "metting-minutes", element: <MeetingMinutesPage /> },
+        ]
       },
       { path: "contracts", element: <AdminContracts /> },
       { path: "finance", element: <AdminFinance /> },

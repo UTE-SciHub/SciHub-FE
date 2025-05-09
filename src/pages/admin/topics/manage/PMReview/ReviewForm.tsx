@@ -207,7 +207,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ topic, onNextStep, formData }) 
                 {/* Form Actions */}
                 <div className="flex justify-end p-6 border-t">
                     <Button type="submit" className="flex items-center gap-2">
-                        <Check className="h-4 w-4" /> Tiếp tục xem kết quả
+                        <Check className="h-4 w-4" /> Xem kết quả
                     </Button>
                 </div>
             </form>

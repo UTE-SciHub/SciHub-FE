@@ -72,7 +72,7 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
             councilDate: new Date().toISOString().split('T')[0],
             meetingLocation: "Phòng họp Khoa học Công nghệ - Đại học Sư phạm Kỹ thuật Đà Nẵng",
             councilDecisionNumber: "",
-            totalMembers: 0,
+            totalMembers: 1,
             totalPresent: 0,
             totalAbsent: 0,
             guests: "",
@@ -91,29 +91,24 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
         },
     });
 
-    // Update form values when formData changes (e.g., when navigating back)
     useEffect(() => {
         if (formData) {
             form.reset(formData);
         }
     }, [formData, form]);
 
-    // Auto-calculate totalAbsent when totalMembers or totalPresent changes
     useEffect(() => {
         const totalMembers = form.getValues("totalMembers");
         const totalPresent = form.getValues("totalPresent");
-        if (totalMembers >= totalPresent) {
-            form.setValue("totalAbsent", totalMembers - totalPresent, { shouldValidate: true });
-        }
+        const absent = Math.max(0, totalMembers - totalPresent);
+        form.setValue("totalAbsent", absent, { shouldValidate: true });
     }, [form.watch("totalMembers"), form.watch("totalPresent"), form]);
 
-    // Auto-calculate rejectCount when totalPresent or approveCount changes
     useEffect(() => {
         const totalPresent = form.getValues("totalPresent");
         const approveCount = form.getValues("approveCount");
-        if (totalPresent >= approveCount) {
-            form.setValue("rejectCount", totalPresent - approveCount, { shouldValidate: true });
-        }
+        const reject = Math.max(0, totalPresent - approveCount);
+        form.setValue("rejectCount", reject, { shouldValidate: true });
     }, [form.watch("totalPresent"), form.watch("approveCount"), form]);
 
     const onSubmit = (data: ReviewFormValues) => {
@@ -225,7 +220,7 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                                     <Input
                                                         type="number"
                                                         {...field}
-                                                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                        onChange={(e) => field.onChange(Math.max(0, parseInt(e.target.value) || 0))}
                                                         min={0}
                                                     />
                                                 </FormControl>

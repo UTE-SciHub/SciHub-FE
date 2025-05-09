@@ -70,4 +70,8 @@ export class UserService {
     static async changeStatus(id: string, status: UserStatus) {
         return axiosClient.patch(`${BASE_URL}users/${id}/status-change?status=${status}`);
     }
+
+    static async getAllUserNotStudent(params) {
+        return axiosClient.get(`${BASE_URL}users/not-student`, { params });
+    }
 }

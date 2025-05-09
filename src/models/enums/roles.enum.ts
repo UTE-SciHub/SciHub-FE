@@ -4,7 +4,9 @@ export enum Roles {
     PQLKHHTQT = "PQLKHHTQT",
     BCNKHOA = "BCNKHOA",
     TEACHER = "TEACHER",
-    STUDENT = "STUDENT"
+    STUDENT = "STUDENT",
+    COUNCIL_MEMBER = "COUNCIL_MEMBER",
+    TOPIC_MEMBER = "TOPIC_MEMBER",
 }
 
 export function getAllRoles(): { value: Roles; label: string }[] {

@@ -35,7 +35,7 @@ const manageSchema = z.object({
 
 type ManageFormValues = z.infer<typeof manageSchema>;
 
-export default function ManageTopicPage() {
+export default function InitialReviewTopicPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"approve" | "reject">("approve");
     const [topic, setTopic] = useState<Topic | null>(null);

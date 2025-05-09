@@ -204,7 +204,7 @@ export default function ReviewTopic() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Đánh giá đề tài</h1>
+                    <h1 className="text-2xl font-bold">Xác định danh mục</h1>
                     <p className="text-sm text-muted-foreground">
                         {currentStep === 1 ? "Biên bản họp Hội đồng xác định danh mục" : "Xem kết quả đánh giá"}
                     </p>
