@@ -207,8 +207,7 @@ export default function Login() {
                                 <img src="/logo/favicon.ico" alt="Login illustration" className="mx-auto" />
                             </Link>
                         </div>
-                        <h2 className="text-white text-3xl font-semibold mb-4">Đăng nhập tài khoản</h2>
-                        <p className="text-white text-2xl">để sử dụng các tính năng</p>
+                        <h2 className="text-white text-3xl font-semibold mb-4">Hệ thống quản lý đề tài</h2>
                     </div>
                 </div>
 

@@ -72,6 +72,10 @@ export class TopicService {
         return axiosClient.post(`${BASE_URL}topics/${id}/assign`, data);
     }
 
+    static async unassignDepartment(id: string) {
+        return axiosClient.post(`${BASE_URL}topics/${id}/unassign`);
+    }
+
     static async getTopicByDepartment(departmentId: string, params: GetTopicsParams) {
         return axiosClient.get(`${BASE_URL}topics/department/${departmentId}`, { params });
     }
@@ -106,5 +110,9 @@ export class TopicService {
 
     static async assignCategory(data: { topicIds: string[], categoryId: number }) {
         return axiosClient.post(`${BASE_URL}topics/assign-category`, data);
+    }
+
+    static async approveTopicsByCouncil(data) {
+        return axiosClient.post(`${BASE_URL}topics/council-approval`, data);
     }
 }

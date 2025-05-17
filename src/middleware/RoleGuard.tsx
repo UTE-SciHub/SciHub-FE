@@ -17,7 +17,8 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ children }) => {
     const roles = (user.roles || []).map((role: { id: string; name: string }) => role.name);
 
     const isAdminPage = location.pathname.startsWith("/admin");
-    const hasAdminAccess = roles.length > 0 && !roles.includes(Roles.STUDENT);
+
+    const hasAdminAccess = roles.length > 1 || (roles.length === 1 && roles[0] !== Roles.STUDENT);
 
     if (isAdminPage && !hasAdminAccess) {
         return <Navigate to="/" state={{ from: location }} replace />;

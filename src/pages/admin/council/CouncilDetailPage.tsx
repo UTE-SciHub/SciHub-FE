@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
@@ -62,6 +64,7 @@ import { ApplicationStatus, type TopicApplication } from "@/models/topic-applica
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import TopicSummaryModal from "@/pages/admin/council/TopicSummaryModal"
+import ApproveTopicsModal from "@/pages/admin/council/ApproveTopicsModal"
 
 export default function CouncilDetailPage() {
     const { id } = useParams<{ id: string }>()
@@ -74,6 +77,7 @@ export default function CouncilDetailPage() {
     const [loadingApplications, setLoadingApplications] = useState<Record<number, boolean>>({})
     const [selectedTopic, setSelectedTopic] = useState<any>(null)
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
+    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false)
 
     // Lấy thông tin chi tiết hội đồng
     useEffect(() => {
@@ -144,7 +148,7 @@ export default function CouncilDetailPage() {
 
     // Hàm lấy danh sách ứng viên của đề tài
     const fetchTopicApplications = async (topicId: string) => {
-        if (topicApplications[topicId]) return // Đã có dữ liệu rồi
+        if (topicApplications[topicId]) return
 
         setLoadingApplications((prev) => ({ ...prev, [topicId]: true }))
         try {
@@ -184,6 +188,17 @@ export default function CouncilDetailPage() {
     const handleOpenSummaryModal = (topic: any) => {
         setSelectedTopic(topic)
         setIsSummaryModalOpen(true)
+    }
+
+    // Hàm mở modal phê duyệt đề tài
+    const handleOpenApproveModal = () => {
+        setIsApproveModalOpen(true)
+    }
+
+    // Hàm xử lý sau khi phê duyệt thành công
+    const handleApproveSuccess = () => {
+        setIsApproveModalOpen(false)
+        setActiveTab("topics")
     }
 
     if (isLoading) {
@@ -311,8 +326,12 @@ export default function CouncilDetailPage() {
                                     className="bg-white/80 border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
                                     onClick={() => window.open("#", "_blank")}
                                 >
-                                    <Download className="h-4 w-4" />
+                                    <Download className="h-4 w-4 mr-2" />
                                     Tải quyết định
+                                </Button>
+                                <Button variant="default" onClick={handleOpenApproveModal}>
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Phê duyệt đề tài
                                 </Button>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -509,14 +528,14 @@ export default function CouncilDetailPage() {
                                 <div className="flex flex-col items-center text-center">
                                     <div
                                         className={`
-                                            w-20 h-20 rounded-full flex items-center justify-center mb-4
-                                            ${status === "Đang hoạt động"
+                      w-20 h-20 rounded-full flex items-center justify-center mb-4
+                      ${status === "Đang hoạt động"
                                                 ? "bg-green-100"
                                                 : status === "Sắp diễn ra"
                                                     ? "bg-blue-100"
                                                     : "bg-gray-100"
                                             }
-                                        `}
+                    `}
                                     >
                                         {status === "Đang hoạt động" ? (
                                             <CheckCircle className="h-10 w-10 text-green-600" />
@@ -553,7 +572,7 @@ export default function CouncilDetailPage() {
                     <Card className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                         <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 pb-4 pt-5 border-b">
                             <h3 className="text-base font-semibold text-gray-800 flex items-center">
-                                <Info className="h-5 w-5 mr-2 text-gray-600 mr-2" />
+                                <Info className="h-5 w-5 text-gray-600 mr-2" />
                                 Ghi chú
                             </h3>
                         </CardHeader>
@@ -564,7 +583,7 @@ export default function CouncilDetailPage() {
                                         <p>{council.notes}</p>
                                     ) : (
                                         <div className="flex items-center justify-center py-8 text-gray-500 italic">
-                                            <Info className="h-5 w-5 mr-2 text-gray-400" />
+                                            <Info className="h-5 w-5 text-gray-400" />
                                             Không có ghi chú
                                         </div>
                                     )}
@@ -684,7 +703,7 @@ export default function CouncilDetailPage() {
                                                             onClick={() => handleOpenSummaryModal(topicCouncil.topic)}
                                                             className="bg-white text-amber-600 border-amber-200 hover:bg-amber-50"
                                                         >
-                                                            <BarChart className="h-4 w-4" />
+                                                            <BarChart className="h-4 w-4 mr-2" />
                                                             Tổng kết
                                                         </Button>
                                                     </div>
@@ -702,8 +721,9 @@ export default function CouncilDetailPage() {
                                                                         <TableRow>
                                                                             <TableHead className="w-[50px]">#</TableHead>
                                                                             <TableHead>Ứng viên</TableHead>
-                                                                            <TableHead className="w-[300px]">Trạng thái</TableHead>
-                                                                            <TableHead className="w-[150px]">Điểm</TableHead>
+                                                                            <TableHead className="w-[120px]">Trạng thái</TableHead>
+                                                                            <TableHead className="w-[100px]">Điểm</TableHead>
+                                                                            <TableHead className="w-[120px] text-right">Thao tác</TableHead>
                                                                         </TableRow>
                                                                     </TableHeader>
                                                                     <TableBody>
@@ -738,6 +758,21 @@ export default function CouncilDetailPage() {
                                                                                     ) : (
                                                                                         <span className="text-muted-foreground">Chưa đánh giá</span>
                                                                                     )}
+                                                                                </TableCell>
+                                                                                <TableCell className="text-right">
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        className="h-8"
+                                                                                        onClick={() =>
+                                                                                            navigate(
+                                                                                                `/admin/councils/${council.id}/topics/${topicCouncil.topic?.id}/applications/${application.id}`,
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <FileText className="h-4 w-4 mr-2" />
+                                                                                        {application.totalScore !== null ? "Xem đánh giá" : "Đánh giá"}
+                                                                                    </Button>
                                                                                 </TableCell>
                                                                             </TableRow>
                                                                         ))}
@@ -814,12 +849,25 @@ export default function CouncilDetailPage() {
 
             {/* Topic Summary Modal */}
             <Dialog open={isSummaryModalOpen} onOpenChange={setIsSummaryModalOpen}>
-                <DialogContent className="max-w-6xl min-h-[90vh] overflow-auto p-0">
+                <DialogContent className="max-w-4xl min-h-[90vh] overflow-auto p-0">
                     {selectedTopic && (
                         <TopicSummaryModal
                             topic={selectedTopic}
                             applications={topicApplications[selectedTopic.id] || []}
                             onClose={() => setIsSummaryModalOpen(false)}
+                            councilId={council.id} />
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Approve Topics Modal */}
+            <Dialog open={isApproveModalOpen} onOpenChange={setIsApproveModalOpen}>
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0">
+                    {council && (
+                        <ApproveTopicsModal
+                            councilId={Number(council.id)}
+                            onClose={() => setIsApproveModalOpen(false)}
+                            onSuccess={handleApproveSuccess}
                         />
                     )}
                 </DialogContent>

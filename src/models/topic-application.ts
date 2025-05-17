@@ -20,4 +20,3 @@ export enum ApplicationStatus {
     REJECTED = "REJECTED",
     IN_PROGRESS = "IN_PROGRESS"
 }
-

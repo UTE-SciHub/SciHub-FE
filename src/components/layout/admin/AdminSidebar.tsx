@@ -115,13 +115,13 @@ const sidebarItems: SidebarItem[] = [
     allowedRoles: [Roles.ADMIN],
   },
   {
-    title: "Quản lý lĩnh vực nghiên cứu",
+    title: "Danh sách lĩnh vực nghiên cứu",
     href: "/admin/research-fields",
     icon: Microscope,
     allowedRoles: [Roles.ADMIN],
   },
   {
-    title: "Quản lý loại hình nghiên cứu",
+    title: "Danh sách loại hình nghiên cứu",
     href: "/admin/research-types",
     icon: Book,
     allowedRoles: [Roles.ADMIN],
@@ -137,6 +137,12 @@ const sidebarItems: SidebarItem[] = [
     href: "/admin/councils",
     icon: Users,
     allowedRoles: [Roles.ADMIN, Roles.TEACHER, Roles.BGH, Roles.PQLKHHTQT, Roles.COUNCIL_MEMBER],
+  },
+  {
+    title: "Đề tài chủ nhiệm",
+    href: "/admin/lecturer-topics",
+    icon: BookOpen,
+    allowedRoles: [Roles.TEACHER],
   },
   {
     title: "Cài đặt hệ thống",

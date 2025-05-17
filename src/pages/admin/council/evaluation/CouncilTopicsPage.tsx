@@ -8,22 +8,24 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { CouncilService } from "@/service/council-service"
+import { TopicApplicationService } from "@/service/topic-application-service" // Import the service
 import { toast } from "@/hooks/use-toast"
 import Loading from "@/components/loading/loading"
 import { formatDateString } from "@/utils/dateTimeFormat"
-import { getCouncilTypeBadgeClass, getCouncilTypeText } from "@/models/council"
+import { Council, getCouncilTypeBadgeClass, getCouncilTypeText } from "@/models/council"
 import useDebounce from "@/hooks/use-debounce"
 import TopicApplicationsModal from "./TopicApplicationsModal"
 import TopicEvaluationModal from "./TopicEvaluationModal"
 import type { TopicApplication } from "@/models/topic-application"
 import { EvaluationService } from "@/service/evaluation-service"
+import TopicSummaryModal from "@/pages/admin/council/TopicSummaryModal"
 
 export default function CouncilTopicsPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const applicationsModalRef = useRef<any>(null)
 
-    const [council, setCouncil] = useState<any>(null)
+    const [council, setCouncil] = useState<Council>(null)
     const [topics, setTopics] = useState<any[]>([])
     const [filteredTopics, setFilteredTopics] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -33,6 +35,8 @@ export default function CouncilTopicsPage() {
     const [selectedApplication, setSelectedApplication] = useState<TopicApplication | null>(null)
     const [isApplicationsModalOpen, setIsApplicationsModalOpen] = useState(false)
     const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false)
+    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
+    const [topicApplications, setTopicApplications] = useState<TopicApplication[]>([]) // State to store applications for the selected topic
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
@@ -45,6 +49,8 @@ export default function CouncilTopicsPage() {
             try {
                 const response = await CouncilService.getById(Number(id))
                 setCouncil(response.data.data)
+
+                console.log("Council data:", council)
 
                 // Extract topics from council data
                 const topicsData = response.data.data.topicCouncils?.map((tc: any) => tc.topic) || []
@@ -64,6 +70,26 @@ export default function CouncilTopicsPage() {
 
         fetchCouncilData()
     }, [id])
+
+    // Fetch applications for the selected topic when opening the summary modal
+    const fetchApplicationsForTopic = async (topicId: string) => {
+        try {
+            const response = await TopicApplicationService.getApplicationsByTopic(topicId)
+            if (response.status === 200) {
+                setTopicApplications(response.data.data || [])
+            } else {
+                throw new Error("Failed to fetch applications")
+            }
+        } catch (error) {
+            console.error("Error fetching applications:", error)
+            toast({
+                title: "Lỗi",
+                description: "Không thể tải danh sách ứng viên cho đề tài này.",
+                variant: "error",
+            })
+            setTopicApplications([])
+        }
+    }
 
     // Filter topics based on search query and tab
     useEffect(() => {
@@ -198,6 +224,12 @@ export default function CouncilTopicsPage() {
         }
     }
 
+    const handleSummarizeTopic = async (topic: any) => {
+        setSelectedTopic(topic)
+        await fetchApplicationsForTopic(topic.id.toString())
+        setIsSummaryModalOpen(true)
+    }
+
     if (loading) {
         return <Loading />
     }
@@ -315,7 +347,7 @@ export default function CouncilTopicsPage() {
                                             <div className="space-y-2">
                                                 <div className="text-sm">
                                                     <span className="font-medium">Số ứng viên: </span>
-                                                    <span className="font-bold">3</span> {/* This would be dynamic in a real app */}
+                                                    <span className="font-bold">{topic.applicationCount || 0}</span> {/* Update dynamically if available */}
                                                 </div>
                                                 <div className="text-sm">
                                                     <span className="font-medium">Lĩnh vực: </span>
@@ -324,7 +356,7 @@ export default function CouncilTopicsPage() {
                                                 {topic.evaluationStatus === "EVALUATED" && topic.evaluationData && (
                                                     <div className="text-sm">
                                                         <span className="font-medium">Đã đánh giá: </span>
-                                                        <span className="font-bold">2/3</span> {/* This would be dynamic in a real app */}
+                                                        <span className="font-bold">{topic.evaluatedCount || 0}/{topic.applicationCount || 0}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -334,9 +366,14 @@ export default function CouncilTopicsPage() {
                                                 <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
                                                 <span className="text-sm">Xem chi tiết</span>
                                             </div>
-                                            <Button size="sm" onClick={() => handleEvaluateTopic(topic)} variant="default">
-                                                Đánh giá ứng viên
-                                            </Button>
+                                            <div>
+                                                <Button size="sm" onClick={() => handleEvaluateTopic(topic)} variant="default" className="mr-2">
+                                                    Đánh giá ứng viên
+                                                </Button>
+                                                <Button size="sm" onClick={() => handleSummarizeTopic(topic)} variant="outline">
+                                                    Tổng kết
+                                                </Button>
+                                            </div>
                                         </div>
                                     </Card>
                                 ))}
@@ -380,6 +417,20 @@ export default function CouncilTopicsPage() {
                             existingData={
                                 selectedApplication.totalScore !== null ? { totalScore: selectedApplication.totalScore } : undefined
                             }
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Summary Modal */}
+            <Dialog open={isSummaryModalOpen} onOpenChange={setIsSummaryModalOpen}>
+                <DialogContent className="max-w-4xl overflow-auto p-0">
+                    {selectedTopic && council && (
+                        <TopicSummaryModal
+                            topic={selectedTopic}
+                            applications={topicApplications}
+                            onClose={() => setIsSummaryModalOpen(false)}
+                            councilId={council.id}
                         />
                     )}
                 </DialogContent>

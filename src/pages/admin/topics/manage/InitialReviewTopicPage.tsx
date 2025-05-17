@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, CheckCircle, XCircle, Info, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Info, AlertCircle, Edit, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ViewTopic from "@/pages/topics/view/ViewTopic";
 import {
@@ -186,10 +186,10 @@ export default function InitialReviewTopicPage() {
                             <CardHeader className="bg-primary/5 pb-3">
                                 <CardTitle className="flex items-center gap-2">
                                     <Info className="h-5 w-5 text-primary" />
-                                    Quyết định xử lý
+                                    Hành động xử lý
                                 </CardTitle>
                                 <CardDescription>
-                                    Phê duyệt hoặc từ chối đề tài này
+                                    Xác nhận hoặc gửi yêu cầu điều chỉnh đề tài này
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="pt-5">
@@ -215,14 +215,14 @@ export default function InitialReviewTopicPage() {
                                                 className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700"
                                             >
                                                 <CheckCircle className="mr-2 h-4 w-4" />
-                                                Phê duyệt
+                                                Xác nhận
                                             </TabsTrigger>
                                             <TabsTrigger
                                                 value="reject"
-                                                className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700"
+                                                className="data-[state=active]:bg-yellow-50 data-[state=active]:text-yellow-700"
                                             >
                                                 <XCircle className="mr-2 h-4 w-4" />
-                                                Từ chối
+                                                Điều chỉnh
                                             </TabsTrigger>
                                         </TabsList>
 
@@ -231,7 +231,7 @@ export default function InitialReviewTopicPage() {
                                                 <TabsContent value="approve" className="space-y-4">
                                                     <div className="flex items-center gap-2 p-3 rounded-md bg-green-50 text-green-700 mb-4">
                                                         <CheckCircle className="h-5 w-5 flex-shrink-0" />
-                                                        <p className="text-sm">Phê duyệt đề tài này để tiến hành các bước tiếp theo</p>
+                                                        <p className="text-sm">Xác nhận đề tài này để tiến hành các bước tiếp theo</p>
                                                     </div>
 
                                                     <FormField
@@ -239,16 +239,16 @@ export default function InitialReviewTopicPage() {
                                                         name="notes"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Ghi chú phê duyệt (không bắt buộc)</FormLabel>
+                                                                <FormLabel>Ghi chú xác nhận (không bắt buộc)</FormLabel>
                                                                 <FormControl>
                                                                     <Textarea
-                                                                        placeholder="Nhập ghi chú về việc phê duyệt (nếu có)..."
+                                                                        placeholder="Nhập ghi chú về việc xác nhận (nếu có)..."
                                                                         {...field}
                                                                         className="min-h-32"
                                                                     />
                                                                 </FormControl>
                                                                 <FormDescription>
-                                                                    Ghi chú sẽ được gửi kèm thông báo phê duyệt đến đơn vị
+                                                                    Ghi chú sẽ được gửi kèm thông báo xác nhận đến đơn vị
                                                                 </FormDescription>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -260,15 +260,15 @@ export default function InitialReviewTopicPage() {
                                                         className="w-full bg-green-600 hover:bg-green-700 text-white"
                                                         disabled={form.formState.isSubmitting}
                                                     >
-                                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                                        Phê duyệt đề tài
+                                                        <CheckCircle className="h-4 w-4" />
+                                                        Xác nhận đề tài
                                                     </Button>
                                                 </TabsContent>
 
                                                 <TabsContent value="reject" className="space-y-4">
-                                                    <div className="flex items-center gap-2 p-3 rounded-md bg-red-50 text-red-700 mb-4">
-                                                        <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                                                        <p className="text-sm">Đề tài sẽ bị từ chối và không thể tiếp tục.</p>
+                                                    <div className="flex items-center gap-2 p-3 rounded-md bg-yellow-50 text-yellow-700 mb-4">
+                                                        <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                                                        <p className="text-sm">Đề tài cần được điều chỉnh.</p>
                                                     </div>
 
                                                     <FormField
@@ -276,16 +276,16 @@ export default function InitialReviewTopicPage() {
                                                         name="notes"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Lý do từ chối <span className="text-destructive">*</span></FormLabel>
+                                                                <FormLabel>Lý do điều chỉnh <span className="text-destructive">*</span></FormLabel>
                                                                 <FormControl>
                                                                     <Textarea
-                                                                        placeholder="Vui lòng nhập lý do từ chối đề tài..."
+                                                                        placeholder="Vui lòng nhập lý do điều chỉnh đề tài..."
                                                                         {...field}
                                                                         className="min-h-32"
                                                                     />
                                                                 </FormControl>
                                                                 <FormDescription>
-                                                                    Lý do từ chối sẽ được gửi kèm thông báo đến đơn vị
+                                                                    Lý do điều chỉnh sẽ được gửi kèm thông báo đến đơn vị
                                                                 </FormDescription>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -294,11 +294,11 @@ export default function InitialReviewTopicPage() {
 
                                                     <Button
                                                         type="submit"
-                                                        className="w-full bg-red-600 hover:bg-red-700 text-white"
+                                                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
                                                         disabled={form.formState.isSubmitting}
                                                     >
-                                                        <XCircle className="mr-2 h-4 w-4" />
-                                                        Từ chối đề tài
+                                                        <Edit className="h-4 w-4" />
+                                                        Điều chỉnh đề tài
                                                     </Button>
                                                 </TabsContent>
                                             </form>

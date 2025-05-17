@@ -74,4 +74,8 @@ export class UserService {
     static async getAllUserNotStudent(params) {
         return axiosClient.get(`${BASE_URL}users/not-student`, { params });
     }
+
+    static async getUserByEmail(email: string) {
+        return axiosClient.get(`${BASE_URL}users/email?email=${email}`);
+    }
 }

@@ -44,6 +44,9 @@ import CouncilDetailPage from "@/pages/admin/council/CouncilDetailPage";
 import EditCouncilPage from "@/pages/admin/council/EditCouncilPage";
 import CouncilTopicsPage from "@/pages/admin/council/evaluation/CouncilTopicsPage";
 import MeetingMinutesPage from "@/pages/admin/council/MeetingMinutes";
+import LecturerTopicsPage from "@/pages/admin/topics/my-topic/LecturerTopicsPage";
+import TopicFeedbackPage from "@/pages/admin/topics/feedback/TopicFeedbackPage";
+import TopicProgressPage from "@/pages/admin/topics/feedback/TopicProgressPage";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -89,6 +92,7 @@ const routers = createBrowserRouter([
           { path: "classification", element: <EvaluateTopicPage /> },
           { path: ":id/classification", element: <ReviewTopic /> },
           { path: "pm-evaluate/:id", element: <PMReviewPage /> },
+          { path: "test", element: <TopicFeedbackPage /> },
         ],
       },
       {
@@ -104,6 +108,9 @@ const routers = createBrowserRouter([
       { path: "contracts", element: <AdminContracts /> },
       { path: "finance", element: <AdminFinance /> },
       { path: "announcements", element: <AdminAnnouncements /> },
+      { path: "lecturer-topics", element: <LecturerTopicsPage /> },
+      { path: "lecturer-topics/feedback/:id", element: <TopicFeedbackPage /> },
+      { path: "lecturer/topic-progress/:id", element: <TopicProgressPage /> },
       { path: "users", element: <AdminUsers /> },
       {
         path: "registration",

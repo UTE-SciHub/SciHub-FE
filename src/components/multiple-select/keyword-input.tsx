@@ -44,7 +44,6 @@ export default function KeywordsInput<TFieldValues extends FieldValues>({
 
     return (
         <FormItem>
-            <FormLabel>{label}</FormLabel>
             <FormControl>
                 <div className={readOnly ? "pointer-events-none select-none opacity-100" : ""}>
                     <TagsInput

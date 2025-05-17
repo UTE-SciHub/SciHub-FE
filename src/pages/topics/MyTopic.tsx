@@ -245,21 +245,23 @@ const MyTopic = () => {
               <TooltipContent>Xem chi tiết</TooltipContent>
             </Tooltip>
 
+            {(record.status === TopicStatus.DRAFT || record.status === TopicStatus.REVIEWED) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(`/topic/edit/${record.id}`)}
+                    className="bg-[#f59e0b] text-white hover:bg-[#f4b122] transition-all"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Chỉnh sửa</TooltipContent>
+              </Tooltip>
+            )}
+
             {record.status === TopicStatus.DRAFT && (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      onClick={() => navigate(`/topic/edit/${record.id}`)}
-                      className="bg-[#f59e0b] text-white hover:bg-[#f4b122] transition-all"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Chỉnh sửa</TooltipContent>
-                </Tooltip>
-
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

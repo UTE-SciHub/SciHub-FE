@@ -1,29 +1,39 @@
 import { useState } from "react"
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Download, FileText, BarChart2, HelpCircle } from "lucide-react"
+import { Download, FileText, BarChart2 } from "lucide-react"
 import { type TopicApplication, ApplicationStatus } from "@/models/topic-application"
-import { CRITERIA_DETAILS, getTotalMaxScore, getTotalMinScore } from "@/models/evaluation-detail"
+import { getTotalMaxScore, getTotalMinScore } from "@/models/evaluation-detail"
 import { toast } from "@/hooks/use-toast"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { getInitialsAvt } from "@/utils/common"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Progress } from "@/components/ui/progress"
+import { EvaluationService } from "@/service/evaluation-service"
 
 interface TopicSummaryModalProps {
     topic: any
     applications: TopicApplication[]
     onClose: () => void
+    councilId: string
 }
 
-export default function TopicSummaryModal({ topic, applications, onClose }: TopicSummaryModalProps) {
+export default function TopicSummaryModal({ topic, applications = [], onClose, councilId }: TopicSummaryModalProps) {
     const [activeTab, setActiveTab] = useState("list")
     const [isExporting, setIsExporting] = useState(false)
+    const [rankedApplications, setRankedApplications] = useState<TopicApplication[]>([])
+    const [isSummarizing, setIsSummarizing] = useState(false)
+
+    if (!topic) {
+        return (
+            <div className="p-6 text-center">
+                <p className="text-muted-foreground">Không tìm thấy thông tin đề tài</p>
+            </div>
+        )
+    }
 
     // Tính toán số liệu thống kê
     const totalApplications = applications.length
@@ -32,8 +42,39 @@ export default function TopicSummaryModal({ topic, applications, onClose }: Topi
     const failedApplications = applications.filter((app) => app.passed === false).length
     const pendingApplications = applications.filter((app) => !app.hasEvaluated).length
 
-    // Sắp xếp ứng viên theo điểm số (từ cao đến thấp)
-    const sortedApplications = [...applications].sort((a, b) => {
+    // Hàm gọi API để tổng kết
+    const handleSummarize = async () => {
+        setIsSummarizing(true)
+        try {
+            const response = await EvaluationService.determinePrincipalInvestigator(councilId, topic.id.toString())
+            if (response.status === 200) {
+                const rankedApps = response.data.data as TopicApplication[]
+                setRankedApplications(rankedApps)
+                toast({
+                    title: "Thành công",
+                    description: "Đã tổng kết và xếp hạng ứng viên.",
+                    variant: "success",
+                })
+            } else {
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể tổng kết. Vui lòng thử lại.",
+                    variant: "error",
+                })
+            }
+        } catch (error) {
+            toast({
+                title: "Lỗi",
+                description: "Đã xảy ra lỗi khi tổng kết.",
+                variant: "error",
+            })
+        } finally {
+            setIsSummarizing(false)
+        }
+    }
+
+    // Sắp xếp ứng viên theo điểm số (từ cao đến thấp) từ API hoặc dữ liệu ban đầu
+    const displayApplications = rankedApplications.length > 0 ? rankedApplications : [...applications].sort((a, b) => {
         if (!a.hasEvaluated) return 1
         if (!b.hasEvaluated) return -1
         return (b.totalScore || 0) - (a.totalScore || 0)
@@ -83,11 +124,16 @@ export default function TopicSummaryModal({ topic, applications, onClose }: Topi
 
     return (
         <div className="flex flex-col h-full max-h-[90vh]">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                <DialogTitle>Tổng kết đánh giá đề tài</DialogTitle>
-                <DialogDescription>
-                    {topic.vietnameseName} - {topic.topicCode}
-                </DialogDescription>
+            <DialogHeader className="px-6 pt-6 pb-4 border-b flex justify-between items-center">
+                <div>
+                    <DialogTitle>Tổng kết đánh giá đề tài</DialogTitle>
+                    <DialogDescription>
+                        {topic.vietnameseName} - {topic.topicCode}
+                    </DialogDescription>
+                </div>
+                <Button variant="default" onClick={handleSummarize} disabled={isSummarizing}>
+                    {isSummarizing ? "Đang tổng kết..." : "Tổng kết"}
+                </Button>
             </DialogHeader>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -104,14 +150,14 @@ export default function TopicSummaryModal({ topic, applications, onClose }: Topi
 
                 <div className="flex-1 overflow-auto p-6">
                     <TabsContent value="list" className="mt-0">
-                        {applications.length > 0 ? (
+                        {displayApplications.length > 0 ? (
                             <Card>
                                 <CardHeader className="pb-3">
                                     <CardTitle className="text-lg">Bảng xếp hạng ứng viên</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <Accordion type="single" collapsible className="w-full">
-                                        {sortedApplications.map((application, index) => (
+                                        {displayApplications.map((application, index) => (
                                             <AccordionItem key={application.id} value={`item-${application.id}`}>
                                                 <div className="border-b">
                                                     <div className="flex items-center px-4 py-3">
@@ -326,16 +372,16 @@ export default function TopicSummaryModal({ topic, applications, onClose }: Topi
                                                         <div className="flex items-center space-x-3">
                                                             <Avatar className="h-10 w-10">
                                                                 <AvatarFallback>
-                                                                    {getInitialsAvt(sortedApplications[0]?.user.name || "")}
+                                                                    {getInitialsAvt(displayApplications[0]?.user.name || "")}
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             <div>
-                                                                <p className="font-medium">{sortedApplications[0]?.user.name}</p>
-                                                                <p className="text-sm text-gray-500">{sortedApplications[0]?.user.email}</p>
+                                                                <p className="font-medium">{displayApplications[0]?.user.name}</p>
+                                                                <p className="text-sm text-gray-500">{displayApplications[0]?.user.email}</p>
                                                             </div>
                                                             <div className="ml-auto">
                                                                 <span className="text-lg font-bold text-green-600">
-                                                                    {sortedApplications[0]?.totalScore?.toFixed(1)}/{maxScore}
+                                                                    {displayApplications[0]?.totalScore?.toFixed(1)}/{maxScore}
                                                                 </span>
                                                             </div>
                                                         </div>

@@ -51,7 +51,7 @@ const topicFormSchema = z
         urgency: z.string().min(1, { message: "Tính cấp thiết là bắt buộc" }),
         keywords: z.array(z.string()).min(1, { message: "Cần ít nhất một từ khóa" }),
         category: z.string().min(1, { message: "Vui lòng chọn loại đề tài" }),
-        period: z.string().min(1, { message: "Vui lòng chọn đợt đăng ký" }),
+        period: z.string().optional(),
         field: z.string().min(1, { message: "Vui lòng chọn lĩnh vực nghiên cứu" }),
         researchType: z.string().min(1, { message: "Vui lòng chọn loại hình nghiên cứu" }),
         transferForm: z.array(z.string()).optional(),

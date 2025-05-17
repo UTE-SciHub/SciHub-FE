@@ -53,6 +53,7 @@ export interface Topic {
     durationInMonths: number;
     endYear: number;
     totalBudget: number;
+    approvedBudget?: number;
     fundingSource?: string;
     budgetBreakdown: BudgetBreakdown[];
     additionalNotes?: string;

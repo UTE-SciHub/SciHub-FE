@@ -282,7 +282,10 @@ const AdminRegistrationPeriods = () => {
             sortable: true,
             render: (_, record) => (
                 <div className="space-y-1">
-                    <div className="font-medium">{record.title}</div>
+                    <div
+                        className="font-medium text-primary hover:underline cursor-pointer"
+                        onClick={() => { navigate(`/admin/registration/${record.id}`); }}
+                    >{record.title}</div>
                     <div className="text-sm text-muted-foreground">
                         ID: {record.id} {record.decisionNumber && `• QĐ: ${record.decisionNumber}`}
                     </div>

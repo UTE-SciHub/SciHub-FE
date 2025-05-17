@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Building, Info, Save, AlertCircle } from "lucide-react";
+import { ArrowLeft, Building, Info, Save, AlertCircle, X } from "lucide-react";
 import { Topic } from "@/models/topic";
 import { Department } from "@/models/department";
 import { toast } from "@/hooks/use-toast";
@@ -32,6 +32,14 @@ import { TopicService } from "@/service/topic-service";
 import { DepartmentService } from "@/service/department-service";
 import Loading from "@/components/loading/loading";
 import { TopicStatus } from "@/models/enums/topic-status.enum";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 const assignmentSchema = z.object({
     departmentId: z.string().min(1, { message: "Vui lòng chọn đơn vị phụ trách" }),
@@ -46,6 +54,7 @@ export default function AssignTopicPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isAssigned, setIsAssigned] = useState(false);
     const [isFinalized, setIsFinalized] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
@@ -84,8 +93,11 @@ export default function AssignTopicPage() {
             const response = await TopicService.getById(id);
             if (response.status === 200 && response.data.code === 1000) {
                 setTopic(response.data.data);
-                setIsAssigned(response.data.data.status === TopicStatus.ASSIGNED);
+                setIsAssigned(!!response.data.data.department?.id);
                 setIsFinalized(response.data.data.status === TopicStatus.APPROVED || response.data.data.status === TopicStatus.REJECTED);
+                if (response.data.data.department?.id) {
+                    form.setValue('departmentId', String(response.data.data.department.id));
+                }
             } else {
                 toast({
                     title: "Lỗi khi tải đề tài",
@@ -127,7 +139,8 @@ export default function AssignTopicPage() {
                     title: "Phân công thành công",
                     description: `Đề tài đã được phân công cho ${departments.find(d => String(d.id) === data.departmentId)?.name}`,
                 });
-                navigate("/admin/topics");
+                setIsAssigned(true);
+                await fetchTopic();
             } else {
                 toast({
                     title: "Phân công thất bại",
@@ -144,6 +157,40 @@ export default function AssignTopicPage() {
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleUnassign = async () => {
+        if (!id || isFinalized) return;
+
+        setIsLoading(true);
+        try {
+            const response = await TopicService.unassignDepartment(id);
+            if (response.status === 200 && response.data.code === 1000) {
+                toast({
+                    title: "Gỡ phân công thành công",
+                    description: "Đề tài đã được gỡ phân công. Bạn có thể chọn đơn vị mới.",
+                });
+                setIsAssigned(false);
+                form.setValue('departmentId', '');
+                await fetchTopic();
+            } else {
+                toast({
+                    title: "Gỡ phân công thất bại",
+                    description: response.data.message || "Đã xảy ra lỗi khi gỡ phân công.",
+                    variant: "error",
+                });
+            }
+        } catch (error) {
+            console.error("Lỗi khi gỡ phân công:", error);
+            toast({
+                title: "Không thể gỡ phân công",
+                description: "Đã xảy ra lỗi khi gỡ phân công. Vui lòng thử lại.",
+                variant: "error",
+            });
+        } finally {
+            setIsLoading(false);
+            setIsDialogOpen(false);
         }
     };
 
@@ -190,11 +237,11 @@ export default function AssignTopicPage() {
                                     <AlertCircle className="h-5 w-5 mt-1 flex-shrink-0 text-yellow-700" />
                                     <div className="text-sm leading-relaxed">
                                         <p>
-                                            <span className="font-semibold text-yellow-800">Đề tài này đã được phân công</span> cho đơn vị:&nbsp;
+                                            <span className="font-semibold text-yellow-800">Đề tài này đã được phân công</span> cho đơn vị:
                                             <span className="font-bold text-yellow-900">{topic?.department?.name}</span>.
                                         </p>
                                         <p className="mt-1 text-yellow-800">
-                                            Nếu cần thay đổi, vui lòng liên hệ quản trị viên hoặc thu hồi phân công trước khi chỉnh sửa.
+                                            Bạn có thể gỡ phân công để chọn đơn vị khác hoặc liên hệ quản trị viên.
                                         </p>
                                     </div>
                                 </div>
@@ -230,7 +277,7 @@ export default function AssignTopicPage() {
                                                     onValueChange={field.onChange}
                                                     defaultValue={field.value}
                                                     value={field.value}
-                                                    disabled={isFinalized}
+                                                    disabled={isFinalized || isAssigned}
                                                 >
                                                     <FormControl>
                                                         <SelectTrigger>
@@ -274,20 +321,33 @@ export default function AssignTopicPage() {
                                         )}
                                     />
 
-                                    <Button
-                                        type="submit"
-                                        className="flex items-center gap-2"
-                                        disabled={isFinalized || form.formState.isSubmitting}
-                                    >
-                                        <Save className="h-4 w-4" />
-                                        Phân công
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="submit"
+                                            className="flex items-center gap-2"
+                                            disabled={isFinalized || form.formState.isSubmitting || isAssigned}
+                                        >
+                                            <Save className="h-4 w-4" />
+                                            Phân công
+                                        </Button>
+                                        {isAssigned && !isFinalized && (
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                className="flex items-center gap-2"
+                                                onClick={() => setIsDialogOpen(true)}
+                                                disabled={form.formState.isSubmitting}
+                                            >
+                                                <X className="h-4 w-4" />
+                                                Gỡ phân công
+                                            </Button>
+                                        )}
+                                    </div>
                                 </form>
                             </Form>
                         </CardContent>
                     </Card>
 
-                    {/* Topic details section */}
                     <div className="border rounded-md p-4 bg-gray-50">
                         <h2 className="text-2xl text-primary font-semibold leading-none tracking-tight mb-4 flex items-center gap-2">
                             <Info className="w-5 h-5" />
@@ -296,6 +356,26 @@ export default function AssignTopicPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Xác nhận gỡ phân công</DialogTitle>
+                        <DialogDescription>
+                            Bạn có chắc chắn muốn gỡ phân công đề tài khỏi đơn vị <strong>{topic?.department?.name}</strong>?
+                            Hành động này sẽ cho phép chọn một đơn vị khác để phân công lại.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                            Hủy
+                        </Button>
+                        <Button variant="destructive" onClick={handleUnassign}>
+                            Gỡ phân công
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

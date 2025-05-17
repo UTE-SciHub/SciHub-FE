@@ -60,4 +60,8 @@ export class CouncilService {
             responseType: "blob",
         })
     }
+
+    static async getApprovedTopicsByCouncil(id: number) {
+        return axiosClient.get(`${BASE_URL}councils/${id}/approved-topics`)
+    }
 }

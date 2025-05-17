@@ -442,7 +442,7 @@ const TopicsPage = () => {
     };
 
     const handleReview = (topicId: string) => {
-        navigate(`/admin/topics/review/${topicId}`);
+        navigate(`/admin/topics/initial-review/${topicId}`);
     };
 
     const handleCategoryAssigned = () => {

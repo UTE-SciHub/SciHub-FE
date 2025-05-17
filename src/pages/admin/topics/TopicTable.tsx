@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Column } from "@/models/column";
 import { Topic } from "@/models/topic";
-import { Check, Eye, MoreHorizontal, Save } from "lucide-react";
+import { Check, CheckCircle2, Eye, MoreHorizontal, Save } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatVND } from "@/utils/common";
 import { getBadge, getStatusClass, TopicStatus } from "@/models/enums/topic-status.enum";
+import { useNavigate } from "react-router-dom";
 
 interface TopicsTableProps {
     topics: Topic[];
@@ -47,6 +48,7 @@ const TopicsTable = ({
     onAssign,
     onReview,
 }: TopicsTableProps) => {
+    const navigate = useNavigate();
     const columns: Column[] = [
         {
             key: "topicCode",
@@ -59,6 +61,16 @@ const TopicsTable = ({
             title: "Tên đề tài",
             width: "300px",
             sortable: true,
+            render: (_, record) => (
+                <div className="space-y-1">
+                    <div
+                        className="font-medium text-primary hover:underline cursor-pointer"
+                        onClick={() => { navigate(`/admin/topics/${record.id}`); }}
+                    >
+                        {record.vietnameseName}
+                    </div>
+                </div>
+            ),
         },
         {
             key: "principalInvestigator",
@@ -116,15 +128,11 @@ const TopicsTable = ({
                             <Eye className="mr-2 h-4 w-4" />
                             Xem chi tiết
                         </DropdownMenuItem>
-                        {record.status === TopicStatus.SUBMITTED && (
-                            <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => onReview(record.id)} className="cursor-pointer">
-                                    <Check className="mr-2 h-4 w-4" />
-                                    Đánh giá đề tài
-                                </DropdownMenuItem>
-                            </>
-                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onReview(record.id)} className="cursor-pointer">
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Kiểm duyệt
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onAssign(record.id)} className="cursor-pointer">
                             <Save className="mr-2 h-4 w-4" />
