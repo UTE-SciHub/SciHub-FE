@@ -92,7 +92,6 @@ const routers = createBrowserRouter([
           { path: "classification", element: <EvaluateTopicPage /> },
           { path: ":id/classification", element: <ReviewTopic /> },
           { path: "pm-evaluate/:id", element: <PMReviewPage /> },
-          { path: "test", element: <TopicFeedbackPage /> },
         ],
       },
       {
@@ -103,6 +102,7 @@ const routers = createBrowserRouter([
           { path: ":id/topics", element: <CouncilTopicsPage /> },
           { path: "edit/:id", element: <EditCouncilPage /> },
           { path: "metting-minutes", element: <MeetingMinutesPage /> },
+          { path: ":councilId/feedback/:topicId", element: <TopicFeedbackPage /> },
         ]
       },
       { path: "contracts", element: <AdminContracts /> },

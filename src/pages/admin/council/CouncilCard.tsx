@@ -70,7 +70,7 @@ export default function CouncilCard({ council }: CouncilCardProps) {
 
     return (
         <Card className="h-full transition-all hover:shadow-md">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 border-b border-gray-100">
                 <div className="flex justify-between items-start">
                     <h3
                         className="text-lg font-semibold text-primary hover:underline cursor-pointer line-clamp-2"
@@ -83,38 +83,48 @@ export default function CouncilCard({ council }: CouncilCardProps) {
                     </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">QĐ: {council.decisionNumber}</p>
+                <p className="text-sm text-muted-foreground">
+                    Ngày thành lập: {formatDateString(council.establishmentDate)}
+                </p>
             </CardHeader>
-            <CardContent className="pb-2">
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            {getStatusIcon(status)}
-                            {getStatusBadge(status)}
-                        </div>
-                        <div className="flex items-center">
-                            <Users className="h-4 w-4 mr-1 text-muted-foreground" />
-                            <span className="text-sm">{council.councilMembers?.length || 0} thành viên</span>
-                        </div>
+            <CardContent className="py-3 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        {getStatusIcon(status)}
+                        {getStatusBadge(status)}
                     </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                            <p className="text-muted-foreground">Bắt đầu:</p>
-                            <p className="font-medium">{formatDateString(council.startDate)}</p>
-                        </div>
-                        <div>
-                            <p className="text-muted-foreground">Kết thúc:</p>
-                            <p className="font-medium">{formatDateString(council.endDate)}</p>
-                        </div>
+                    <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <span className="text-sm">{council.councilMembers?.length || 0} thành viên</span>
                     </div>
-
-                    {topicCount > 0 && (
-                        <div>
-                            <p className="text-muted-foreground text-sm mb-1">Đề tài:</p>
-                            <p className="text-sm font-medium">{topicCount} đề tài cần đánh giá</p>
-                        </div>
-                    )}
                 </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                        <p className="text-muted-foreground">Bắt đầu:</p>
+                        <p className="font-medium">{formatDateString(council.startDate)}</p>
+                    </div>
+                    <div>
+                        <p className="text-muted-foreground">Kết thúc:</p>
+                        <p className="font-medium">{formatDateString(council.endDate)}</p>
+                    </div>
+                </div>
+
+                {council.notes && (
+                    <div className="bg-gray-50 rounded-md p-2 border border-gray-100">
+                        <p className="text-gray-700 text-sm mb-1">
+                            <span className="font-medium">Ghi chú:</span> {council.notes}
+                        </p>
+                    </div>
+                )}
+
+                {topicCount > 0 && (
+                    <div className="bg-blue-50 rounded-md p-2 border border-blue-100">
+                        <p className="text-blue-700 text-sm mb-1">
+                            <span className="font-medium"></span> {topicCount} đề tài cần đánh giá
+                        </p>
+                    </div>
+                )}
             </CardContent>
             <CardFooter className="flex justify-between pt-2">
                 {council.decisionFile ? (

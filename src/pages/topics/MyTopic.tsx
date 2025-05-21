@@ -1,26 +1,17 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Eye, Pencil, Trash2, FilePlus, Send, X, Save } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
-import { TopicService } from '@/service/topic-service';
-import { Topic } from '@/models/topic';
-import { getBadge, getStatusClass, TopicStatus } from '@/models/enums/topic-status.enum';
-import { formatVND } from '@/utils/common';
-import DataTable from '@/components/data-table/data-table';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { useEffect, useState, useMemo } from "react"
+import { Eye, Pencil, Trash2, FilePlus, Send, X, Save, BarChart2, Clock } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { useNavigate } from "react-router-dom"
+import { toast } from "@/hooks/use-toast"
+import { TopicService } from "@/service/topic-service"
+import { MilestoneService } from "@/service/milestone-service"
+import type { Topic } from "@/models/topic"
+import { getBadge, getStatusClass, TopicStatus } from "@/models/enums/topic-status.enum"
+import { formatVND } from "@/utils/common"
+import DataTable from "@/components/data-table/data-table"
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,59 +21,70 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RegistrationService } from '@/service/registration-service';
-import { RegistrationPeriod } from '@/models/registraion-period';
-import { RegistrationPeriodStatus } from '@/models/enums/registration-period-status';
-import Loading from '@/components/loading/loading';
+} from "@/components/ui/alert-dialog"
+import { useForm } from "react-hook-form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RegistrationService } from "@/service/registration-service"
+import type { RegistrationPeriod } from "@/models/registraion-period"
+import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status"
+import Loading from "@/components/loading/loading"
+import MilestoneAccordion from "@/pages/admin/topics/milestone/MilestoneAccordion"
+import FeedbackList from "@/pages/admin/topics/feedback/FeedbackList"
+import type { Milestone } from "@/models/milestone"
 
 interface SubmitFormValues {
-  period: string;
+  period: string
 }
 
 const MyTopic = () => {
-  const [myTopics, setMyTopics] = useState<Topic[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
-  const [sortBy, setSortBy] = useState<string | null>(null);
-  const [order, setOrder] = useState<string | null>(null);
-  const [openModal, setOpenModal] = useState(false);
-  const [openConfirm, setOpenConfirm] = useState(false);
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
-  const [periods, setPeriods] = useState<RegistrationPeriod[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+  const [myTopics, setMyTopics] = useState<Topic[]>([])
+  const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [totalItems, setTotalItems] = useState(0)
+  const [sortBy, setSortBy] = useState<string | null>(null)
+  const [order, setOrder] = useState<string | null>(null)
+  const [openModal, setOpenModal] = useState(false)
+  const [openConfirm, setOpenConfirm] = useState(false)
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null)
+  const [periods, setPeriods] = useState<RegistrationPeriod[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [openConfirmDelete, setOpenConfirmDelete] = useState(false)
 
-  const navigate = useNavigate();
+  // New states for milestone and feedback functionality
+  const [viewingMilestones, setViewingMilestones] = useState(false)
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
+  const [milestones, setMilestones] = useState<Milestone[]>([])
+  const [viewingReviews, setViewingReviews] = useState(false)
+  const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null)
+  const [loadingMilestones, setLoadingMilestones] = useState(false)
+
+  const navigate = useNavigate()
 
   const form = useForm<SubmitFormValues>({
     defaultValues: {
-      period: '',
+      period: "",
     },
-  });
+  })
 
   const fetchMyTopics = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await TopicService.getUserTopics();
-      setMyTopics(response.data.data);
-      setTotalItems(response.data.totalItems || response.data.data.length);
+      const response = await TopicService.getUserTopics()
+      setMyTopics(response.data.data)
+      setTotalItems(response.data.totalItems || response.data.data.length)
     } catch (error) {
-      console.error('Error fetching topics:', error);
+      console.error("Error fetching topics:", error)
       toast({
-        title: 'Có lỗi xảy ra!',
-        description: 'Không thể tải danh sách đề tài. Vui lòng thử lại sau.',
-        variant: 'error',
-      });
+        title: "Có lỗi xảy ra!",
+        description: "Không thể tải danh sách đề tài. Vui lòng thử lại sau.",
+        variant: "error",
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const fetchOpenPeriods = async () => {
     try {
@@ -93,215 +95,273 @@ const MyTopic = () => {
         order: "desc",
         status: RegistrationPeriodStatus.OPEN,
         year: new Date().getFullYear(),
-      });
-      setPeriods(response.data.data);
+      })
+      setPeriods(response.data.data)
     } catch (error) {
-      console.error('Error fetching registration periods:', error);
+      console.error("Error fetching registration periods:", error)
       toast({
-        title: 'Có lỗi xảy ra!',
-        description: 'Không thể tải danh sách đợt đăng ký. Vui lòng thử lại sau.',
-        variant: 'error',
-      });
+        title: "Có lỗi xảy ra!",
+        description: "Không thể tải danh sách đợt đăng ký. Vui lòng thử lại sau.",
+        variant: "error",
+      })
     }
-  };
+  }
+
+  // New function to fetch milestones for a topic
+  const fetchMilestones = async (topicId: string) => {
+    setLoadingMilestones(true)
+    try {
+      const response = await MilestoneService.getByTopicId(topicId)
+      if (response.status === 200 && response.data.code === 1000) {
+        setMilestones(response.data.data)
+      } else {
+        toast({
+          title: "Có lỗi xảy ra!",
+          description: "Không thể tải thông tin tiến độ. Vui lòng thử lại sau.",
+          variant: "error",
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching milestones:", error)
+      toast({
+        title: "Có lỗi xảy ra!",
+        description: "Không thể tải thông tin tiến độ. Vui lòng thử lại sau.",
+        variant: "error",
+      })
+    } finally {
+      setLoadingMilestones(false)
+    }
+  }
+
+  // Function to view milestones and feedback for a topic
+  const handleViewMilestones = async (topic: Topic) => {
+    setSelectedTopic(topic)
+    setViewingMilestones(true)
+    await fetchMilestones(topic.id)
+  }
+
+  // Function to view reviews for a milestone
+  const handleViewReviews = (milestone: Milestone) => {
+    setSelectedMilestone(milestone)
+    setViewingReviews(true)
+  }
 
   useEffect(() => {
-    fetchMyTopics();
-  }, [currentPage, itemsPerPage, sortBy, order]);
+    fetchMyTopics()
+  }, [currentPage, itemsPerPage, sortBy, order])
 
   const handleDelete = async (topicId: string) => {
-    if (!topicId) return;
+    if (!topicId) return
 
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await TopicService.deleteTopicById(topicId);
+      const response = await TopicService.deleteTopicById(topicId)
       if (response.status === 200 && response.data.code === 1000) {
         toast({
-          title: 'Xóa đề tài thành công!',
-          description: 'Đề tài đã được xóa thành công.',
-          variant: 'success',
-        });
-        fetchMyTopics();
+          title: "Xóa đề tài thành công!",
+          description: "Đề tài đã được xóa thành công.",
+          variant: "success",
+        })
+        fetchMyTopics()
       } else {
         toast({
-          title: 'Có lỗi xảy ra!',
-          description: 'Không thể xóa đề tài. Vui lòng thử lại sau.',
-          variant: 'error',
-        });
+          title: "Có lỗi xảy ra!",
+          description: "Không thể xóa đề tài. Vui lòng thử lại sau.",
+          variant: "error",
+        })
       }
     } catch (error) {
-      console.error('Error deleting topic:', error);
+      console.error("Error deleting topic:", error)
       toast({
-        title: 'Có lỗi xảy ra!',
-        description: 'Không thể xóa đề tài. Vui lòng thử lại sau.',
-        variant: 'error',
-      });
+        title: "Có lỗi xảy ra!",
+        description: "Không thể xóa đề tài. Vui lòng thử lại sau.",
+        variant: "error",
+      })
     } finally {
-      setLoading(false);
-      setOpenConfirmDelete(false);
-      setSelectedTopicId(null);
+      setLoading(false)
+      setOpenConfirmDelete(false)
+      setSelectedTopicId(null)
     }
-  };
+  }
 
   const handleOpenSubmitModal = (topicId: string) => {
-    setSelectedTopicId(topicId);
-    fetchOpenPeriods();
-    setOpenModal(true);
-  };
+    setSelectedTopicId(topicId)
+    fetchOpenPeriods()
+    setOpenModal(true)
+  }
 
   const handleSubmitTopic = async (values: SubmitFormValues) => {
-    if (!selectedTopicId) return;
+    if (!selectedTopicId) return
 
-    setOpenConfirm(true);
-  };
+    setOpenConfirm(true)
+  }
 
   const confirmSubmitTopic = async () => {
-    if (!selectedTopicId) return;
+    if (!selectedTopicId) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      const periodId = form.getValues('period');
-      const response = await TopicService.submitTopic(selectedTopicId, periodId);
+      const periodId = form.getValues("period")
+      const response = await TopicService.submitTopic(selectedTopicId, periodId)
       if (response.status === 200 && response.data.code === 1000) {
         toast({
-          title: 'Nộp đề tài thành công!',
-          description: 'Đề tài đã được nộp thành công.',
-          variant: 'success',
-        });
+          title: "Nộp đề tài thành công!",
+          description: "Đề tài đã được nộp thành công.",
+          variant: "success",
+        })
       } else {
         toast({
-          title: 'Có lỗi xảy ra!',
-          description: 'Không thể nộp đề tài. Vui lòng thử lại sau.',
-          variant: 'error',
-        });
+          title: "Có lỗi xảy ra!",
+          description: "Không thể nộp đề tài. Vui lòng thử lại sau.",
+          variant: "error",
+        })
       }
-      fetchMyTopics();
+      fetchMyTopics()
     } catch (error) {
-      console.error('Error submitting topic:', error);
+      console.error("Error submitting topic:", error)
       toast({
-        title: 'Có lỗi xảy ra!',
-        description: 'Không thể nộp đề tài. Vui lòng thử lại sau.',
-        variant: 'error',
-      });
+        title: "Có lỗi xảy ra!",
+        description: "Không thể nộp đề tài. Vui lòng thử lại sau.",
+        variant: "error",
+      })
     } finally {
-      setIsSubmitting(false);
-      setOpenConfirm(false);
-      setOpenModal(false);
-      setSelectedTopicId(null);
-      form.reset();
+      setIsSubmitting(false)
+      setOpenConfirm(false)
+      setOpenModal(false)
+      setSelectedTopicId(null)
+      form.reset()
     }
-  };
+  }
 
   const columns = useMemo(
     () => [
       {
-        key: 'vietnameseName',
-        title: 'Tên tiếng Việt',
+        key: "vietnameseName",
+        title: "Tên tiếng Việt",
         sortable: true,
-        render: (value: string) => value || 'N/A',
+        render: (value: string) => value || "N/A",
       },
       {
-        key: 'englishName',
-        title: 'Tên tiếng Anh',
+        key: "englishName",
+        title: "Tên tiếng Anh",
         sortable: true,
-        render: (value: string) => value || 'N/A',
+        render: (value: string) => value || "N/A",
       },
       {
-        key: 'durationInMonths',
-        title: 'TG thực hiện (tháng)',
+        key: "durationInMonths",
+        title: "TG thực hiện (tháng)",
         sortable: true,
-        render: (value: number) => value || 'N/A',
+        render: (value: number) => value || "N/A",
       },
       {
-        key: 'totalBudget',
-        title: 'Tổng chi phí dự kiến (đ)',
+        key: "totalBudget",
+        title: "Tổng chi phí dự kiến (đ)",
         sortable: true,
-        render: (value: number) => (value ? formatVND(value) : 'N/A'),
+        render: (value: number) => (value ? formatVND(value) : "N/A"),
       },
       {
-        key: 'status',
-        title: 'Trạng thái',
+        key: "status",
+        title: "Trạng thái",
         render: (value: TopicStatus, record: Topic) => (
-          <Badge className={getStatusClass(record.status)}>
-            {getBadge(record.status)}
-          </Badge>
+          <Badge className={getStatusClass(record.status)}>{getBadge(record.status)}</Badge>
         ),
       },
       {
-        key: 'actions',
-        title: 'Thao tác',
+        key: "actions",
+        title: "Thao tác",
         render: (_: any, record: Topic) => (
           <div className="flex gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => navigate(`/topic/${record.id}`)}
-                >
-                  <Eye className="h-4 w-4 text-white" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Xem chi tiết</TooltipContent>
-            </Tooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="default" size="sm" onClick={() => navigate(`/topic/${record.id}`)}>
+                    <Eye className="h-4 w-4 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Xem chi tiết</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-            {(record.status === TopicStatus.DRAFT || record.status === TopicStatus.REVIEWED) && (
+            {/* New button for viewing milestones and feedback */}
+            <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    variant="default"
                     size="sm"
-                    onClick={() => navigate(`/topic/edit/${record.id}`)}
-                    className="bg-[#f59e0b] text-white hover:bg-[#f4b122] transition-all"
+                    onClick={() => handleViewMilestones(record)}
+                    className="bg-purple-600 hover:bg-purple-700"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <BarChart2 className="h-4 w-4 text-white" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Chỉnh sửa</TooltipContent>
+                <TooltipContent>Xem tiến độ và đánh giá</TooltipContent>
               </Tooltip>
+            </TooltipProvider>
+
+            {(record.status === TopicStatus.DRAFT || record.status === TopicStatus.REVIEWED) && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      onClick={() => navigate(`/topic/edit/${record.id}`)}
+                      className="bg-[#f59e0b] text-white hover:bg-[#f4b122] transition-all"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Chỉnh sửa</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
 
             {record.status === TopicStatus.DRAFT && (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setOpenConfirmDelete(true);
-                        setSelectedTopicId(record.id);
-                      }}
-                      className="bg-[#ef4444] hover:bg-[#b91c1c] text-white transition-all"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Xoá</TooltipContent>
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setOpenConfirmDelete(true)
+                          setSelectedTopicId(record.id)
+                        }}
+                        className="bg-[#ef4444] hover:bg-[#b91c1c] text-white transition-all"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Xoá</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="bg-[#8b5cf6] hover:bg-[#6d28d9] text-white transition-all"
-                      onClick={() => handleOpenSubmitModal(record.id)}
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Nộp đề tài</TooltipContent>
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="bg-[#8b5cf6] hover:bg-[#6d28d9] text-white transition-all"
+                        onClick={() => handleOpenSubmitModal(record.id)}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Nộp đề tài</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </>
             )}
           </div>
         ),
       },
     ],
-    [navigate]
-  );
+    [navigate],
+  )
 
   if (loading || isSubmitting) {
-    return <Loading />;
+    return <Loading />
   }
 
   return (
@@ -314,7 +374,7 @@ const MyTopic = () => {
         <div className="flex items-center gap-2 w-full md:w-auto">
           <Button
             className="bg-[#2563eb] hover:bg-[#1e40af] transition-all"
-            onClick={() => navigate('/topic-proposal')}
+            onClick={() => navigate("/topic-proposal")}
           >
             <FilePlus className="h-4 w-4" />
             Tạo đề tài
@@ -338,13 +398,13 @@ const MyTopic = () => {
         onSelectionChange={() => { }}
         onPageChange={(page) => setCurrentPage(page)}
         onPageSizeChange={(size) => {
-          setItemsPerPage(size);
-          setCurrentPage(1);
+          setItemsPerPage(size)
+          setCurrentPage(1)
         }}
         onSortChange={(field, order) => {
-          setSortBy(field);
-          setOrder(order);
-          setCurrentPage(1);
+          setSortBy(field)
+          setOrder(order)
+          setCurrentPage(1)
         }}
       />
 
@@ -390,7 +450,7 @@ const MyTopic = () => {
                 <Button type="button" variant="outline" className="text-rose-500" onClick={() => setOpenModal(false)}>
                   <X className="h-4 w-4" /> Hủy
                 </Button>
-                <Button type="submit" disabled={!form.watch('period')}>
+                <Button type="submit" disabled={!form.watch("period")}>
                   <Save className="h-4 w-4" /> Nộp
                 </Button>
               </DialogFooter>
@@ -414,7 +474,7 @@ const MyTopic = () => {
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmSubmitTopic} disabled={isSubmitting}>
               <Save className="h-4 w-4" />
-              {isSubmitting ? 'Đang nộp...' : 'Xác nhận'}
+              {isSubmitting ? "Đang nộp..." : "Xác nhận"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -439,13 +499,83 @@ const MyTopic = () => {
               disabled={isSubmitting}
             >
               <Trash2 className="h-4 w-4" />
-              {isSubmitting ? 'Đang xóa...' : 'Xác nhận'}
+              {isSubmitting ? "Đang xóa..." : "Xác nhận"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-};
 
-export default MyTopic;
+      {/* New Dialog for viewing milestones and feedback */}
+      <Dialog open={viewingMilestones} onOpenChange={setViewingMilestones}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Tiến độ và đánh giá: {selectedTopic?.vietnameseName}</DialogTitle>
+          </DialogHeader>
+
+          {loadingMilestones ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="w-8 h-8 border-4 border-t-transparent border-primary rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {milestones.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                  <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 mb-2">Chưa có giai đoạn nào được tạo cho đề tài này</p>
+                  <p className="text-gray-500 text-sm">Vui lòng liên hệ với quản trị viên để biết thêm thông tin</p>
+                </div>
+              ) : (
+                <MilestoneAccordion
+                  milestones={milestones}
+                  topicId={selectedTopic?.id || ""}
+                  onViewReviews={handleViewReviews}
+                  isCouncilView={true}
+                />
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setViewingMilestones(false)}>
+                  Đóng
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for viewing reviews */}
+      <Dialog open={viewingReviews} onOpenChange={setViewingReviews}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Đánh giá từ hội đồng</DialogTitle>
+          </DialogHeader>
+
+          {selectedMilestone && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                <h3 className="font-medium text-blue-800 mb-2">Thông tin giai đoạn</h3>
+                <p className="text-sm text-blue-700 mb-1">
+                  <span className="font-medium">Mô tả:</span> {selectedMilestone.description}
+                </p>
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">Ngày dự kiến hoàn thành:</span>{" "}
+                  {selectedMilestone.expectedCompletionDate}
+                </p>
+              </div>
+
+              <FeedbackList reviews={selectedMilestone.reviews || []} />
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setViewingReviews(false)}>
+                  Đóng
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+export default MyTopic

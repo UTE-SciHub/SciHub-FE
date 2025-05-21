@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { RegistrationService } from '@/service/registration-service';
 import { toast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import Chatbot from '@/components/chatbot/Chatbot';
 
 const recentTopics = [
   {
@@ -183,6 +184,21 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Chatbot component positioned at the bottom right corner */}
+      <Chatbot 
+        title="UTE-SciHub Trợ lý" 
+        initialMessages={[
+          {
+            content: "Xin chào! Tôi là trợ lý ảo của UTE-SciHub. Tôi có thể giúp gì cho bạn?",
+            isBot: true,
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          }
+        ]}
+      />
     </div>
   );
 };

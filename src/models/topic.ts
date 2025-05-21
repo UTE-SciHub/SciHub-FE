@@ -4,6 +4,7 @@ import { TopicStatus } from "@/models/enums/topic-status.enum";
 import { RegistrationPeriod } from "@/models/registraion-period";
 import { ResearchField } from "@/models/research-field";
 import { ResearchType } from "@/models/research-type";
+import { TopicCouncil } from "@/models/topic-council";
 import { TopicMember } from "@/models/topic-member";
 
 export interface ExpectedProduct {
@@ -61,4 +62,5 @@ export interface Topic {
     updatedAt?: string
     createdBy?: string;
     updatedBy?: string;
+    topicCouncils?: TopicCouncil[];
 }

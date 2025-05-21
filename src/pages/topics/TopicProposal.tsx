@@ -490,9 +490,21 @@ export default function TopicProposal() {
 
     const formValues = form.watch()
     const handleNext = async () => {
-        if (currentStep < steps.length) {
-            setCurrentStep(currentStep + 1);
-            window.scrollTo(0, 0);
+        const fieldsToValidate = stepFieldsToValidate[currentStep - 1];
+
+        const isValid = await form.trigger(fieldsToValidate);
+
+        if (isValid) {
+            if (currentStep < steps.length) {
+                setCurrentStep(currentStep + 1);
+                window.scrollTo(0, 0);
+            }
+        } else {
+            toast({
+                title: "Thông tin chưa hoàn thiện",
+                description: "Vui lòng nhập đầy đủ các trường bắt buộc (có dấu * đỏ).",
+                variant: "error",
+            });
         }
     };
 

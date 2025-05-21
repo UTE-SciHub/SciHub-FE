@@ -1,5 +1,3 @@
-"use client"
-
 import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -26,6 +24,7 @@ interface ProgressFormProps {
     onSubmit: (data: Progress, documentFile: File | null) => void
     onCancel: () => void
     isSubmitting: boolean
+    isCouncilView?: boolean
 }
 
 const ProgressForm: React.FC<ProgressFormProps> = ({
@@ -35,6 +34,7 @@ const ProgressForm: React.FC<ProgressFormProps> = ({
     onSubmit,
     onCancel,
     isSubmitting,
+    isCouncilView = false,
 }) => {
     const form = useForm<z.infer<typeof progressSchema>>({
         resolver: zodResolver(progressSchema),
@@ -49,12 +49,7 @@ const ProgressForm: React.FC<ProgressFormProps> = ({
 
     const handleFileChange = (file: File | null) => {
         setDocumentFile(file)
-        if (file) {
-            // Không cần giả lập URL ở đây, URL sẽ được BE trả về sau khi upload
-            form.setValue("documentUrl", "", { shouldValidate: true })
-        } else {
-            form.setValue("documentUrl", "", { shouldValidate: true })
-        }
+        form.setValue("documentUrl", file ? "" : initialData?.documentUrl || "", { shouldValidate: true })
     }
 
     const handleSubmit = (values: z.infer<typeof progressSchema>) => {
@@ -83,13 +78,19 @@ const ProgressForm: React.FC<ProgressFormProps> = ({
                                     value={[field.value]}
                                     min={0}
                                     max={100}
-                                    step={1}
+                                    step={25}
                                     onValueChange={(value) => field.onChange(value[0])}
+                                    disabled={isSubmitting || isCouncilView}
                                 />
                                 <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">0%</span>
-                                    <span className="text-sm font-medium">{field.value}%</span>
-                                    <span className="text-sm text-gray-500">100%</span>
+                                    {Array.from({ length: 5 }, (_, i) => i * 25).map((tick) => (
+                                        <span
+                                            key={tick}
+                                            className={`text-sm ${tick === field.value ? 'font-medium' : 'text-gray-500'}`}
+                                        >
+                                            {tick}%
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                             <FormMessage />
@@ -104,7 +105,13 @@ const ProgressForm: React.FC<ProgressFormProps> = ({
                         <FormItem>
                             <FormLabel>Báo cáo tiến độ</FormLabel>
                             <FormControl>
-                                <Textarea placeholder="Mô tả chi tiết về tiến độ thực hiện giai đoạn này" {...field} rows={5} />
+                                <Textarea
+                                    placeholder="Mô tả chi tiết về tiến độ thực hiện giai đoạn này"
+                                    {...field}
+                                    rows={5}
+                                    disabled={isSubmitting || isCouncilView}
+                                    readOnly={isCouncilView}
+                                />
                             </FormControl>
                             <FormDescription>
                                 Mô tả chi tiết công việc đã thực hiện, kết quả đạt được và các khó khăn gặp phải.
@@ -130,6 +137,7 @@ const ProgressForm: React.FC<ProgressFormProps> = ({
                                     onFileChange={handleFileChange}
                                     existingFile={initialData?.documentUrl}
                                     height="500px"
+                                    disabled={isCouncilView}
                                 />
                             </FormControl>
                             <FormDescription>Đính kèm tài liệu minh chứng (PDF, Word, Excel, PowerPoint)</FormDescription>
@@ -138,23 +146,33 @@ const ProgressForm: React.FC<ProgressFormProps> = ({
                     )}
                 />
 
-                <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-                        Hủy
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                                Đang lưu...
-                            </>
-                        ) : initialData?.id ? (
-                            "Cập nhật"
-                        ) : (
-                            "Thêm báo cáo"
-                        )}
-                    </Button>
-                </div>
+                {!isCouncilView && (
+                    <div className="flex justify-end space-x-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCancel}
+                            disabled={isSubmitting}
+                        >
+                            Hủy
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                                    Đang lưu...
+                                </>
+                            ) : initialData?.id ? (
+                                "Cập nhật"
+                            ) : (
+                                "Thêm báo cáo"
+                            )}
+                        </Button>
+                    </div>
+                )}
             </form>
         </Form>
     )

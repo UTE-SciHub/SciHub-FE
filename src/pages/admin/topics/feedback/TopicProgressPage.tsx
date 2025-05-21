@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
@@ -35,35 +33,34 @@ const TopicProgressPage: React.FC = () => {
     const [isViewingReviews, setIsViewingReviews] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Fetch topic details
-    useEffect(() => {
-        const fetchTopicDetails = async () => {
-            if (!id) return
+    const fetchTopicDetails = async () => {
+        if (!id) return
 
-            setLoading(true)
-            try {
-                const response = await TopicService.getById(id)
-                if (response.status === 200 && response.data.code === 1000) {
-                    setTopic(response.data.data)
-                } else {
-                    toast({
-                        title: "Lỗi",
-                        description: "Không thể tải thông tin đề tài",
-                        variant: "error",
-                    })
-                }
-            } catch (error) {
-                console.error("Error fetching topic:", error)
+        setLoading(true)
+        try {
+            const response = await TopicService.getById(id)
+            if (response.status === 200 && response.data.code === 1000) {
+                setTopic(response.data.data)
+            } else {
                 toast({
                     title: "Lỗi",
                     description: "Không thể tải thông tin đề tài",
                     variant: "error",
                 })
-            } finally {
-                setLoading(false)
             }
+        } catch (error) {
+            console.error("Error fetching topic:", error)
+            toast({
+                title: "Lỗi",
+                description: "Không thể tải thông tin đề tài",
+                variant: "error",
+            })
+        } finally {
+            setLoading(false)
         }
+    }
 
+    useEffect(() => {
         fetchTopicDetails()
     }, [id])
 
@@ -73,7 +70,6 @@ const TopicProgressPage: React.FC = () => {
         try {
             const response = await MilestoneService.getByTopicId(id)
             if (response.status === 200 && response.data.code === 1000) {
-                // Lấy danh sách milestone
                 const milestoneData = response.data.data
 
                 // Lấy progress reports cho từng milestone
@@ -87,10 +83,10 @@ const TopicProgressPage: React.FC = () => {
                                     progressReports: progressResponse.data.data,
                                 }
                             }
-                            return milestone
+                            return { ...milestone, progressReports: [] }
                         } catch (error) {
                             console.error(`Error fetching progress for milestone ${milestone.id}:`, error)
-                            return milestone
+                            return { ...milestone, progressReports: [] }
                         }
                     }),
                 )
@@ -148,8 +144,8 @@ const TopicProgressPage: React.FC = () => {
                         variant: "success",
                     })
 
-                    // Update milestones list
-                    setMilestones((prev) => prev.map((m) => (m.id === milestoneData.id ? response.data.data : m)))
+                    // Refresh all milestones to ensure progress data is maintained
+                    await fetchMilestones()
 
                     setIsEditingMilestone(false)
                 } else {
@@ -169,8 +165,8 @@ const TopicProgressPage: React.FC = () => {
                         variant: "success",
                     })
 
-                    // Add new milestone to list
-                    setMilestones((prev) => [...prev, response.data.data])
+                    // Refresh all milestones
+                    await fetchMilestones()
 
                     setIsAddingMilestone(false)
                 } else {
@@ -206,13 +202,8 @@ const TopicProgressPage: React.FC = () => {
                         variant: "success",
                     })
 
-                    // Refresh milestones to get updated data
-                    if (id) {
-                        const milestoneResponse = await MilestoneService.getByTopicId(id)
-                        if (milestoneResponse.status === 200 && milestoneResponse.data.code === 1000) {
-                            setMilestones(milestoneResponse.data.data)
-                        }
-                    }
+                    // Refresh milestones to get updated data with progress reports
+                    await fetchMilestones()
                 } else {
                     toast({
                         title: "Lỗi",
@@ -221,32 +212,22 @@ const TopicProgressPage: React.FC = () => {
                     })
                 }
             } else {
-                // Create new progress
-                // const response = await ProgressService.create(progressData, file)
-                // if (response.status === 201 && response.data.code === 1000) {
-                //     toast({
-                //         title: "Thành công",
-                //         description: "Tạo báo cáo tiến độ mới thành công",
-                //         variant: "success",
-                //     })
+                const response = await ProgressService.create(progressData, file)
+                if (response.status === 201 && response.data.code === 1000) {
+                    toast({
+                        title: "Thành công",
+                        description: "Tạo báo cáo tiến độ mới thành công",
+                        variant: "success",
+                    })
 
-                //     // Refresh milestones to get updated data
-                //     if (id) {
-                //         const milestoneResponse = await MilestoneService.getByTopicId(id)
-                //         if (milestoneResponse.status === 200 && milestoneResponse.data.code === 1000) {
-                //             setMilestones(milestoneResponse.data.data)
-                //         }
-                //     }
-                // } else {
-                //     toast({
-                //         title: "Lỗi",
-                //         description: "Không thể tạo báo cáo tiến độ mới",
-                //         variant: "error",
-                //     })
-                // }
-
-                console.log("Progress data:", progressData)
-                console.log("File:", file)
+                    await fetchMilestones()
+                } else {
+                    toast({
+                        title: "Lỗi",
+                        description: "Không thể tạo báo cáo tiến độ mới",
+                        variant: "error",
+                    })
+                }
             }
         } catch (error) {
             console.error("Error submitting progress:", error)
@@ -270,13 +251,8 @@ const TopicProgressPage: React.FC = () => {
                     variant: "success",
                 })
 
-                // Refresh milestones to get updated data
-                if (id) {
-                    const milestoneResponse = await MilestoneService.getByTopicId(id)
-                    if (milestoneResponse.status === 200 && milestoneResponse.data.code === 1000) {
-                        setMilestones(milestoneResponse.data.data)
-                    }
-                }
+                // Refresh milestones to get updated data with progress reports
+                await fetchMilestones()
             } else {
                 toast({
                     title: "Lỗi",
@@ -418,7 +394,7 @@ const TopicProgressPage: React.FC = () => {
             <div className="mb-6 flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Tiến độ thực hiện</h2>
                 <Button onClick={handleAddMilestone}>
-                    <Plus className="h-4 w-4 mr-1" />
+                    <Plus className="h-4 w-4" />
                     Thêm giai đoạn
                 </Button>
             </div>
@@ -430,7 +406,6 @@ const TopicProgressPage: React.FC = () => {
                 onEditMilestone={handleEditMilestone}
                 onSubmitProgress={handleSubmitProgress}
                 onDeleteProgress={handleDeleteProgress}
-                isSubmitting={isSubmitting}
             />
 
             {/* Add Milestone Dialog */}

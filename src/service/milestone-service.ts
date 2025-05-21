@@ -1,12 +1,5 @@
 import type { Milestone } from "@/models/milestone"
 import type { Review } from "@/models/review"
-import {
-    getMilestonesByTopicId,
-    getMilestoneById,
-    addReviewToMilestone,
-    addMilestone,
-    updateMilestone,
-} from "@/models/milestone"
 
 import axiosClient from "@/utils/axiosClient";
 
@@ -18,29 +11,7 @@ export class MilestoneService {
     }
 
     static async getById(id: number) {
-        await new Promise((resolve) => setTimeout(resolve, 300))
-
-        const milestone = getMilestoneById(id)
-
-        if (!milestone) {
-            return {
-                status: 404,
-                data: {
-                    code: 1004,
-                    message: "Milestone not found",
-                    data: null,
-                },
-            }
-        }
-
-        return {
-            status: 200,
-            data: {
-                code: 1000,
-                message: "Success",
-                data: milestone,
-            },
-        }
+        return axiosClient.get(`${BASE_URL}milestones/${id}`);
     }
 
     static async create(milestone: Milestone) {
@@ -51,29 +22,19 @@ export class MilestoneService {
         return axiosClient.put(`${BASE_URL}milestones/${id}`, milestone);
     }
 
-    static async addReview(milestoneId: number, review: Review) {
-        await new Promise((resolve) => setTimeout(resolve, 700))
+    static async getReviewByMilestoneId(milestoneId: number) {
+        return axiosClient.get(`${BASE_URL}reviews?milestoneId=${milestoneId}`);
+    }
 
-        const success = addReviewToMilestone(milestoneId, review)
+    static async addReview(review: Review) {
+        return axiosClient.post(`${BASE_URL}reviews`, review);
+    }
 
-        if (!success) {
-            return {
-                status: 404,
-                data: {
-                    code: 1004,
-                    message: "Milestone not found",
-                    data: null,
-                },
-            }
-        }
+    static async updateReview(id: number, review: Review) {
+        return axiosClient.put(`${BASE_URL}reviews/${id}`, review);
+    }
 
-        return {
-            status: 201,
-            data: {
-                code: 1000,
-                message: "Review added successfully",
-                data: review,
-            },
-        }
+    static async deleteReview(id: number) {
+        return axiosClient.delete(`${BASE_URL}reviews/${id}`);
     }
 }

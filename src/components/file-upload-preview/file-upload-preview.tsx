@@ -15,6 +15,7 @@ interface FileUploadPreviewProps {
     className?: string
     existingFile?: string // URL to an existing file
     height?: string | number // New prop for preview height
+    disabled?: boolean // New prop to disable the component
 }
 
 export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
@@ -29,6 +30,7 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     className = "",
     existingFile,
     height = "500px", // Default height
+    disabled = false, // Default to enabled
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [fileName, setFileName] = useState<string>("")
@@ -58,11 +60,14 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     }, [existingFile, value, onChange, fileName, isExistingFile, isCleared])
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (disabled) return
         const file = e.target.files?.[0]
         processFile(file)
     }
 
     const processFile = (file: File | null | undefined) => {
+        if (disabled) return
+
         setFileError("")
         setIsExistingFile(false)
 
@@ -108,23 +113,27 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     }
 
     const handleDragEnter = (e: React.DragEvent) => {
+        if (disabled) return
         e.preventDefault()
         e.stopPropagation()
         setIsDragging(true)
     }
 
     const handleDragLeave = (e: React.DragEvent) => {
+        if (disabled) return
         e.preventDefault()
         e.stopPropagation()
         setIsDragging(false)
     }
 
     const handleDragOver = (e: React.DragEvent) => {
+        if (disabled) return
         e.preventDefault()
         e.stopPropagation()
     }
 
     const handleDrop = (e: React.DragEvent) => {
+        if (disabled) return
         e.preventDefault()
         e.stopPropagation()
         setIsDragging(false)
@@ -134,6 +143,8 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     }
 
     const clearFile = () => {
+        if (disabled) return
+
         setFileName("")
         setFileType("")
         setFileSize("")
@@ -184,7 +195,7 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
             {label && <div className="file-upload-label">{label}</div>}
 
             <div
-                className={`file-upload-area ${isDragging ? "dragging" : ""} ${error || fileError ? "error" : ""}`}
+                className={`file-upload-area ${isDragging ? "dragging" : ""} ${error || fileError ? "error" : ""} ${disabled ? "disabled" : ""}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -193,20 +204,32 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
                 <div className="file-upload-content">
                     {!fileName ? (
                         <>
-                            <div className="file-upload-placeholder" onClick={() => fileInputRef.current?.click()}>
+                            <div
+                                className="file-upload-placeholder"
+                                onClick={() => !disabled && fileInputRef.current?.click()}
+                                style={disabled ? { cursor: 'not-allowed', opacity: 0.6 } : {}}
+                            >
                                 <Upload className="file-upload-icon" />
                                 <span>{placeholder}</span>
                             </div>
                             <div className="file-upload-instructions">
-                                Kéo và thả file vào đây hoặc{" "}
-                                <span className="file-upload-browse" onClick={() => fileInputRef.current?.click()}>
-                                    chọn file
-                                </span>
+                                {disabled ? (
+                                    "Chỉ có thể xem"
+                                ) : (
+                                    <>
+                                        Kéo và thả file vào đây hoặc{" "}
+                                        <span className="file-upload-browse" onClick={() => fileInputRef.current?.click()}>
+                                            chọn file
+                                        </span>
+                                    </>
+                                )}
                             </div>
-                            <div className="file-upload-info">
-                                {accept && <div className="file-upload-accept">Định dạng: {accept}</div>}
-                                {maxSize && <div className="file-upload-size">Kích thước tối đa: {maxSize}MB</div>}
-                            </div>
+                            {!disabled && (
+                                <div className="file-upload-info">
+                                    {accept && <div className="file-upload-accept">Định dạng: {accept}</div>}
+                                    {maxSize && <div className="file-upload-size">Kích thước tối đa: {maxSize}MB</div>}
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="file-selected">
@@ -241,14 +264,16 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
                                         </button>
                                     </>
                                 )}
-                                <button
-                                    type="button"
-                                    className="file-action-button remove text-rose-500"
-                                    onClick={clearFile}
-                                    aria-label="Xóa file"
-                                >
-                                    <X className="file-action-icon" />
-                                </button>
+                                {!disabled && (
+                                    <button
+                                        type="button"
+                                        className="file-action-button remove text-rose-500"
+                                        onClick={clearFile}
+                                        aria-label="Xóa file"
+                                    >
+                                        <X className="file-action-icon" />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )}
@@ -260,6 +285,7 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
                     className="hidden-file-input"
                     accept={accept}
                     onChange={handleFileChange}
+                    disabled={disabled}
                 />
             </div>
 
@@ -323,6 +349,7 @@ export const FormFileUploadPreview = ({
     onFileChange,
     existingFile,
     height,
+    disabled,
 }: {
     field: any
     fieldState: any
@@ -333,7 +360,8 @@ export const FormFileUploadPreview = ({
     className?: string
     onFileChange?: (file: File | null) => void
     existingFile?: string
-    height?: string | number // Add height to form component props
+    height?: string | number
+    disabled?: boolean
 }) => {
     return (
         <FileUploadPreview
@@ -348,6 +376,7 @@ export const FormFileUploadPreview = ({
             className={className}
             existingFile={existingFile}
             height={height}
+            disabled={disabled}
         />
     )
 }

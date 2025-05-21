@@ -1,53 +1,78 @@
+"use client"
+
 import type React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Edit, Trash } from "lucide-react"
 import { formatDateString } from "@/utils/dateTimeFormat"
 import type { Review } from "@/models/review"
-import { getInitialsAvt } from "@/utils/common"
+import type { Council } from "@/models/council"
 
 interface FeedbackListProps {
     reviews: Review[]
+    council?: Council
+    userId?: string | number
+    onEdit?: (review: Review) => void
+    onDelete?: (review: Review) => void
 }
 
-const FeedbackList: React.FC<FeedbackListProps> = ({ reviews }) => {
-    // Sort reviews by created date (newest first)
-    const sortedReviews = [...reviews].sort(
-        (a, b) => new Date(b.createdAt || "").getTime() - new Date(a.createdAt || "").getTime(),
-    )
+const FeedbackList: React.FC<FeedbackListProps> = ({
+    reviews,
+    council,
+    userId,
+    onEdit,
+    onDelete,
+}) => {
+    if (reviews.length === 0) {
+        return (
+            <div className="text-center py-4 text-gray-500">
+                Chưa có đánh giá nào cho giai đoạn này
+            </div>
+        )
+    }
 
     return (
-        <Card className="border border-gray-200 shadow-sm">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-semibold">Đánh giá từ hội đồng</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {sortedReviews.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">Chưa có đánh giá nào cho giai đoạn này</div>
-                ) : (
-                    <div className="space-y-6">
-                        {sortedReviews.map((review) => (
-                            <div key={review.id} className="border border-gray-200 rounded-lg p-4">
-                                <div className="flex items-start gap-4">
-                                    <Avatar className="h-10 w-10">
-                                        <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                                        <AvatarFallback>{getInitialsAvt("Hội đồng")}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h3 className="font-medium text-gray-900">Hội đồng đánh giá</h3>
-                                            <span className="text-sm text-gray-500">
-                                                {review.createdAt ? formatDateString(review.createdAt) : ""}
-                                            </span>
-                                        </div>
-                                        <div className="text-gray-700 whitespace-pre-line">{review.comments}</div>
-                                    </div>
-                                </div>
+        <div className="space-y-4">
+            {reviews.map((review) => (
+                <Card key={review.id} className="border border-gray-200 shadow-sm">
+                    <CardContent className="p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    Ngày tạo: {formatDateString(review.createdAt)}
+                                </p>
+                                <p className="mt-2 text-gray-700">{review.comments}</p>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                            {userId && review.createdBy === userId && (
+                                <div className="flex gap-2">
+                                    {onEdit && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => onEdit(review)}
+                                        >
+                                            <Edit className="h-4 w-4" />
+                                            Sửa
+                                        </Button>
+                                    )}
+                                    {onDelete && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-red-600 border-red-200 hover:bg-red-50"
+                                            onClick={() => onDelete(review)}
+                                        >
+                                            <Trash className="h-4 w-4" />
+                                            Xóa
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
     )
 }
 

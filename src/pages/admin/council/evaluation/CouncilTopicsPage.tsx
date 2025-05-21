@@ -1,6 +1,8 @@
+"use client"
+
 import { useEffect, useState, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, CalendarCheck, CalendarClock, CalendarX, FileText, Search, Users } from "lucide-react"
+import { ArrowLeft, CalendarCheck, CalendarClock, CalendarX, FileText, Search, Users, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { CouncilService } from "@/service/council-service"
-import { TopicApplicationService } from "@/service/topic-application-service" // Import the service
+import { TopicApplicationService } from "@/service/topic-application-service"
 import { toast } from "@/hooks/use-toast"
 import Loading from "@/components/loading/loading"
 import { formatDateString } from "@/utils/dateTimeFormat"
@@ -20,23 +22,36 @@ import type { TopicApplication } from "@/models/topic-application"
 import { EvaluationService } from "@/service/evaluation-service"
 import TopicSummaryModal from "@/pages/admin/council/TopicSummaryModal"
 
+// Define Topic interface based on used properties
+interface Topic {
+    id: string
+    vietnameseName: string
+    topicCode: string
+    principalInvestigator?: string
+    evaluationStatus: string
+    applicationCount?: number
+    evaluatedCount?: number
+    evaluationData?: any
+    field?: { name: string }
+}
+
 export default function CouncilTopicsPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const applicationsModalRef = useRef<any>(null)
 
-    const [council, setCouncil] = useState<Council>(null)
-    const [topics, setTopics] = useState<any[]>([])
-    const [filteredTopics, setFilteredTopics] = useState<any[]>([])
+    const [council, setCouncil] = useState<Council | null>(null)
+    const [topics, setTopics] = useState<Topic[]>([])
+    const [filteredTopics, setFilteredTopics] = useState<Topic[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [activeTab, setActiveTab] = useState("all")
-    const [selectedTopic, setSelectedTopic] = useState<any>(null)
+    const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
     const [selectedApplication, setSelectedApplication] = useState<TopicApplication | null>(null)
     const [isApplicationsModalOpen, setIsApplicationsModalOpen] = useState(false)
     const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false)
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
-    const [topicApplications, setTopicApplications] = useState<TopicApplication[]>([]) // State to store applications for the selected topic
+    const [topicApplications, setTopicApplications] = useState<TopicApplication[]>([])
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
@@ -50,10 +65,16 @@ export default function CouncilTopicsPage() {
                 const response = await CouncilService.getById(Number(id))
                 setCouncil(response.data.data)
 
-                console.log("Council data:", council)
+                // Extract topics, filter out undefined/null, and validate required fields
+                const topicsData = (response.data.data.topicCouncils
+                    ?.map((tc: any) => tc.topic)
+                    .filter((topic: any): topic is Topic =>
+                        topic &&
+                        typeof topic.id === 'string' &&
+                        typeof topic.vietnameseName === 'string' &&
+                        typeof topic.topicCode === 'string'
+                    ) || [])
 
-                // Extract topics from council data
-                const topicsData = response.data.data.topicCouncils?.map((tc: any) => tc.topic) || []
                 setTopics(topicsData)
                 setFilteredTopics(topicsData)
             } catch (error) {
@@ -71,7 +92,6 @@ export default function CouncilTopicsPage() {
         fetchCouncilData()
     }, [id])
 
-    // Fetch applications for the selected topic when opening the summary modal
     const fetchApplicationsForTopic = async (topicId: string) => {
         try {
             const response = await TopicApplicationService.getApplicationsByTopic(topicId)
@@ -93,7 +113,10 @@ export default function CouncilTopicsPage() {
 
     // Filter topics based on search query and tab
     useEffect(() => {
-        if (!topics.length) return
+        if (!topics.length) {
+            setFilteredTopics([])
+            return
+        }
 
         let filtered = [...topics]
 
@@ -123,7 +146,7 @@ export default function CouncilTopicsPage() {
         setFilteredTopics(filtered)
     }, [topics, debouncedSearchQuery, activeTab])
 
-    const getCouncilStatus = (council: any) => {
+    const getCouncilStatus = (council: Council | null) => {
         if (!council) return ""
 
         const now = new Date()
@@ -185,7 +208,7 @@ export default function CouncilTopicsPage() {
         setActiveTab(value)
     }
 
-    const handleEvaluateTopic = (topic: any) => {
+    const handleEvaluateTopic = (topic: Topic) => {
         setSelectedTopic(topic)
         setIsApplicationsModalOpen(true)
     }
@@ -202,32 +225,38 @@ export default function CouncilTopicsPage() {
             councilId: council.id,
         }
 
-        const response = await EvaluationService.submitEvaluate(selectedApplication.id, data)
-        if (response.status !== 200) {
+        try {
+            const response = await EvaluationService.submitEvaluate(selectedApplication.id, data)
+            if (response.status !== 200) {
+                throw new Error("Evaluation failed")
+            }
+            toast({
+                title: "Đánh giá thành công",
+                description: "Đã gửi kết quả đánh giá ứng viên thành công.",
+            })
+            setIsEvaluationModalOpen(false)
+            // Reload applications using ref
+            if (applicationsModalRef.current && applicationsModalRef.current.loadApplications) {
+                await applicationsModalRef.current.loadApplications()
+            }
+        } catch (error) {
+            console.error("Error submitting evaluation:", error)
             toast({
                 title: "Lỗi",
                 description: "Đánh giá không thành công. Vui lòng thử lại.",
                 variant: "error",
             })
-            return
-        }
-
-        toast({
-            title: "Đánh giá thành công",
-            description: "Đã gửi kết quả đánh giá ứng viên thành công.",
-        })
-
-        setIsEvaluationModalOpen(false)
-        // Reload applications using ref
-        if (applicationsModalRef.current && applicationsModalRef.current.loadApplications) {
-            await applicationsModalRef.current.loadApplications()
         }
     }
 
-    const handleSummarizeTopic = async (topic: any) => {
+    const handleSummarizeTopic = async (topic: Topic) => {
         setSelectedTopic(topic)
-        await fetchApplicationsForTopic(topic.id.toString())
+        await fetchApplicationsForTopic(topic.id)
         setIsSummaryModalOpen(true)
+    }
+
+    const handleViewProgress = (topicId: string) => {
+        navigate(`/admin/councils/${id}/feedback/${topicId}`)
     }
 
     if (loading) {
@@ -347,7 +376,7 @@ export default function CouncilTopicsPage() {
                                             <div className="space-y-2">
                                                 <div className="text-sm">
                                                     <span className="font-medium">Số ứng viên: </span>
-                                                    <span className="font-bold">{topic.applicationCount || 0}</span> {/* Update dynamically if available */}
+                                                    <span className="font-bold">{topic.applicationCount || 0}</span>
                                                 </div>
                                                 <div className="text-sm">
                                                     <span className="font-medium">Lĩnh vực: </span>
@@ -366,11 +395,30 @@ export default function CouncilTopicsPage() {
                                                 <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
                                                 <span className="text-sm">Xem chi tiết</span>
                                             </div>
-                                            <div>
-                                                <Button size="sm" onClick={() => handleEvaluateTopic(topic)} variant="default" className="mr-2">
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleViewProgress(topic.id)}
+                                                    variant="outline"
+                                                    className="gap-1"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    Xem tiến độ
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleEvaluateTopic(topic)}
+                                                    variant="default"
+                                                    className="gap-1"
+                                                >
                                                     Đánh giá ứng viên
                                                 </Button>
-                                                <Button size="sm" onClick={() => handleSummarizeTopic(topic)} variant="outline">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleSummarizeTopic(topic)}
+                                                    variant="outline"
+                                                    className="gap-1"
+                                                >
                                                     Tổng kết
                                                 </Button>
                                             </div>

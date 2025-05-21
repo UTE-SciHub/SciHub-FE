@@ -115,4 +115,8 @@ export class TopicService {
     static async approveTopicsByCouncil(data) {
         return axiosClient.post(`${BASE_URL}topics/council-approval`, data);
     }
+
+    static async getTopicsByPrincipalInvestigator(id: string) {
+        return axiosClient.get(`${BASE_URL}topics/by-investigator/${id}`);
+    }
 }

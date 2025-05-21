@@ -22,6 +22,7 @@ import useDebounce from "@/hooks/use-debounce"
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { RegistrationPeriod } from "@/models/registraion-period"
+import useUserStore from "@/store/userStore"
 
 interface SubmitFormValues {
     period: string
@@ -49,6 +50,7 @@ const LecturerTopicsPage = () => {
     const [delFlagFields, setDelFlagFields] = useState<string>("all")
 
     const navigate = useNavigate()
+    const user = useUserStore((state) => state.user)
 
     const form = useForm<SubmitFormValues>({
         defaultValues: {
@@ -62,7 +64,7 @@ const LecturerTopicsPage = () => {
     const fetchMyTopics = async () => {
         setLoading(true)
         try {
-            const response = await TopicService.getUserTopics()
+            const response = await TopicService.getTopicsByPrincipalInvestigator(user.id)
             setMyTopics(response.data.data)
             setTotalItemsTopics(response.data.totalItems || response.data.data.length)
         } catch (error) {
