@@ -22,9 +22,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status"
 import { RegistrationPeriod } from "@/models/registraion-period"
-import { getRegistrationById, updateRegistration } from "@/service/registration-service"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { RegistrationService } from "@/service/registration-service"
 
 const formSchema = z
     .object({
@@ -32,7 +32,7 @@ const formSchema = z
         title: z
             .string()
             .min(5, "Tiêu đề phải có ít nhất 5 ký tự")
-            .max(100, "Tiêu đề không được vượt quá 100 ký tự")
+            .max(255, "Tiêu đề không được vượt quá 255 ký tự")
         ,
         decisionNumber: z
             .string()
@@ -45,7 +45,7 @@ const formSchema = z
         endDate: z.date({
             required_error: "Vui lòng chọn ngày kết thúc",
         }),
-        description: z.string().min(10, "Mô tả phải có ít nhất 10 ký tự").max(5000, "Mô tả không được vượt quá 5000 ký tự"),
+        description: z.string().min(10, "Mô tả phải có ít nhất 10 ký tự"),
         status: z.enum([RegistrationPeriodStatus.OPEN, RegistrationPeriodStatus.CLOSED], {
             errorMap: () => ({ message: "Trạng thái không hợp lệ" }),
         })
@@ -95,13 +95,13 @@ export default function UpdateRegistrationPeriod() {
         const fetchRegistrationPeriod = async () => {
             try {
                 setIsFetching(true)
-                const response = await getRegistrationById(id as string)
+                const response = await RegistrationService.getRegistrationById(id as string)
 
                 if (response.status === 200 && response.data.code === 1000) {
                     const data = response.data.data
                     setRegistrationPeriod(data)
+                    setIsStatusOpen(data.status === RegistrationPeriodStatus.OPEN)
 
-                    // Set form values
                     form.reset({
                         id: data.id,
                         title: data.title,
@@ -133,13 +133,11 @@ export default function UpdateRegistrationPeriod() {
     }
 
     const handleStatusToggle = () => {
-        setIsStatusOpen(!isStatusOpen)
         setIsChangingStatus(true)
-
         const newStatus = isStatusOpen ? RegistrationPeriodStatus.CLOSED : RegistrationPeriodStatus.OPEN
-        const updatedRegistrationPeriod = { ...registrationPeriod, status: newStatus }
-
-        setRegistrationPeriod(updatedRegistrationPeriod)
+        setIsStatusOpen(!isStatusOpen)
+        form.setValue("status", newStatus)
+        setRegistrationPeriod({ ...registrationPeriod, status: newStatus })
         setIsChangingStatus(false)
     }
 
@@ -150,8 +148,8 @@ export default function UpdateRegistrationPeriod() {
                 id: id,
                 title: values.title,
                 decisionNumber: values.decisionNumber,
-                status: isStatusOpen ? RegistrationPeriodStatus.OPEN : RegistrationPeriodStatus.CLOSED,
-                decisionFile: values.decisionFile,
+                status: values.status,
+                decisionFile: registrationPeriod.decisionFile || "",
                 startDate: format(new Date(values.startDate), "yyyy-MM-dd"),
                 endDate: format(new Date(values.endDate), "yyyy-MM-dd"),
                 description: values.description,
@@ -167,7 +165,7 @@ export default function UpdateRegistrationPeriod() {
                 formData.append("decisionFile", uploadedFile, uploadedFile.name)
             }
 
-            const response = await updateRegistration(id as string, formData)
+            const response = await RegistrationService.updateRegistration(id as string, formData)
 
             let variant: "success" | "error" = "error"
             if (response.status === 200 && response.data.code === 1000 && response.data.status === 200) {
@@ -230,7 +228,7 @@ export default function UpdateRegistrationPeriod() {
         }
     }
 
-    if (isFetching) {
+    if (isFetching || isLoading) {
         return (
             <Loading onCancel={handleCancelLoading} />
         )
@@ -282,15 +280,11 @@ export default function UpdateRegistrationPeriod() {
                                     <FormItem className="flex items-center space-x-2">
                                         <FormLabel className="text-sm">Trạng thái</FormLabel>
                                         <Switch
-                                            checked={registrationPeriod?.status === RegistrationPeriodStatus.OPEN}
-                                            onCheckedChange={(checked) => {
-                                                setIsStatusOpen(checked)
-                                                handleStatusToggle()
-                                                field.onChange(checked ? RegistrationPeriodStatus.OPEN : RegistrationPeriodStatus.CLOSED)
-                                            }}
+                                            checked={isStatusOpen}
+                                            onCheckedChange={handleStatusToggle}
                                         />
                                         <Label className="text-sm font-medium">
-                                            {registrationPeriod?.status === RegistrationPeriodStatus.OPEN ? (
+                                            {isStatusOpen ? (
                                                 <span className="flex items-center gap-1 text-green-600">
                                                     <CalendarCheck className="h-4 w-4" />
                                                     Mở đăng ký
@@ -341,7 +335,7 @@ export default function UpdateRegistrationPeriod() {
                                                         <InfoIcon className="h-4 w-4 ml-1 text-muted-foreground inline-block cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>Tiêu đề của đợt đăng ký, tối đa 100 ký tự</p>
+                                                        <p>Tiêu đề của đợt đăng ký, tối đa 255 ký tự</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -392,7 +386,7 @@ export default function UpdateRegistrationPeriod() {
                                                 maxSize={10}
                                                 placeholder="Tải lên file quyết định"
                                                 onFileChange={handleFileChange}
-                                                existingFile={`${BASE_URL}files/${registrationPeriod.decisionFile}`}
+                                                existingFile={registrationPeriod.decisionFile}
                                                 height={800}
                                             />
                                         </FormControl>
@@ -496,7 +490,6 @@ export default function UpdateRegistrationPeriod() {
                                                 field={field}
                                                 placeholder="Nhập mô tả chi tiết về đợt đăng ký..."
                                                 height="400px"
-                                                maxLength={5000}
                                                 fieldState={fieldState}
                                             />
                                         </FormControl>
@@ -527,4 +520,3 @@ export default function UpdateRegistrationPeriod() {
         </div >
     )
 }
-

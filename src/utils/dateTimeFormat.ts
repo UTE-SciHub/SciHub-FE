@@ -10,7 +10,7 @@ export const formatDate = (date: Date | null) => {
     }
 }
 
-const formatDateString = (dateString: string | null) => {
+export const formatDateString = (dateString: string | null) => {
     if (!dateString) return "Chưa cập nhật"
     try {
         return format(new Date(dateString), "dd/MM/yyyy", { locale: vi })

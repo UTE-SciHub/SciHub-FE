@@ -39,16 +39,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { create } from "@/service/registration-service";
 import { toast } from "@/hooks/use-toast";
 import Loading from "@/components/loading/loading";
+import { RegistrationService } from "@/service/registration-service";
 
 const formSchema = z
   .object({
     title: z
       .string()
       .min(5, "Tiêu đề phải có ít nhất 5 ký tự")
-      .max(100, "Tiêu đề không được vượt quá 100 ký tự"),
+      .max(255, "Tiêu đề không được vượt quá 255 ký tự"),
     decisionNumber: z
       .string()
       .min(3, "Số quyết định không được để trống")
@@ -63,7 +63,6 @@ const formSchema = z
     description: z
       .string()
       .min(10, "Mô tả phải có ít nhất 10 ký tự")
-      .max(5000, "Mô tả không được vượt quá 5000 ký tự"),
   })
   .refine((data) => data.endDate > data.startDate, {
     message: "Ngày kết thúc phải sau ngày bắt đầu",
@@ -122,7 +121,7 @@ export default function CreateRegistrationPeriod() {
         formData.append("decisionFile", uploadedFile, uploadedFile.name);
       }
 
-      const response = await create(formData);
+      const response = await RegistrationService.create(formData);
 
       let variant: "success" | "error" | "info" | "warning" = "error";
       if (response.status === 201 && response.data.code === 1000) {
@@ -190,7 +189,7 @@ export default function CreateRegistrationPeriod() {
                             <InfoIcon className="h-4 w-4 ml-1 text-muted-foreground inline-block cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Tiêu đề của đợt đăng ký, tối đa 100 ký tự</p>
+                            <p>Tiêu đề của đợt đăng ký, tối đa 255 ký tự</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -364,7 +363,6 @@ export default function CreateRegistrationPeriod() {
                         field={field}
                         placeholder="Nhập mô tả chi tiết về đợt đăng ký..."
                         height="400px"
-                        maxLength={5000}
                         fieldState={fieldState}
                       />
                     </FormControl>

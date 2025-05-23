@@ -6,6 +6,7 @@ export interface Department {
     phoneNumber: string;
     imageUrl: string;
     delFlag: boolean;
+    logoPublicId?: string;
     created_at?: string;
     updated_at?: string;
     created_by?: string;

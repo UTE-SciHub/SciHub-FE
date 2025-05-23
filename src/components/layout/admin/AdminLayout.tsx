@@ -5,8 +5,8 @@ import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import AdminFooter from "@/components/layout/admin/AdminFooter";
 import useUserStore from "@/store/userStore";
-import { getCurrentUsers } from "@/service/user-service";
 import Cookies from "js-cookie";
+import { UserService } from "@/service/user-service";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -24,7 +24,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
   useEffect(() => {
     const token = Cookies.get("access-token");
     if (token) {
-      getCurrentUsers({ token }).then((res) => {
+      UserService.getCurrentUsers({ token }).then((res) => {
         if (res.status === 200 || res.code == 1000) {
           setUser(res.data);
         }

@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  FileTextIcon, 
-  ClipboardCheckIcon, 
-  FileSignatureIcon, 
-  GanttChartIcon, 
-  CheckCircleIcon, 
+import {
+  FileTextIcon,
+  ClipboardCheckIcon,
+  FileSignatureIcon,
+  GanttChartIcon,
+  CheckCircleIcon,
   ArchiveIcon,
   Menu,
   Home
@@ -16,39 +16,14 @@ import UserAppLogo from './UserAppLogo';
 
 const navItems = [
   {
-    title: 'Trang chủ',
-    href: '/',
+    title: "Trang chủ",
+    href: "/",
     icon: Home,
   },
   {
-    title: 'Đăng ký đề tài',
-    href: '/topic-registration',
+    title: "Đề tài của tôi",
+    href: "/my-topics",
     icon: FileTextIcon,
-  },
-  {
-    title: 'Xét duyệt đề tài',
-    href: '/topic-approval',
-    icon: ClipboardCheckIcon,
-  },
-  {
-    title: 'Hợp đồng & Tài chính',
-    href: '/contracts',
-    icon: FileSignatureIcon,
-  },
-  {
-    title: 'Thực hiện đề tài',
-    href: '/topic-execution',
-    icon: GanttChartIcon,
-  },
-  {
-    title: 'Nghiệm thu & Hoàn thiện',
-    href: '/topic-completion',
-    icon: CheckCircleIcon,
-  },
-  {
-    title: 'Lưu trữ & Tra cứu',
-    href: '/archive',
-    icon: ArchiveIcon,
   },
 ];
 
@@ -59,7 +34,7 @@ const UserMobileNav = () => {
     <div className="md:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <button 
+          <button
             className="p-2 rounded-md hover:bg-accent"
             aria-label="Open Menu"
           >
@@ -78,8 +53,8 @@ const UserMobileNav = () => {
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 text-sm font-medium transition-colors px-3 py-2 rounded-md
-                  ${isActive 
-                    ? 'bg-primary-100 text-primary-900' 
+                  ${isActive
+                    ? 'bg-primary-100 text-primary-900'
                     : 'text-muted-foreground hover:text-primary-700 hover:bg-primary-50'
                   }`
                 }

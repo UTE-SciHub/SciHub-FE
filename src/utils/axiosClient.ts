@@ -5,9 +5,6 @@ import Cookies from 'js-cookie';
 const axiosClient = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
     timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json'
-    }
 });
 
 const handleRequestSuccess = async (config) => {
@@ -47,10 +44,10 @@ const handleResponseErr = async (err) => {
 
         try {
             const res = await axiosClient.post('auth/refresh-token', {
-                token: refreshToken
+                refreshToken: refreshToken
             });
 
-            const newAccessToken = res.data.accessToken;
+            const newAccessToken = res.data.data.accessToken;
             Cookies.set('access-token', newAccessToken, { secure: true, sameSite: 'Strict' });
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 

@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input"
 import DataTable from "@/components/data-table/data-table"
 import { useLocation, useNavigate } from "react-router-dom"
 import useDebounce from "@/hooks/use-debounce"
-import { exportExcel, getAll } from "@/service/registration-service"
 import type { RegistrationPeriod } from "@/models/registraion-period"
 import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status"
 import {
@@ -23,8 +22,6 @@ import {
     Trash2,
     PlusCircle,
     Ban,
-    Search,
-    Filter,
     Calendar,
     RefreshCw,
     CalendarCheck,
@@ -42,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Label } from "@/components/ui/label"
 import Loading from "@/components/loading/loading"
+import { RegistrationService } from "@/service/registration-service"
 
 const AdminRegistrationPeriods = () => {
     const location = useLocation()
@@ -92,7 +90,7 @@ const AdminRegistrationPeriods = () => {
     }) => {
         setLoading(true)
         try {
-            const response = await getAll({
+            const response = await RegistrationService.getAll({
                 p: params.p,
                 s: params.s,
                 sort: params.sort,
@@ -204,7 +202,6 @@ const AdminRegistrationPeriods = () => {
     }
 
     const handleRefresh = () => {
-        setIsRefreshing(true)
         fetchData({
             p: currentPage,
             s: itemsPerPage,
@@ -215,7 +212,6 @@ const AdminRegistrationPeriods = () => {
             startDate: startDate,
             endDate: endDate,
         })
-        setIsRefreshing(false)
     }
 
     const handleViewDetails = (record) => {
@@ -286,7 +282,10 @@ const AdminRegistrationPeriods = () => {
             sortable: true,
             render: (_, record) => (
                 <div className="space-y-1">
-                    <div className="font-medium">{record.title}</div>
+                    <div
+                        className="font-medium text-primary hover:underline cursor-pointer"
+                        onClick={() => { navigate(`/admin/registration/${record.id}`); }}
+                    >{record.title}</div>
                     <div className="text-sm text-muted-foreground">
                         ID: {record.id} {record.decisionNumber && `• QĐ: ${record.decisionNumber}`}
                     </div>
@@ -331,7 +330,7 @@ const AdminRegistrationPeriods = () => {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <a
-                                    href={`${BASE_URL}files/${record.decisionFile}`}
+                                    href={record.decisionFile}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -408,7 +407,7 @@ const AdminRegistrationPeriods = () => {
     const handleExportExcel = async () => {
         try {
             setLoading(true)
-            const response = await exportExcel({
+            const response = await RegistrationService.exportExcel({
                 q: debouncedSearchQuery,
                 status: activeTab,
                 sort: sortField,
@@ -516,8 +515,8 @@ const AdminRegistrationPeriods = () => {
                         </TabsTrigger>
                     </TabsList>
 
-                    <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
-                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
+                        <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                         Làm mới
                     </Button>
                 </div>
