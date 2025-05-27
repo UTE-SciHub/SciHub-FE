@@ -20,6 +20,7 @@ export default function ReviewTopic() {
         councilDate: "",
         meetingLocation: "",
         councilDecisionNumber: "",
+        totalMembers: 0,
         totalPresent: 0,
         totalAbsent: 0,
         guests: "",

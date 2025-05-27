@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
@@ -66,6 +64,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import TopicSummaryModal from "@/pages/admin/council/TopicSummaryModal"
 import ApproveTopicsModal from "@/pages/admin/council/ApproveTopicsModal"
 
+import TopicEvaluationModal from "@/pages/admin/council/evaluation/TopicEvaluationModal"
+import { EvaluationService } from "@/service/evaluation-service"
+import { getTotalMaxScore, getTotalMinScore, getTotalScore } from "@/models/evaluation-detail"
+import { Topic } from "@/models/topic"
+
 export default function CouncilDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
@@ -75,11 +78,15 @@ export default function CouncilDetailPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [topicApplications, setTopicApplications] = useState<Record<number, TopicApplication[]>>({})
     const [loadingApplications, setLoadingApplications] = useState<Record<number, boolean>>({})
-    const [selectedTopic, setSelectedTopic] = useState<any>(null)
+    const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
     const [isApproveModalOpen, setIsApproveModalOpen] = useState(false)
+    const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+    const [selectedApplication, setSelectedApplication] = useState<TopicApplication | null>(null);
+    const [evaluationDetail, setEvaluationDetail] = useState<any>(null);
+    const minRequiredScore = getTotalMinScore()
+    const maxPossibleScore = getTotalMaxScore()
 
-    // Lấy thông tin chi tiết hội đồng
     useEffect(() => {
         const fetchCouncilDetail = async () => {
             if (!id) return
@@ -126,17 +133,6 @@ export default function CouncilDetailPage() {
         }
     }
 
-    // Hàm lấy chữ cái đầu của tên
-    const getInitials = (name: string) => {
-        if (!name) return "U"
-        return name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .substring(0, 2)
-    }
-
     // Hàm copy link
     const copyToClipboard = () => {
         navigator.clipboard.writeText(window.location.href)
@@ -146,7 +142,6 @@ export default function CouncilDetailPage() {
         })
     }
 
-    // Hàm lấy danh sách ứng viên của đề tài
     const fetchTopicApplications = async (topicId: string) => {
         if (topicApplications[topicId]) return
 
@@ -169,7 +164,6 @@ export default function CouncilDetailPage() {
         }
     }
 
-    // Hàm hiển thị trạng thái ứng viên
     const getApplicationStatusBadge = (status: ApplicationStatus) => {
         switch (status) {
             case ApplicationStatus.APPROVED:
@@ -184,21 +178,62 @@ export default function CouncilDetailPage() {
         }
     }
 
-    // Hàm mở modal tổng kết đề tài
-    const handleOpenSummaryModal = (topic: any) => {
+    const handleOpenSummaryModal = (topic: Topic) => {
         setSelectedTopic(topic)
         setIsSummaryModalOpen(true)
     }
 
-    // Hàm mở modal phê duyệt đề tài
     const handleOpenApproveModal = () => {
         setIsApproveModalOpen(true)
     }
 
-    // Hàm xử lý sau khi phê duyệt thành công
     const handleApproveSuccess = () => {
         setIsApproveModalOpen(false)
         setActiveTab("topics")
+    }
+
+    const handleEvaluationComplete = async (evaluationData: any) => {
+        const completeEvaluationData = {
+            researchOverviewScore: evaluationData.researchOverviewScore,
+            urgencyScore: evaluationData.urgencyScore,
+            objectiveScore: evaluationData.objectiveScore,
+            approachMethodScore: evaluationData.approachMethodScore,
+            contentAndTimelineScore: evaluationData.contentAndTimelineScore,
+            productScore: evaluationData.productScore,
+            effectivenessScore: evaluationData.effectivenessScore,
+            experienceScore: evaluationData.experienceScore,
+            institutionCapabilityScore: evaluationData.institutionCapabilityScore,
+            budgetScore: evaluationData.budgetScore,
+            totalScore: evaluationData.totalScore,
+            additionalComments: evaluationData.additionalComments || "",
+        }
+
+        if (!selectedApplication || !council) return
+        const data = {
+            ...completeEvaluationData,
+            councilId: council.id,
+        }
+
+        try {
+            const response = await EvaluationService.submitEvaluate(selectedApplication.id, data)
+            if (response.status !== 200) {
+                throw new Error("Evaluation failed")
+            }
+            toast({
+                title: "Đánh giá thành công",
+                description: "Đã gửi kết quả đánh giá ứng viên thành công.",
+            })
+        } catch (error) {
+            console.error("Error submitting evaluation:", error)
+            toast({
+                title: "Lỗi",
+                description: "Đánh giá không thành công. Vui lòng thử lại.",
+                variant: "error",
+            })
+        } finally {
+            setIsEvaluationModalOpen(false)
+            fetchTopicApplications(selectedTopic.id)
+        }
     }
 
     if (isLoading) {
@@ -250,6 +285,38 @@ export default function CouncilDetailPage() {
 
     const status = getCouncilStatus(council)
 
+    const handleSelectApplication = async (application: TopicApplication) => {
+        setSelectedApplication(application);
+        setSelectedTopic(application.topic)
+        setEvaluationDetail(null);
+
+        if (application.hasEvaluated) {
+            try {
+                const response = await EvaluationService.getEvaluationDetail(application.id)
+                if (response.status === 200 && response.data.data) {
+                    const totalScore = getTotalScore(response.data.data)
+                    const evaluationData = {
+                        ...response.data.data,
+                        totalScore: totalScore,
+                        passedAssessment: totalScore >= minRequiredScore,
+                        councilDate: new Date().toISOString(),
+                    }
+
+                    setEvaluationDetail(evaluationData)
+                }
+            } catch (error) {
+                console.error("Error fetching evaluation data:", error)
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể tải dữ liệu đánh giá chi tiết. Hiển thị dữ liệu cơ bản.",
+                    variant: "error",
+                })
+            }
+        }
+
+        setIsEvaluationModalOpen(true)
+    }
+
     return (
         <div className="space-y-6">
             {/* Breadcrumb & Navigation */}
@@ -277,8 +344,8 @@ export default function CouncilDetailPage() {
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" className="h-9" onClick={copyToClipboard}>
-                        <Clipboard className="h-4 w-4 mr-1.5" />
+                    <Button variant="secondary" size="sm" className="h-9" onClick={copyToClipboard}>
+                        <Clipboard className="h-4 w-4" />
                         Sao chép link
                     </Button>
                     <Button
@@ -287,7 +354,7 @@ export default function CouncilDetailPage() {
                         className="h-9"
                         onClick={() => navigate(`/admin/councils/edit/${council.id}`)}
                     >
-                        <Edit className="h-4 w-4 mr-1.5" />
+                        <Edit className="h-4 w-4" />
                         Chỉnh sửa
                     </Button>
                 </div>
@@ -326,11 +393,11 @@ export default function CouncilDetailPage() {
                                     className="bg-white/80 border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
                                     onClick={() => window.open("#", "_blank")}
                                 >
-                                    <Download className="h-4 w-4 mr-2" />
+                                    <Download className="h-4 w-4" />
                                     Tải quyết định
                                 </Button>
                                 <Button variant="default" onClick={handleOpenApproveModal}>
-                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    <CheckCircle className="h-4 w-4" />
                                     Phê duyệt đề tài
                                 </Button>
                                 <DropdownMenu>
@@ -528,14 +595,14 @@ export default function CouncilDetailPage() {
                                 <div className="flex flex-col items-center text-center">
                                     <div
                                         className={`
-                      w-20 h-20 rounded-full flex items-center justify-center mb-4
-                      ${status === "Đang hoạt động"
+                                                w-20 h-20 rounded-full flex items-center justify-center mb-4
+                                                ${status === "Đang hoạt động"
                                                 ? "bg-green-100"
                                                 : status === "Sắp diễn ra"
                                                     ? "bg-blue-100"
                                                     : "bg-gray-100"
                                             }
-                    `}
+                                        `}
                                     >
                                         {status === "Đang hoạt động" ? (
                                             <CheckCircle className="h-10 w-10 text-green-600" />
@@ -677,7 +744,7 @@ export default function CouncilDetailPage() {
                                     className="bg-white"
                                     onClick={() => navigate(`/admin/councils/edit/${council.id}`)}
                                 >
-                                    <Edit className="h-4 w-4 mr-2" />
+                                    <Edit className="h-4 w-4" />
                                     Chỉnh sửa đề tài
                                 </Button>
                             </div>
@@ -686,7 +753,15 @@ export default function CouncilDetailPage() {
                             {council.topicCouncils && council.topicCouncils.length > 0 ? (
                                 <Accordion type="single" collapsible className="w-full">
                                     {council.topicCouncils.map((topicCouncil) => (
-                                        <AccordionItem key={topicCouncil.id} value={`topic-${topicCouncil.id}`}>
+                                        <AccordionItem
+                                            key={topicCouncil.id}
+                                            value={`topic-${topicCouncil.id}`}
+                                            onClick={() => {
+                                                if (!topicApplications[topicCouncil.topic?.id] && !loadingApplications[topicCouncil.topic?.id]) {
+                                                    fetchTopicApplications(topicCouncil.topic?.id)
+                                                }
+                                            }}
+                                        >
                                             <AccordionTrigger className="px-6 py-4 hover:bg-gray-50 transition-colors">
                                                 <div className="flex flex-col items-start text-left">
                                                     <div className="font-medium text-gray-900">{topicCouncil.topic?.vietnameseName}</div>
@@ -703,7 +778,7 @@ export default function CouncilDetailPage() {
                                                             onClick={() => handleOpenSummaryModal(topicCouncil.topic)}
                                                             className="bg-white text-amber-600 border-amber-200 hover:bg-amber-50"
                                                         >
-                                                            <BarChart className="h-4 w-4 mr-2" />
+                                                            <BarChart className="h-4 w-4" />
                                                             Tổng kết
                                                         </Button>
                                                     </div>
@@ -764,14 +839,10 @@ export default function CouncilDetailPage() {
                                                                                         size="sm"
                                                                                         variant="outline"
                                                                                         className="h-8"
-                                                                                        onClick={() =>
-                                                                                            navigate(
-                                                                                                `/admin/councils/${council.id}/topics/${topicCouncil.topic?.id}/applications/${application.id}`,
-                                                                                            )
-                                                                                        }
+                                                                                        onClick={() => handleSelectApplication(application)}
                                                                                     >
-                                                                                        <FileText className="h-4 w-4 mr-2" />
-                                                                                        {application.totalScore !== null ? "Xem đánh giá" : "Đánh giá"}
+                                                                                        <FileText className="h-4 w-4" />
+                                                                                        {application.hasEvaluated ? "Xem đánh giá" : "Đánh giá"}
                                                                                     </Button>
                                                                                 </TableCell>
                                                                             </TableRow>
@@ -868,6 +939,20 @@ export default function CouncilDetailPage() {
                             councilId={Number(council.id)}
                             onClose={() => setIsApproveModalOpen(false)}
                             onSuccess={handleApproveSuccess}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+            {/* Evaluation Modal */}
+            <Dialog open={isEvaluationModalOpen} onOpenChange={setIsEvaluationModalOpen}>
+                <DialogContent className="max-w-3xl min-h-[70vh] overflow-auto p-0">
+                    {selectedTopic && selectedApplication && (
+                        <TopicEvaluationModal
+                            topic={selectedTopic}
+                            application={selectedApplication}
+                            existingData={evaluationDetail}
+                            onCancel={() => setIsEvaluationModalOpen(false)}
+                            onComplete={handleEvaluationComplete}
                         />
                     )}
                 </DialogContent>

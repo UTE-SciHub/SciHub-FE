@@ -47,6 +47,8 @@ import MeetingMinutesPage from "@/pages/admin/council/MeetingMinutes";
 import LecturerTopicsPage from "@/pages/admin/topics/my-topic/LecturerTopicsPage";
 import TopicFeedbackPage from "@/pages/admin/topics/feedback/TopicFeedbackPage";
 import TopicProgressPage from "@/pages/admin/topics/feedback/TopicProgressPage";
+import ContractList from "@/pages/admin/contract/ContractList";
+import SettingsPage from "@/pages/admin/settings/SettingsPage";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -105,7 +107,7 @@ const routers = createBrowserRouter([
           { path: ":councilId/feedback/:topicId", element: <TopicFeedbackPage /> },
         ]
       },
-      { path: "contracts", element: <AdminContracts /> },
+      { path: "contracts", element: <ContractList /> },
       { path: "finance", element: <AdminFinance /> },
       { path: "announcements", element: <AdminAnnouncements /> },
       { path: "lecturer-topics", element: <LecturerTopicsPage /> },
@@ -124,7 +126,8 @@ const routers = createBrowserRouter([
       { path: "research-fields", element: <ListResearchField /> },
       { path: "research-types", element: <ListResearchType /> },
       { path: "categories", element: <ListCategory /> },
-      { path: "registration-cndt", element: <RegisterCNDTPage /> }
+      { path: "registration-cndt", element: <RegisterCNDTPage /> },
+      { path: "settings", element: <SettingsPage /> }
     ],
   },
   { path: "*", element: <NotFoundPage /> },

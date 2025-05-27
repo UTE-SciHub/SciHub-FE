@@ -35,7 +35,7 @@ export class GoogleGenAIService {
             **Lưu ý**: Đảm bảo không trả lời dựa trên kiến thức bên ngoài tài liệu. Tập trung vào nội dung của quy trình quản lý và thực hiện đề tài cấp trường.
         `;
     }
-
+    
     private static initializeAI() {
         if (!GoogleGenAIService.ai && GoogleGenAIService.GEMINI_API_KEY) {
             GoogleGenAIService.ai = new GoogleGenAI({ apiKey: GoogleGenAIService.GEMINI_API_KEY });

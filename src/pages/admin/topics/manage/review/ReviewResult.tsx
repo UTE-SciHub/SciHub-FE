@@ -55,22 +55,22 @@ const ReviewResult = forwardRef<HTMLDivElement, { topic: Topic; reviewData: any 
 
                         <div>
                             <p>
-                                <span className="font-semibold">5. Thành viên Hội đồng:</span> Tổng số: {reviewData.totalPresent + reviewData.totalAbsent || "........"}
+                                <span className="font-semibold">5. Thành viên Hội đồng:</span> Tổng số: {reviewData.totalMembers || "........"}
                                 <span className="ml-4">Có mặt: {reviewData.totalPresent || "........"}</span>
                                 <span className="ml-4">Vắng mặt: {reviewData.totalAbsent || "........"}</span>
                             </p>
                         </div>
 
                         <div>
-                            <p><span className="font-semibold">6. Khách mời dự:</span> .................................</p>
+                            <p><span className="font-semibold">6. Khách mời dự:</span> {reviewData.guests || "................................."}</p>
                         </div>
 
                         <div>
                             <p className="font-semibold">7. Kết quả bỏ phiếu đánh giá:</p>
                             <ul className="list-disc ml-8">
-                                <li>Số phiếu đánh giá ở mức "Đạt": {reviewData.approveCount || "........"}</li>
-                                <li>Số phiếu đánh giá ở mức "Không đạt": {reviewData.rejectCount || "........"}</li>
-                                <li>Điểm số chung: {reviewData.approved ? "Đạt" : "Không đạt"} ☐</li>
+                                <li>Số phiếu đánh giá ở mức "Đạt": {reviewData.approveCount || "........"} phiếu</li>
+                                <li>Số phiếu đánh giá ở mức "Không đạt": {reviewData.rejectCount || "........"} phiếu</li>
+                                <li>Kết luận: {reviewData.approved ? "Đạt" : "Không đạt"}</li>
                             </ul>
                             <p className="text-xs italic ml-4">
                                 <span className="font-semibold">Ghi chú:</span> Đánh giá chung được xếp loại "Đạt" nếu trên 2/3 thành viên có mặt của hội đồng xếp loại "Đạt"

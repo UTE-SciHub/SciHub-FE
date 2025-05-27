@@ -9,52 +9,44 @@ import { type TopicApplication, ApplicationStatus } from "@/models/topic-applica
 import { toast } from "@/hooks/use-toast"
 import Loading from "@/components/loading/loading"
 import useDebounce from "@/hooks/use-debounce"
-import { TopicApplicationService } from "@/service/topic-application-service"
 
 interface TopicApplicationsModalProps {
     topic: any
+    applications: TopicApplication[]
     onSelectApplication: (application: TopicApplication) => void
     onClose: () => void
+    onRefresh?: () => Promise<void>
 }
 
-const TopicApplicationsModal = forwardRef(({ topic, onSelectApplication, onClose }: TopicApplicationsModalProps, ref) => {
-    const [applications, setApplications] = useState<TopicApplication[]>([])
+const TopicApplicationsModal = forwardRef(({ topic, applications, onSelectApplication, onClose, onRefresh }: TopicApplicationsModalProps, ref) => {
     const [filteredApplications, setFilteredApplications] = useState<TopicApplication[]>([])
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
-    const loadApplications = async () => {
-        setLoading(true)
-        try {
-            const response = await TopicApplicationService.getApplicationsByTopic(topic.id)
-
-            if (response.status !== 200) {
-                throw new Error("Failed to fetch applications")
+    const refreshApplications = async () => {
+        if (onRefresh) {
+            setLoading(true)
+            try {
+                await onRefresh()
+            } catch (error) {
+                console.error("Error refreshing applications:", error)
+                toast({
+                    title: "Lỗi khi làm mới dữ liệu",
+                    description: "Không thể làm mới danh sách ứng viên. Vui lòng thử lại sau.",
+                    variant: "error",
+                })
+            } finally {
+                setLoading(false)
             }
-
-            const fetchedApplications = Array.isArray(response.data.data) ? response.data.data : []
-
-            setApplications(fetchedApplications)
-            setFilteredApplications(fetchedApplications)
-        } catch (error) {
-            console.error("Error fetching applications:", error)
-            toast({
-                title: "Lỗi khi tải dữ liệu",
-                description: "Không thể tải danh sách ứng viên. Vui lòng thử lại sau.",
-                variant: "error",
-            })
-            setApplications([])
-            setFilteredApplications([])
-        } finally {
-            setLoading(false)
         }
     }
 
     useEffect(() => {
-        loadApplications()
-    }, [topic.id])
+        setFilteredApplications(applications)
+        setLoading(false)
+    }, [applications])
 
     useEffect(() => {
         if (!applications.length) {
@@ -66,8 +58,8 @@ const TopicApplicationsModal = forwardRef(({ topic, onSelectApplication, onClose
             const query = debouncedSearchQuery.toLowerCase()
             const filtered = applications.filter(
                 (app) =>
-                    app.user.name.toLowerCase().includes(query) ||
-                    app.user.email.toLowerCase().includes(query) ||
+                    (app.user.name?.toLowerCase() || "").includes(query) ||
+                    (app.user.email?.toLowerCase() || "").includes(query) ||
                     false,
             )
             setFilteredApplications(filtered)
@@ -76,9 +68,8 @@ const TopicApplicationsModal = forwardRef(({ topic, onSelectApplication, onClose
         }
     }, [applications, debouncedSearchQuery])
 
-    // Expose loadApplications via ref
     useImperativeHandle(ref, () => ({
-        loadApplications,
+        refreshApplications,
     }))
 
     const getStatusBadge = (status: ApplicationStatus) => {

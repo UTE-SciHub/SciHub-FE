@@ -21,8 +21,13 @@ export default function ReviewResult({ topic, reviewData }: ReviewResultProps) {
     const currentDate = new Date()
 
     // Calculate approval status
-    const hasPassedMinimumScores = CRITERIA_DETAILS.every((criteria) => reviewData[criteria.id] >= criteria.minScore)
-    const isApproved = reviewData.totalScore >= 55 && hasPassedMinimumScores
+    const hasPassedMinimumScores = CRITERIA_DETAILS.every((criteria) => 
+        (reviewData[criteria.id] || 0) >= criteria.minScore
+    )
+    // Use existing passed status if available, otherwise calculate
+    const isApproved = reviewData.passedAssessment !== undefined 
+        ? reviewData.passedAssessment 
+        : (reviewData.totalScore >= 55 && hasPassedMinimumScores)
 
     const exportToPdf = async () => {
         if (!pdfRef.current) {

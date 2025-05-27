@@ -22,6 +22,7 @@ import {
   Book,
   FilePlus,
   UserCogIcon,
+  TableProperties,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/service/auth-service";
@@ -63,6 +64,12 @@ const sidebarItems: SidebarItem[] = [
     allowedRoles: [Roles.ADMIN, Roles.BGH],
   },
   {
+    title: "Đăng ký chủ nhiệm",
+    href: "/admin/registration-cndt",
+    icon: FilePlus,
+    allowedRoles: [Roles.ADMIN, Roles.TEACHER],
+  },
+  {
     title: "Thông báo",
     href: "/admin/announcements",
     icon: Bell,
@@ -73,16 +80,43 @@ const sidebarItems: SidebarItem[] = [
     href: "/admin/topics",
     icon: Folder,
     subItems: [
-      { title: "Danh sách đề tài", href: "/admin/topics", icon: List, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER] },
-      { title: "Đăng ký đề tài", href: "/admin/topic-proposal", icon: FileText, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.TEACHER] },
+      { title: "Danh sách đề tài",
+        href: "/admin/topics",
+        icon: List,
+        allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER]
+      },
+      {
+        title: "Xác định danh mục đề tài",
+        href: "/admin/topics/classification",
+        icon: BookOpen,
+        allowedRoles: [Roles.PQLKHHTQT],
+      },
+      {
+        title: "Loại đề tài",
+        href: "/admin/categories",
+        icon: TableProperties,
+        allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT],
+      },
+      {
+        title: "Danh sách lĩnh vực nghiên cứu",
+        href: "/admin/research-fields",
+        icon: Microscope,
+        allowedRoles: [Roles.ADMIN],
+      },
+      {
+        title: "Danh sách loại hình nghiên cứu",
+        href: "/admin/research-types",
+        icon: Book,
+        allowedRoles: [Roles.ADMIN],
+      },
+      {
+        title: "Đề tài chủ nhiệm",
+        href: "/admin/lecturer-topics",
+        icon: BookOpen,
+        allowedRoles: [Roles.TEACHER],
+      },
     ],
     allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER],
-  },
-  {
-    title: "Danh mục đề tài",
-    href: "/admin/categories",
-    icon: List,
-    allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT],
   },
   {
     title: "Quản lý hợp đồng",
@@ -115,34 +149,10 @@ const sidebarItems: SidebarItem[] = [
     allowedRoles: [Roles.ADMIN],
   },
   {
-    title: "Danh sách lĩnh vực nghiên cứu",
-    href: "/admin/research-fields",
-    icon: Microscope,
-    allowedRoles: [Roles.ADMIN],
-  },
-  {
-    title: "Danh sách loại hình nghiên cứu",
-    href: "/admin/research-types",
-    icon: Book,
-    allowedRoles: [Roles.ADMIN],
-  },
-  {
-    title: "Đăng ký CNDT",
-    href: "/admin/registration-cndt",
-    icon: FilePlus,
-    allowedRoles: [Roles.ADMIN, Roles.TEACHER],
-  },
-  {
     title: "Danh sách hội đồng",
     href: "/admin/councils",
     icon: Users,
     allowedRoles: [Roles.ADMIN, Roles.TEACHER, Roles.BGH, Roles.PQLKHHTQT, Roles.COUNCIL_MEMBER],
-  },
-  {
-    title: "Đề tài chủ nhiệm",
-    href: "/admin/lecturer-topics",
-    icon: BookOpen,
-    allowedRoles: [Roles.TEACHER],
   },
   {
     title: "Cài đặt hệ thống",

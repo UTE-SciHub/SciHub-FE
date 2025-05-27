@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -24,20 +24,68 @@ export default function TopicEvaluationModal({
     existingData,
 }: TopicEvaluationModalProps) {
     const [activeTab, setActiveTab] = useState(existingData ? "result" : "form")
-    const [reviewData, setReviewData] = useState(existingData || null)
+    const [reviewData, setReviewData] = useState(() => {
+        if (existingData) {
+            return existingData;
+        }
+
+        if (application.hasEvaluated && application.totalScore !== null) {
+            const defaultScorePerCriteria = Math.floor(application.totalScore / CRITERIA_DETAILS.length);
+            return {
+                ...Object.fromEntries(CRITERIA_DETAILS.map((criteria) => [criteria.id, defaultScorePerCriteria])),
+                additionalComments: "",
+                totalScore: application.totalScore,
+                passedAssessment: application.passed,
+                councilDate: new Date().toISOString(),
+            };
+        }
+
+        // Default to minimum scores if no existing data
+        return {
+            ...Object.fromEntries(CRITERIA_DETAILS.map((criteria) => [criteria.id, criteria.minScore])),
+            additionalComments: "",
+            totalScore: CRITERIA_DETAILS.reduce((sum, criteria) => sum + criteria.minScore, 0),
+            councilDate: new Date().toISOString(),
+        };
+    })
+    
+    const formModifiedRef = useRef(false)
 
     const handleNextStep = (data: any) => {
         setReviewData(data)
         setActiveTab("result")
+        formModifiedRef.current = false
     }
 
     const handlePreviousStep = () => {
         setActiveTab("form")
+        formModifiedRef.current = true
+    }
+    
+    const handleFormChange = (data: any) => {
+        setReviewData(data)
+        formModifiedRef.current = true
     }
 
     const handleSubmitReview = () => {
         if (!reviewData) return
-        onComplete(reviewData)
+        
+        const completeEvaluationData = {
+            researchOverviewScore: reviewData.researchOverviewScore,
+            urgencyScore: reviewData.urgencyScore,
+            objectiveScore: reviewData.objectiveScore,
+            approachMethodScore: reviewData.approachMethodScore,
+            contentAndTimelineScore: reviewData.contentAndTimelineScore,
+            productScore: reviewData.productScore,
+            effectivenessScore: reviewData.effectivenessScore,
+            experienceScore: reviewData.experienceScore,
+            institutionCapabilityScore: reviewData.institutionCapabilityScore,
+            budgetScore: reviewData.budgetScore,
+            totalScore: reviewData.totalScore,
+            additionalComments: reviewData.additionalComments || "",
+        }
+        
+        onComplete(completeEvaluationData)
     }
 
     return (
@@ -57,7 +105,12 @@ export default function TopicEvaluationModal({
 
                 <div className="flex-1 overflow-auto">
                     <TabsContent value="form" className="mt-0 h-full">
-                        <ReviewForm topic={topic} onNextStep={handleNextStep} formData={reviewData} />
+                        <ReviewForm
+                            topic={topic}
+                            onNextStep={handleNextStep}
+                            formData={reviewData}
+                            onChange={handleFormChange}
+                        />
                     </TabsContent>
 
                     <TabsContent value="result" className="mt-0 h-full">
@@ -74,17 +127,7 @@ export default function TopicEvaluationModal({
                         </Button>
                         <Button
                             onClick={() => {
-                                // Create default review data if none exists
-                                if (!reviewData) {
-                                    const defaultData = {
-                                        ...Object.fromEntries(CRITERIA_DETAILS.map((criteria) => [criteria.id, criteria.minScore])),
-                                        additionalComments: "",
-                                        totalScore: CRITERIA_DETAILS.reduce((sum, criteria) => sum + criteria.minScore, 0),
-                                    }
-                                    handleNextStep(defaultData)
-                                } else {
-                                    handleNextStep(reviewData)
-                                }
+                                document.getElementById('review-form-submit-button')?.click()
                             }}
                         >
                             Xem kết quả <ArrowRight className="ml-2 h-4 w-4" />

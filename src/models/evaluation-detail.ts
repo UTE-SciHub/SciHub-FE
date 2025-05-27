@@ -88,3 +88,7 @@ export const getTotalMinScore = () => {
 export const getTotalMaxScore = () => {
     return CRITERIA_DETAILS.reduce((acc, curr) => acc + curr.maxScore, 0);
 };
+
+export const getTotalScore = (evaluationData: EvaluationDetail) => {
+    return CRITERIA_DETAILS.reduce((acc, curr) => acc + evaluationData[curr.id], 0);
+};

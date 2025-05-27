@@ -149,7 +149,7 @@ export default function CreateCouncilPage() {
                     s: 1000,
                     q: debouncedTopicSearchTerm,
                     periodId: selectedPeriodId !== "all" ? selectedPeriodId : undefined,
-                    status: TopicStatus.IN_CATALOG
+                    status: TopicStatus.REVIEWED
                 })
                 const topics = Array.isArray(response.data.data) ? response.data.data : []
                 setFilteredTopics(topics)
@@ -308,12 +308,6 @@ export default function CreateCouncilPage() {
                 topics: selectedTopics.map((topic) => topic.id),
             }
 
-            // // If there's a decision file, upload it first
-            // if (decisionFile) {
-            //     console.log("Uploading decision file:", decisionFile.name)
-            //     await new Promise((resolve) => setTimeout(resolve, 500))
-            // }
-
             const result = await CouncilService.create(councilData)
 
             if (result.status === 201 && result.data.code === 1000) {
@@ -322,7 +316,7 @@ export default function CreateCouncilPage() {
                     description: "Hội đồng đã được tạo thành công",
                     variant: "success",
                 })
-                // navigate("/councils")
+                navigate("/councils")
             } else {
                 toast({
                     title: "Lỗi",
