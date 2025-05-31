@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 import { formatDate } from "@/utils/dateTimeFormat";
 import {
     Table,
@@ -13,9 +13,10 @@ import {
     TableCell,
 } from "@/components/ui/table";
 import { Topic } from "@/models/topic";
-import { UserService } from "@/service/user-service"; // Giả định bạn có service này
+import { UserService } from "@/service/user-service";
 import { toast } from "@/hooks/use-toast";
 import Loading from "@/components/loading/loading";
+import { renderContent } from "@/utils/util";
 
 interface CouncilDecisionDocumentProps {
     decisionNumber?: string;
@@ -40,18 +41,17 @@ const CouncilDecisionDocument: React.FC<CouncilDecisionDocumentProps> = ({
 }) => {
     const [isExporting, setIsExporting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [principalInvestigators, setPrincipalInvestigators] = useState<{ [email: string]: string }>({}); // Lưu tên theo email
+    const [principalInvestigators, setPrincipalInvestigators] = useState<{ [email: string]: string }>({});
     const pdfRef = useRef<HTMLDivElement>(null);
     const currentDate = new Date();
 
-    // Lấy thông tin người dùng từ email
     useEffect(() => {
         const fetchPrincipalInvestigators = async () => {
             setIsLoading(true);
             try {
                 const emailPromises = topics.map(async (topic) => {
                     const email = topic.principalInvestigator;
-                    if (!email || principalInvestigators[email]) return; // Bỏ qua nếu không có email hoặc đã lấy
+                    if (!email || principalInvestigators[email]) return;
                     const response = await UserService.getUserByEmail(email);
                     return { email, name: response.data.data.name };
                 });
@@ -89,12 +89,19 @@ const CouncilDecisionDocument: React.FC<CouncilDecisionDocumentProps> = ({
         }
 
         setIsExporting(true);
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         try {
+            window.scrollTo(0, 0);
+
             const canvas = await html2canvas(pdfRef.current, {
                 scale: 2,
                 useCORS: true,
-                logging: false,
+                logging: true,
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: 210 * 3.78,
+                windowHeight: pdfRef.current.scrollHeight,
             });
 
             const imgData = canvas.toDataURL("image/png");
@@ -105,15 +112,28 @@ const CouncilDecisionDocument: React.FC<CouncilDecisionDocumentProps> = ({
             });
 
             const imgWidth = 210;
+            const pageHeight = 297;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
 
-            pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-            pdf.save(`Quyết định phê duyệt đề tài.pdf`);
+            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+
+            heightLeft -= pageHeight;
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            const fileName = "BM.21-QT.01-KHCN Quyết định giao nhiệm vụ thực hiện đề tài.pdf";
+            pdf.save(fileName);
         } catch (error) {
             console.error("Error exporting PDF:", error);
             toast({
                 title: "Lỗi",
-                description: "Không thể xuất PDF. Vui lòng thử lại sau.",
+                description: "Không thể xuất PDF. Vui lòng thử lại.",
                 variant: "error",
             });
         } finally {
@@ -127,22 +147,26 @@ const CouncilDecisionDocument: React.FC<CouncilDecisionDocumentProps> = ({
 
     return (
         <div className="space-y-6 w-full">
-            <div className="flex justify-between items-center px-6 py-4 border-b">
+            <div className="flex justify-between items-center py-4 border-b">
                 <h3 className="text-xl font-semibold">Quyết định phê duyệt đề tài</h3>
-                <div className="space-x-2 flex-shrink-0">
+                <div className="flex flex-row gap-3 flex-shrink-0 items-end">
+                    {onClose && (
+                        <Button
+                            variant="outline"
+                            onClick={onClose}
+                            className="text-red-500"
+                        >
+                            Hủy
+                        </Button>
+                    )}
                     <Button
                         onClick={exportToPdf}
                         disabled={isExporting}
-                        className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                        className=""
                     >
                         <Download className="h-4 w-4" />
                         {isExporting ? "Đang xuất..." : "Xuất PDF"}
                     </Button>
-                    {onClose && (
-                        <Button variant="outline" onClick={onClose} className="border-gray-300 text-gray-700 hover:bg-gray-100">
-                            Đóng
-                        </Button>
-                    )}
                 </div>
             </div>
 
@@ -280,15 +304,56 @@ const CouncilDecisionDocument: React.FC<CouncilDecisionDocumentProps> = ({
                                                 {`${principalInvestigators[topic.principalInvestigator] || topic.principalInvestigator} - ${topic.principalInvestigator}`}
                                             </TableCell>
                                             <TableCell className="text-sm border min-w-[150px]">
-                                                {/* Placeholder for team members */}
-                                                {/* {topic.teamMembers?.join(", ") || "Chưa có thông tin"} */}
+                                                {topic.members && topic.members.filter(m => m.role !== 'INVESTIGATOR').length > 0 ? (
+                                                    <div className="flex flex-col gap-1">
+                                                        {topic.members.filter(m => m.role !== 'INVESTIGATOR').map((m) => (
+                                                            <span key={m.id}>{m.user.name} - {m.user.email}</span>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <span>Chưa có thông tin</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-sm border min-w-[150px]">
-                                                {/* {topic.expectedProducts
-                                                    ? topic.expectedProducts.map((product: any, i: number) => (
-                                                        <div key={i}>{product.productName || "Chưa xác định"}</div>
-                                                    ))
-                                                    : "Chưa có sản phẩm"} */}
+                                                {topic.expectedProducts && (topic.expectedProducts.scientific || topic.expectedProducts.training || topic.expectedProducts.commercial) ? (
+                                                    <div className="space-y-1">
+                                                        {/* Scientific */}
+                                                        {(topic.expectedProducts.scientific?.domestic || topic.expectedProducts.scientific?.international) && (
+                                                            <div>
+                                                                <span className="font-semibold">Sản phẩm khoa học: </span>
+                                                                {topic.expectedProducts.scientific.domestic && (
+                                                                    <span>{topic.expectedProducts.scientific.domestic} trong nước</span>
+                                                                )}
+                                                                {topic.expectedProducts.scientific.domestic && topic.expectedProducts.scientific.international && ', '}
+                                                                {topic.expectedProducts.scientific.international && (
+                                                                    <span>{topic.expectedProducts.scientific.international} quốc tế</span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {/* Training */}
+                                                        {(topic.expectedProducts.training?.masters || topic.expectedProducts.training?.students) && (
+                                                            <div>
+                                                                <span className="font-semibold">Sản phẩm đào tạo: </span>
+                                                                {topic.expectedProducts.training.masters && (
+                                                                    <span>{topic.expectedProducts.training.masters} thạc sĩ</span>
+                                                                )}
+                                                                {topic.expectedProducts.training.masters && topic.expectedProducts.training.students && ', '}
+                                                                {topic.expectedProducts.training.students && (
+                                                                    <span>{topic.expectedProducts.training.students} sinh viên</span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {/* Commercial */}
+                                                        {topic.expectedProducts.commercial?.details && (
+                                                            <div>
+                                                                <span className="font-semibold">Sản phẩm ứng dụng: </span>
+                                                                <span>{renderContent(topic.expectedProducts.commercial?.details)}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span>Chưa có sản phẩm</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-sm border text-center w-[100px]">
                                                 {topic.durationInMonths} tháng

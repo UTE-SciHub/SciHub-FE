@@ -11,6 +11,7 @@ export enum CouncilMemberRole {
 export enum CouncilType {
     SELECT_CNDT = "SELECT_CNDT", // Hội đồng xét duyệt chủ nhiệm
     EVALUATE_TOPIC = "EVALUATE_TOPIC", // Hội đồng đánh giá
+    ACCEPTANCE_JURY = "ACCEPTANCE_JURY", // Hội đồng nghiệm thu
 }
 
 export interface Council {

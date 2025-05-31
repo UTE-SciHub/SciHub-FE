@@ -387,6 +387,7 @@ export default function UpdateRegistrationPeriod() {
                                                 placeholder="Tải lên file quyết định"
                                                 onFileChange={handleFileChange}
                                                 existingFile={registrationPeriod.decisionFile}
+                                                displayName={`Quyết định: ${registrationPeriod.decisionNumber}`}
                                                 height={800}
                                             />
                                         </FormControl>

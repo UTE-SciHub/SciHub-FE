@@ -1,27 +1,27 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
-    ArrowLeft,
-    Calendar,
-    Download,
-    Edit,
-    FileText,
-    Info,
-    MoreHorizontal,
-    Trash2,
-    Users,
-    Plus,
-    Clock,
-    CheckCircle,
-    AlertCircle,
-    ChevronLeft,
-    ChevronRight,
-    ExternalLink,
-    Clipboard,
-    Share2,
-    User,
-    BarChart,
-    Search,
+  ArrowLeft,
+  Calendar,
+  Download,
+  Edit,
+  FileText,
+  Info,
+  MoreHorizontal,
+  Trash2,
+  Users,
+  Plus,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Clipboard,
+  Share2,
+  User,
+  BarChart,
+  Search,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -30,29 +30,29 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
 import {
-    type Council,
-    getCouncilTypeText,
-    getCouncilTypeBadgeClass,
-    getCouncilStatus,
-    getStatusVariant,
-    getMemberRoleText,
-    getMemberRoleBadgeClass,
+  type Council,
+  getCouncilTypeText,
+  getCouncilTypeBadgeClass,
+  getCouncilStatus,
+  getStatusVariant,
+  getMemberRoleText,
+  getMemberRoleBadgeClass,
 } from "@/models/council"
 import { CouncilService } from "@/service/council-service"
 import { TopicApplicationService } from "@/service/topic-application-service"
@@ -62,12 +62,11 @@ import { ApplicationStatus, type TopicApplication } from "@/models/topic-applica
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import TopicSummaryModal from "@/pages/admin/council/TopicSummaryModal"
-import ApproveTopicsModal from "@/pages/admin/council/ApproveTopicsModal"
 
 import TopicEvaluationModal from "@/pages/admin/council/evaluation/TopicEvaluationModal"
 import { EvaluationService } from "@/service/evaluation-service"
 import { getTotalMaxScore, getTotalMinScore, getTotalScore } from "@/models/evaluation-detail"
-import { Topic } from "@/models/topic"
+import type { Topic } from "@/models/topic"
 
 export default function CouncilDetailPage() {
     const { id } = useParams<{ id: string }>()
@@ -80,10 +79,9 @@ export default function CouncilDetailPage() {
     const [loadingApplications, setLoadingApplications] = useState<Record<number, boolean>>({})
     const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
-    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false)
-    const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
-    const [selectedApplication, setSelectedApplication] = useState<TopicApplication | null>(null);
-    const [evaluationDetail, setEvaluationDetail] = useState<any>(null);
+    const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false)
+    const [selectedApplication, setSelectedApplication] = useState<TopicApplication | null>(null)
+    const [evaluationDetail, setEvaluationDetail] = useState<any>(null)
     const minRequiredScore = getTotalMinScore()
     const maxPossibleScore = getTotalMaxScore()
 
@@ -183,13 +181,9 @@ export default function CouncilDetailPage() {
         setIsSummaryModalOpen(true)
     }
 
-    const handleOpenApproveModal = () => {
-        setIsApproveModalOpen(true)
-    }
-
-    const handleApproveSuccess = () => {
-        setIsApproveModalOpen(false)
-        setActiveTab("topics")
+    // Updated function to navigate to the approve topics page instead of opening modal
+    const handleOpenApproveTopics = () => {
+        navigate(`/admin/councils/${id}/approve-topics`)
     }
 
     const handleEvaluationComplete = async (evaluationData: any) => {
@@ -286,9 +280,9 @@ export default function CouncilDetailPage() {
     const status = getCouncilStatus(council)
 
     const handleSelectApplication = async (application: TopicApplication) => {
-        setSelectedApplication(application);
+        setSelectedApplication(application)
         setSelectedTopic(application.topic)
-        setEvaluationDetail(null);
+        setEvaluationDetail(null)
 
         if (application.hasEvaluated) {
             try {
@@ -396,7 +390,7 @@ export default function CouncilDetailPage() {
                                     <Download className="h-4 w-4" />
                                     Tải quyết định
                                 </Button>
-                                <Button variant="default" onClick={handleOpenApproveModal}>
+                                <Button variant="default" onClick={handleOpenApproveTopics}>
                                     <CheckCircle className="h-4 w-4" />
                                     Phê duyệt đề tài
                                 </Button>
@@ -458,7 +452,6 @@ export default function CouncilDetailPage() {
                     </CardContent>
                 </div>
             </Card>
-
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="border-b border-gray-200 mb-6">
@@ -573,19 +566,19 @@ export default function CouncilDetailPage() {
                         <Card className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                             <CardHeader
                                 className={`pb-4 pt-5 ${status === "Đang hoạt động"
-                                    ? "bg-gradient-to-r from-green-50 to-green-100"
-                                    : status === "Sắp diễn ra"
-                                        ? "bg-gradient-to-r from-blue-50 to-blue-100"
-                                        : "bg-gradient-to-r from-gray-50 to-gray-100"
+                                        ? "bg-gradient-to-r from-green-50 to-green-100"
+                                        : status === "Sắp diễn ra"
+                                            ? "bg-gradient-to-r from-blue-50 to-blue-100"
+                                            : "bg-gradient-to-r from-gray-50 to-gray-100"
                                     }`}
                             >
                                 <h3 className="text-base font-semibold text-gray-800 flex items-center">
                                     <Info
                                         className={`h-5 w-5 mr-2 ${status === "Đang hoạt động"
-                                            ? "text-green-600"
-                                            : status === "Sắp diễn ra"
-                                                ? "text-blue-600"
-                                                : "text-gray-600"
+                                                ? "text-green-600"
+                                                : status === "Sắp diễn ra"
+                                                    ? "text-blue-600"
+                                                    : "text-gray-600"
                                             }`}
                                     />
                                     Trạng thái
@@ -614,10 +607,10 @@ export default function CouncilDetailPage() {
                                     </div>
                                     <p
                                         className={`text-lg font-semibold ${status === "Đang hoạt động"
-                                            ? "text-green-700"
-                                            : status === "Sắp diễn ra"
-                                                ? "text-blue-700"
-                                                : "text-gray-700"
+                                                ? "text-green-700"
+                                                : status === "Sắp diễn ra"
+                                                    ? "text-blue-700"
+                                                    : "text-gray-700"
                                             }`}
                                     >
                                         {status}
@@ -757,7 +750,10 @@ export default function CouncilDetailPage() {
                                             key={topicCouncil.id}
                                             value={`topic-${topicCouncil.id}`}
                                             onClick={() => {
-                                                if (!topicApplications[topicCouncil.topic?.id] && !loadingApplications[topicCouncil.topic?.id]) {
+                                                if (
+                                                    !topicApplications[topicCouncil.topic?.id] &&
+                                                    !loadingApplications[topicCouncil.topic?.id]
+                                                ) {
                                                     fetchTopicApplications(topicCouncil.topic?.id)
                                                 }
                                             }}
@@ -926,23 +922,12 @@ export default function CouncilDetailPage() {
                             topic={selectedTopic}
                             applications={topicApplications[selectedTopic.id] || []}
                             onClose={() => setIsSummaryModalOpen(false)}
-                            councilId={council.id} />
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            {/* Approve Topics Modal */}
-            <Dialog open={isApproveModalOpen} onOpenChange={setIsApproveModalOpen}>
-                <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0">
-                    {council && (
-                        <ApproveTopicsModal
-                            councilId={Number(council.id)}
-                            onClose={() => setIsApproveModalOpen(false)}
-                            onSuccess={handleApproveSuccess}
+                            councilId={council.id}
                         />
                     )}
                 </DialogContent>
             </Dialog>
+
             {/* Evaluation Modal */}
             <Dialog open={isEvaluationModalOpen} onOpenChange={setIsEvaluationModalOpen}>
                 <DialogContent className="max-w-3xl min-h-[70vh] overflow-auto p-0">

@@ -242,9 +242,13 @@ const MyTopic = () => {
         render: (value: string) => value || "N/A",
       },
       {
-        key: "englishName",
-        title: "Tên tiếng Anh",
-        sortable: true,
+        key: "category.name",
+        title: "Loại đề tài",
+        render: (value: string) => value || "N/A",
+      },
+      {
+        key: "field.name",
+        title: "Lĩnh vực",
         render: (value: string) => value || "N/A",
       },
       {

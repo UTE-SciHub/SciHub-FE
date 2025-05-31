@@ -142,7 +142,7 @@ const RegisterCNDTPage = () => {
                                 setDeleteApplicationId(record.applicationId!);
                                 setIsDeleteDialogOpen(true);
                             }}
-                            disabled={record.applicationStatus !== "PENDING" || !record.applicationId}
+                            disabled={record.status !== "PENDING" || !record.applicationId}
                             aria-label={`Xóa đăng ký đề tài ${record.vietnameseName}`}
                         >
                             <Trash2 className="h-4 w-4" />

@@ -13,6 +13,10 @@
   font-family: "Times New Roman", Times, serif !important;
 }
 
+.z-100-import {
+  z-index: 10 !important;
+}
+
 @layer base {
   :root {
     --background: 210 40% 98%;

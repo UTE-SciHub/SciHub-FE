@@ -161,6 +161,7 @@ export default function Login() {
                     useUserStore.getState().setUser(user)
 
                     toast({
+                        title: "Thông báo",
                         description: "Đăng nhập thành công!",
                         variant: "success",
                         duration: 2000,
