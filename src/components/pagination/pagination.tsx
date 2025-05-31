@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 interface PaginationProps {
   currentPage: number;
@@ -25,8 +25,8 @@ const Pagination = ({
   currentPage,
   totalPages,
   onPageChange,
-  totalItems,
-  itemsPerPage,
+  totalItems = 0,
+  itemsPerPage = 10,
   pageSizeOptions = [5, 10, 15, 20],
   onPageSizeChange,
 }: PaginationProps) => {
@@ -100,45 +100,49 @@ const Pagination = ({
 
   const pageNumbers = getPageNumbers();
 
-  if (totalPages <= 1 && !onPageSizeChange) {
-    return null;
-  }
-
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      {onPageSizeChange && itemsPerPage && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Hiển thị</span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={(value) => onPageSizeChange(Number(value))}
-          >
-            <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={itemsPerPage} />
-            </SelectTrigger>
-            <SelectContent>
-              {pageSizeOptions.map((size) => (
-                <SelectItem key={size} value={size.toString()}>
-                  {size}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">mục mỗi trang</span>
-        </div>
-      )}
+      {/* Left Section: Page Size Select and Item Count Info */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        {totalItems > 0 && (
+          <>
+            {onPageSizeChange && itemsPerPage && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Hiển thị</span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => onPageSizeChange(Number(value))}
+                >
+                  <SelectTrigger className="w-[70px]">
+                    <SelectValue placeholder={itemsPerPage} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pageSizeOptions.map((size) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground">mục mỗi trang</span>
+              </div>
+            )}</>
+        )}
 
-      {/* Item count info */}
-      {totalItems && itemsPerPage && totalItems > 0 && (
-        <div className="text-sm text-muted-foreground sm:ml-4">
-          Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} đến{" "}
-          {Math.min(currentPage * itemsPerPage, totalItems)} trong tổng số {totalItems} mục
+        {/* Item count info - Always next to pageSize select */}
+        <div className="text-sm text-muted-foreground">
+          {totalItems > 0 && (
+            <>
+              Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} đến{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} trong tổng số {totalItems} mục
+            </>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Pagination controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center space-x-2 sm:ml-auto">
+      {/* Right Section: Pagination Controls and Go-to-Page Input */}
+      {totalItems > 0 && totalPages > 1 && (
+        <div className="flex items-center gap-2 sm:ml-auto">
           <Button
             variant="outline"
             size="icon"
@@ -195,22 +199,24 @@ const Pagination = ({
             <ChevronsRight className="h-4 w-4" />
             <span className="sr-only">Trang cuối cùng</span>
           </Button>
+
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={inputPage}
+              onChange={handleInputPageChange}
+              onKeyDown={handleInputKeyDown}
+              placeholder="Trang"
+              className="w-14"
+              min={1}
+              max={totalPages}
+            />
+            <Button size="sm" onClick={handleGoToPage}>
+              Đi
+            </Button>
+          </div>
         </div>
       )}
-
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          value={inputPage}
-          onChange={handleInputPageChange}
-          onKeyDown={handleInputKeyDown}
-          placeholder="Trang"
-          className="w-14"
-          min={1}
-          max={totalPages}
-        />
-        <Button size="sm" onClick={handleGoToPage}>Đi</Button>
-      </div>
     </div>
   );
 };

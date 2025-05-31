@@ -2,11 +2,6 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import {
   FileTextIcon,
-  ClipboardCheckIcon,
-  FileSignatureIcon,
-  GanttChartIcon,
-  CheckCircleIcon,
-  ArchiveIcon,
 } from "lucide-react";
 
 const navItems = [
@@ -15,8 +10,8 @@ const navItems = [
     href: "/",
   },
   {
-    title: "Đăng ký đề tài",
-    href: "/topic-registration",
+    title: "Đề tài của tôi",
+    href: "/my-topics",
     icon: FileTextIcon,
   },
 ];
@@ -30,10 +25,9 @@ const UserMainNav = () => {
           to={item.href}
           className={({ isActive }) =>
             `text-sm font-medium transition-colors px-1 py-1.5 
-            ${
-              isActive
-                ? "text-primary-600 border-b-2 border-primary-500"
-                : "text-muted-foreground hover:text-primary-700"
+            ${isActive
+              ? "text-primary-600 border-b-2 border-primary-500"
+              : "text-muted-foreground hover:text-primary-700"
             }`
           }
         >

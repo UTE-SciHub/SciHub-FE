@@ -7,7 +7,7 @@ import { DataTableProps } from "@/models/table-props";
 
 const DataTable: React.FC<DataTableProps> = ({
     columns,
-    data,
+    data = [],
     emptyMessage = "Không có dữ liệu",
     rowKey = "id",
     loading = false,
@@ -129,30 +129,40 @@ const DataTable: React.FC<DataTableProps> = ({
         navigate({ search: params.toString() }, { replace: true });
     };
 
-    const displayColumns = selectable
-        ? [
-            {
-                key: "selection",
-                title: (
-                    <Checkbox
-                        checked={allSelected}
-                        data-state={someSelected ? "indeterminate" : allSelected ? "checked" : "unchecked"}
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Select all"
-                    />
-                ),
-                width: "40px",
-                render: (_, record, index) => (
-                    <Checkbox
-                        checked={internalSelectedRowKeys.includes(getRowKey(record, index))}
-                        onCheckedChange={(checked) => handleSelectRow(!!checked, record, index)}
-                        aria-label={`Select row ${index + 1}`}
-                    />
-                ),
-            },
-            ...columns,
-        ]
-        : columns;
+    // Add a default column for the checkbox and index
+    const displayColumns = [
+        ...(selectable
+            ? [
+                {
+                    key: "selection",
+                    title: (
+                        <Checkbox
+                            checked={allSelected}
+                            data-state={someSelected ? "indeterminate" : allSelected ? "checked" : "unchecked"}
+                            onCheckedChange={handleSelectAll}
+                            aria-label="Select all"
+                            className="border-white"
+                        />
+                    ),
+                    width: "40px",
+                    render: (_, record, index) => (
+                        <Checkbox
+                            checked={internalSelectedRowKeys.includes(getRowKey(record, index))}
+                            onCheckedChange={(checked) => handleSelectRow(!!checked, record, index)}
+                            aria-label={`Select row ${index + 1}`}
+                        />
+                    ),
+                },
+            ]
+            : []),
+        {
+            key: "index",
+            title: "STT",
+            width: "10px",
+            render: (_, __, index) => (currentPage - 1) * itemsPerPage + index + 1,
+        },
+        ...columns,
+    ];
 
     return (
         <div className="space-y-4">
@@ -193,7 +203,13 @@ const DataTable: React.FC<DataTableProps> = ({
                                         {displayColumns.map((column) => (
                                             <TableCell
                                                 key={`${getRowKey(record, index)}-${column.key}`}
-                                                style={{ width: column.width }}
+                                                style={{
+                                                    width: column.width,
+                                                    maxWidth: column.width,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
                                                 className={
                                                     column.align === "right"
                                                         ? "text-right"
@@ -201,8 +217,11 @@ const DataTable: React.FC<DataTableProps> = ({
                                                             ? "text-center"
                                                             : ""
                                                 }
+                                                title={record[column.key]} // Hiển thị tooltip khi di chuột
                                             >
-                                                {column.render ? column.render(record[column.key], record, index) : record[column.key]}
+                                                {column.render
+                                                    ? column.render(record[column.key], record, index)
+                                                    : record[column.key]}
                                             </TableCell>
                                         ))}
                                     </TableRow>
@@ -214,17 +233,6 @@ const DataTable: React.FC<DataTableProps> = ({
                                     </TableCell>
                                 </TableRow>
                             )}
-
-                            {itemsPerPage &&
-                                data.length > 0 &&
-                                data.length < itemsPerPage &&
-                                Array(itemsPerPage - data.length)
-                                    .fill(0)
-                                    .map((_, index) => (
-                                        <TableRow key={`empty-${index}`} className="h-[53px]">
-                                            <TableCell colSpan={displayColumns.length}></TableCell>
-                                        </TableRow>
-                                    ))}
                         </TableBody>
                     </Table>
                 </div>

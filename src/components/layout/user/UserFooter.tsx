@@ -1,11 +1,11 @@
 const UserFooter = () => {
   return (
-    <footer className="border-t py-8 bg-white">
+    <footer className="border-t py-8 bg-[#3782F5] text-white">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">UTE-SciHub</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm">
               Hệ thống quản lý đề tài nghiên cứu khoa học và công nghệ - Đại học Sư phạm kỹ thuật - Đại học Đà Nẵng.
             </p>
           </div>
@@ -15,7 +15,7 @@ const UserFooter = () => {
               <li>
                 <a
                   href="#"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className=""
                 >
                   Trang chủ
                 </a>
@@ -23,7 +23,7 @@ const UserFooter = () => {
               <li>
                 <a
                   href="#"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className=""
                 >
                   Đăng ký đề tài
                 </a>
@@ -31,7 +31,7 @@ const UserFooter = () => {
               <li>
                 <a
                   href="#"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className=""
                 >
                   Tra cứu đề tài
                 </a>
@@ -39,7 +39,7 @@ const UserFooter = () => {
               <li>
                 <a
                   href="#"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className=""
                 >
                   Hướng dẫn sử dụng
                 </a>
@@ -52,7 +52,7 @@ const UserFooter = () => {
               <li>
                 <a
                   href="#"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className=""
                 >
                   Câu hỏi thường gặp
                 </a>
@@ -60,7 +60,7 @@ const UserFooter = () => {
               <li>
                 <a
                   href="#"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className=""
                 >
                   Liên hệ hỗ trợ
                 </a>
@@ -68,7 +68,7 @@ const UserFooter = () => {
               <li>
                 <a
                   href="#"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className=""
                 >
                   Báo lỗi hệ thống
                 </a>
@@ -78,23 +78,23 @@ const UserFooter = () => {
           <div className="space-y-3">
             <h3 className="text-sm font-semibold">Liên hệ</h3>
             <ul className="space-y-2 text-sm">
-              <li className="text-muted-foreground">
+              <li className="">
                 Phòng Quản lý Khoa học và Công nghệ
               </li>
-              <li className="text-muted-foreground">
-                Trường Đại học Sư phạm Kỹ thuật
+              <li className="">
+                Trường Đại học Sư phạm Kỹ thuật Đà Nẵng
               </li>
-              <li className="text-muted-foreground">
-                Email: qlkh@hcmute.edu.vn
+              <li className="">
+                Email: qlkh@ute.udn.vn
               </li>
-              <li className="text-muted-foreground">Tel: (028) 3896 xxxx</li>
+              <li className="">Tel: (028) 3896 xxxx</li>
             </ul>
           </div>
         </div>
-        <div className="border-t mt-8 pt-6 text-center text-sm text-muted-foreground">
+        <div className="border-t mt-8 pt-6 text-center text-sm ">
           <p>
             &copy; {new Date().getFullYear()} UTE-SciHub. Đại học Sư phạm Kỹ
-            thuật TP.HCM.
+            thuật Đà Nẵng.
           </p>
         </div>
       </div>

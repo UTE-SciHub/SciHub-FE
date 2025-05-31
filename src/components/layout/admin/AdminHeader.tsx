@@ -1,5 +1,5 @@
-import { NavLink } from "react-router-dom";
-import { Bell, Search, User, Menu } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Bell, Search, User, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,6 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import useUserStore from "@/store/userStore";
+import { toast } from "@/hooks/use-toast";
+import Cookies from "js-cookie";
+import { logout } from "@/service/auth-service";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitialsAvt } from "@/utils/common";
 
 interface AdminHeaderProps {
   collapsed: boolean;
@@ -17,8 +23,41 @@ interface AdminHeaderProps {
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
+  const user = useUserStore((state) => state.user);
+  const navigate = useNavigate();
+  const clearUser = useUserStore((state) => state.clearUser);
+
+  const handleLogout = async () => {
+    try {
+      const accessToken = Cookies.get("access-token");
+      if (accessToken) {
+        await logout(accessToken);
+      }
+
+      Cookies.remove("access-token", { secure: true, sameSite: "Strict" });
+      Cookies.remove("refresh-token", { secure: true, sameSite: "Strict" });
+      clearUser();
+
+      toast({
+        title: "Thông báo",
+        description: "Đăng xuất thành công!",
+        variant: "success",
+        duration: 2000,
+      });
+
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast({
+        title: "Thông báo",
+        description: "Đăng xuất thất bại. Vui lòng thử lại.",
+        variant: "error",
+      });
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-white">
       <div className="flex h-14 items-center px-4">
         <div className="flex items-center gap-4">
           <NavLink to="/admin" className="flex items-center gap-2 mr-16">
@@ -53,6 +92,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
             <Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Tìm kiếm..." className="pl-8 w-full" />
           </div>
+
+          <span className="text-sm font-medium">
+            Xin chào, {user?.name || "Guest"}
+          </span>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -112,19 +155,23 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ collapsed, onToggle }) => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="h-5 w-5" />
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.imageUrl} alt="Ảnh đại diện" />
+                  <AvatarFallback>{getInitialsAvt(user.name)}</AvatarFallback>
+                </Avatar>
+
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Admin</DropdownMenuLabel>
+              <DropdownMenuLabel>{user?.email || ""}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Hồ sơ</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/profile")}>Hồ sơ</DropdownMenuItem>
               <DropdownMenuItem>Cài đặt</DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <NavLink to="/">Chuyển sang giao diện người dùng</NavLink>
+                <NavLink to="/">Trang chủ</NavLink>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Đăng xuất</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="text-rose-500"><LogOut className="h-4 w-4 mr-2" /> Đăng xuất</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
