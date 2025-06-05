@@ -319,7 +319,7 @@ export default function CreateCouncilPage() {
                     description: "Hội đồng đã được tạo thành công",
                     variant: "success",
                 })
-                navigate("/councils")
+                navigate("/admin/councils")
             } else {
                 toast({
                     title: "Lỗi",

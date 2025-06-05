@@ -53,6 +53,7 @@ import ApproveTopicsPage from "@/pages/admin/council/ApprovedTopicPage";
 import TopicMembersPage from "@/pages/admin/topics/my-topic/TopicMembersPage";
 import AcceptanceDashboard from "@/pages/admin/acceptance/acceptance-workflow-dashboard";
 import AcceptanceSubmissionForm from "@/pages/admin/acceptance/acceptance-submission-form";
+import AcceptanceDetail from "@/pages/admin/acceptance/acceptance-detail";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -136,7 +137,8 @@ const routers = createBrowserRouter([
       { path: "settings", element: <SettingsPage /> },
       { path: "acceptance", children: [
         { index: true, element: <AcceptanceDashboard /> },
-        {path: "submit", element: <AcceptanceSubmissionForm />}
+        {path: "submit", element: <AcceptanceSubmissionForm />},
+        {path: ":acceptanceId", element: <AcceptanceDetail />},
       ]},
     ],
   },

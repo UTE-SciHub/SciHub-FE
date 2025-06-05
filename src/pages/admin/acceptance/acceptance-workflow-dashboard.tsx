@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -6,11 +6,14 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "@/hooks/use-toast"
-import { Search, Plus, FileText, Users, Clock, CheckCircle, Eye, Upload } from "lucide-react"
+import { Search, Plus, FileText, Users, Clock, CheckCircle, Eye, Upload, ChevronDown, ChevronRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import type { Topic } from "@/models/topic"
 import { type Council, CouncilType, getCouncilStatus, getStatusVariant } from "@/models/council"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { TopicStatus } from "@/models/enums/topic-status.enum"
+import { CouncilService } from "@/service/council-service"
+import { AcceptanceService } from "@/service/acceptance-service"
 
 interface AcceptanceDashboardStats {
   totalTopics: number
@@ -20,6 +23,7 @@ interface AcceptanceDashboardStats {
 }
 
 export default function AcceptanceDashboard() {
+  const [openTopicId, setOpenTopicId] = useState<number | null>(null)
   const navigate = useNavigate()
   const [stats, setStats] = useState<AcceptanceDashboardStats>({
     totalTopics: 0,
@@ -29,13 +33,82 @@ export default function AcceptanceDashboard() {
   })
   const [topics, setTopics] = useState<Topic[]>([])
   const [councils, setCouncils] = useState<Council[]>([])
+  const [selectedCouncil, setSelectedCouncil] = useState<Council | undefined>(undefined)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState("all")
+  const [acceptancesGrouped, setAcceptancesGrouped] = useState<
+    Record<string, { topic: any; acceptanceFinal?: any; acceptances: any[] }>
+  >({})
 
   useEffect(() => {
     fetchDashboardData()
   }, [])
+
+  useEffect(() => {
+    if (councils && councils.length > 0) {
+      setSelectedCouncil(councils[0])
+    }
+  }, [councils])
+
+  useEffect(() => {
+    if (selectedCouncil) {
+      fetchAcceptancesByCouncil(Number(selectedCouncil.id))
+    }
+  }, [selectedCouncil])
+
+  const fetchCouncilData = async () => {
+    setLoading(true)
+    try {
+      const councilResponse = await CouncilService.getAll({
+        type: CouncilType.ACCEPTANCE_JURY,
+        isAdmin: true,
+      })
+
+      return councilResponse.data.data
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải dữ liệu hội đồng. Vui lòng thử lại.",
+        variant: "error",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCouncilSelect = (council: Council) => {
+    setSelectedCouncil(council)
+  }
+
+  const fetchAcceptancesByCouncil = async (councilId: number) => {
+    try {
+      const response = await AcceptanceService.getAcceptances({
+        councilId: councilId,
+      })
+      const data = response?.data?.data || []
+      // Group by topicId
+      const grouped: Record<string, { topic: any; acceptanceFinal?: any; acceptances: any[] }> = {}
+      data.forEach((acc: any) => {
+        const topicId = acc.topic.id
+        if (!grouped[topicId]) {
+          grouped[topicId] = { topic: acc.topic, acceptances: [] }
+        }
+        grouped[topicId].acceptances.push(acc)
+      })
+      // Lấy acceptanceFinal (isFinal=true đầu tiên)
+      Object.values(grouped).forEach((group) => {
+        group.acceptanceFinal = group.acceptances.find((a) => a.isFinal) || undefined
+      })
+      setAcceptancesGrouped(grouped)
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải danh sách nghiệm thu",
+        variant: "error",
+      })
+    }
+  }
 
   const fetchDashboardData = async () => {
     setLoading(true)
@@ -72,22 +145,10 @@ export default function AcceptanceDashboard() {
         },
       ]
 
-      const mockCouncils: Council[] = [
-        {
-          id: "1",
-          name: "Hội đồng nghiệm thu CNTT 2024",
-          decisionNumber: "123/QĐ-ĐHBK",
-          establishmentDate: "2024-01-15",
-          startDate: "2024-02-01",
-          endDate: "2024-12-31",
-          type: CouncilType.ACCEPTANCE_JURY,
-          councilMembers: [],
-          topicCouncils: [],
-        },
-      ]
+      const councilsResponse = await fetchCouncilData()
+      setCouncils(councilsResponse)
 
       setTopics(mockTopics)
-      setCouncils(mockCouncils)
 
       // Calculate stats
       setStats({
@@ -121,15 +182,19 @@ export default function AcceptanceDashboard() {
   }
 
   const filteredTopics = topics.filter((topic) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      topic.vietnameseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      topic.topicCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (topic.principalInvestigator && topic.principalInvestigator.toLowerCase().includes(searchQuery.toLowerCase()))
+    // const matchesSearch =
+    //   searchQuery === "" ||
+    //   topic.vietnameseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //   topic.topicCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //   (topic.principalInvestigator && topic.principalInvestigator.toLowerCase().includes(searchQuery.toLowerCase()))
 
-    const matchesFilter = activeFilter === "all" || topic.status === activeFilter
+    // const matchesFilter = activeFilter === "all" || topic.status === activeFilter
 
-    return matchesSearch && matchesFilter
+    // const matchesCouncilType =
+    //   selectedCouncilType === "all" || councils.some(c => c.type === selectedCouncilType && c.topicCouncils.some(tc => tc.topicId === topic.id))
+
+    // return matchesSearch && matchesFilter && matchesCouncilType
+    return true
   })
 
   return (
@@ -220,7 +285,27 @@ export default function AcceptanceDashboard() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex gap-2">
+                {/* Select box chọn hội đồng nghiệm thu */}
+                <div className="w-56">
+                  <Select
+                    value={selectedCouncil ? String(selectedCouncil.id) : undefined}
+                    onValueChange={(v) => setSelectedCouncil(councils.find((c) => c.id === v))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn hội đồng nghiệm thu" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {councils
+                        .filter((c) => c.type === CouncilType.ACCEPTANCE_JURY)
+                        .map((council) => (
+                          <SelectItem key={council.id} value={String(council.id)}>
+                            {council.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2 items-center">
                   <Button
                     variant={activeFilter === "all" ? "default" : "outline"}
                     size="sm"
@@ -252,56 +337,151 @@ export default function AcceptanceDashboard() {
             <CardHeader>
               <CardTitle>Danh sách đề tài</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Mã đề tài</TableHead>
                     <TableHead>Tên đề tài</TableHead>
                     <TableHead>Chủ nhiệm</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead>Thời gian</TableHead>
+                    <TableHead>Trạng thái nghiệm thu</TableHead>
+                    <TableHead>Hội đồng</TableHead>
+                    <TableHead>Lần nộp</TableHead>
+                    <TableHead>Ngày gửi</TableHead>
                     <TableHead>Tài liệu</TableHead>
                     <TableHead>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTopics.map((topic) => (
-                    <TableRow key={topic.id}>
-                      <TableCell className="font-medium">{topic.topicCode}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{topic.vietnameseName}</p>
-                          <p className="text-sm text-gray-500">{topic.englishName}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{topic.principalInvestigator}</TableCell>
-                      <TableCell>{getTopicStatusBadge(topic.status)}</TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <p>Bắt đầu: {new Date(topic.startDate).toLocaleDateString("vi-VN")}</p>
-                          <p>Thời gian: {topic.durationInMonths} tháng</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{topic.documents?.length || 0} tài liệu</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/topics/${topic.id}`)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/acceptance/submit/${topic.id}`)}
-                          >
-                            <Upload className="h-4 w-4" />
-                          </Button>
+                  {Object.values(acceptancesGrouped).map((group) => {
+                    const { topic, acceptances } = group;
+                    const latestAcceptance = acceptances[acceptances.length - 1];
+                    const isExpanded = openTopicId === topic.id;
+
+                    return (
+                      <React.Fragment key={topic.id}>
+                        <TableRow
+                          className="cursor-pointer hover:bg-blue-50 transition"
+                          onClick={() => setOpenTopicId(isExpanded ? null : topic.id)}
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-gray-500" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-500" />
+                              )}
+                              <span>{topic.topicCode}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <a
+                              href={`/topic/${topic.id}`}
+                              className="font-medium text-blue-700 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {topic.vietnameseName}
+                            </a>
+                          </TableCell>
+                          <TableCell>{topic.principalInvestigator}</TableCell>
+                          <TableCell>{getTopicStatusBadge(topic.status)}</TableCell>
+                          <TableCell>{topic.councilName || '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{acceptances.length} lần</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {latestAcceptance?.submissionDate
+                              ? new Date(latestAcceptance.submissionDate).toLocaleDateString('vi-VN')
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{latestAcceptance?.documents?.length || 0} tài liệu</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                              <Button variant="outline" size="sm" onClick={() => navigate(`/topics/${topic.id}`)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/acceptance/submit/${topic.id}`)}
+                              >
+                                <Upload className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {isExpanded && (
+                          <TableRow>
+                            <TableCell colSpan={9} className="p-0 bg-gray-50">
+                              <div className="p-4 space-y-3">
+                                <div className="font-semibold text-gray-700 mb-3">
+                                  Lịch sử nộp hồ sơ nghiệm thu ({acceptances.length} lần):
+                                </div>
+                                <div className="space-y-2">
+                                  {acceptances
+                                    .slice()
+                                    .sort((a, b) => (b.isFinal ? 1 : 0) - (a.isFinal ? 1 : 0))
+                                    .map((acc, index) => (
+                                      <Card key={acc.id} className="border border-gray-200">
+                                        <CardContent className="p-4">
+                                          <div className="flex items-start justify-between">
+                                            <div className="space-y-2">
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-medium">Lần {index + 1}</span>
+                                                <span className="text-gray-500">#{acc.id}</span>
+                                                {acc.isFinal && (
+                                                  <Badge className="bg-green-100 text-green-800">
+                                                    Nghiệm thu chính thức
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                              <div className="text-sm text-gray-600">
+                                                <p>
+                                                  <strong>Ngày nộp:</strong>{' '}
+                                                  {new Date(acc.submissionDate).toLocaleDateString('vi-VN')}
+                                                </p>
+                                                <p>
+                                                  <strong>Số tài liệu:</strong> {acc.documents?.length || 0}
+                                                </p>
+                                                {acc.notes && (
+                                                  <p>
+                                                    <strong>Ghi chú:</strong> {acc.notes}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <Button variant="default" size="sm" onClick={() => navigate(`/admin/acceptance/${acc.id}`)}>
+                                                <Eye className="h-4 w-4" />
+                                                Chi tiết
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </CardContent>
+                                      </Card>
+                                    ))}
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+
+                  {Object.keys(acceptancesGrouped).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8">
+                        <div className="flex flex-col items-center gap-2">
+                          <FileText className="h-8 w-8 text-gray-400" />
+                          <p className="text-gray-500">Không có đề tài nào trong hội đồng này</p>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -345,7 +525,7 @@ export default function AcceptanceDashboard() {
                         <Badge variant={getStatusVariant(getCouncilStatus(council))}>{getCouncilStatus(council)}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/councils/${council.id}`)}>
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/admin/councils/${council.id}`)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>

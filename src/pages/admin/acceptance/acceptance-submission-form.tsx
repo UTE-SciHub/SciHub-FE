@@ -5,14 +5,12 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import MultiFileUpload from "@/components/multiple-upload-file/multiple-upload-file";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { format, parse } from "date-fns";
 import {
   ArrowLeft,
   FileText,
@@ -26,14 +24,13 @@ import {
   CalendarIcon,
   X,
 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Topic } from "@/models/topic";
-import type { Document } from "@/models/document";
-import { TopicStatus } from "@/models/enums/topic-status.enum";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { enUS, vi } from "date-fns/locale";
+import { AcceptanceService } from "@/service/acceptance-service";
+import { TopicService } from "@/service/topic-service";
+import useUserStore from "@/store/userStore";
+import {DocumentType} from "@/models/document";
+import Loading from "@/components/loading/loading";
 
 const fileObjectSchema = z.object({
   file: z.instanceof(File, { message: "Vui lòng chọn file" }),
@@ -45,7 +42,7 @@ const fileObjectSchema = z.object({
 
 const acceptanceSchema = z.object({
   topicId: z.string().min(1, "Vui lòng chọn đề tài"),
-  submissionDate: z.string().min(1, "Vui lòng chọn ngày nộp"),
+  submissionDate: z.string().optional(),
   completionReport: z.array(fileObjectSchema).min(1, "Vui lòng tải lên báo cáo tổng kết"),
   bmDecision: z.array(fileObjectSchema).min(1, "Vui lòng tải lên quyết định BM.24-QT.01-KHCN"),
   researchProducts: z.array(fileObjectSchema).optional(),
@@ -67,6 +64,8 @@ export default function AcceptanceSubmissionForm() {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [topics, setTopics] = useState<Topic[]>([]);
 
+  const user = useUserStore((state) => state.user);
+
   const form = useForm<AcceptanceFormValues>({
     resolver: zodResolver(acceptanceSchema),
     defaultValues: {
@@ -86,34 +85,9 @@ export default function AcceptanceSubmissionForm() {
 
   const fetchTopics = async () => {
     try {
-      // Mock data
-      const mockTopics: Topic[] = [
-        {
-          id: "1",
-          vietnameseName: "Nghiên cứu ứng dụng AI trong giáo dục",
-          topicCode: "NCKH-2024-001",
-          principalInvestigator: "TS. Nguyễn Văn A",
-          status: TopicStatus.IN_PROGRESS,
-          startDate: "2024-01-01",
-          durationInMonths: 12,
-          endYear: 2024,
-          totalBudget: 100000000,
-          expectedProducts: {
-            scientific: { domestic: 2, international: 1 },
-            training: { masters: 1, students: 2 },
-            commercial: { details: "Phần mềm giáo dục" },
-          },
-          urgency: "Cao",
-          keywords: ["AI", "Giáo dục"],
-          transferForm: ["Báo cáo"],
-          registrationPeriod: {} as any,
-          budgetBreakdown: [],
-          documents: [],
-          department: { id: "1", name: "Khoa Công nghệ thông tin" } as any,
-        },
-      ];
-
-      setTopics(mockTopics);
+      const response = await TopicService.getTopicsByPrincipalInvestigator(user.id);
+      const topics = Array.isArray(response.data.data) ? response.data.data : [];
+      setTopics(topics);
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -139,106 +113,66 @@ export default function AcceptanceSubmissionForm() {
     }
   };
 
-  const handleSubmit = async (data: AcceptanceFormValues) => {
+
+  const onSubmit = async (data: AcceptanceFormValues) => {
     setIsSubmitting(true);
     try {
-      const documents: Partial<Document>[] = [];
+      const formData = new FormData();
+      // Chuẩn hóa dữ liệu chính
+      const acceptanceData = {
+        topicId: data.topicId,
+        submissionDate: data.submissionDate,
+        notes: data.notes,
+        acknowledgment: data.acknowledgment,
+      };
+      // Đưa dữ liệu chính vào blob
+      const jsonBlob = new Blob([JSON.stringify(acceptanceData)], { type: 'application/json' });
+      formData.append('data', jsonBlob, 'acceptanceData.json');
 
-      data.completionReport.forEach((file) => {
-        documents.push({
-          id: 0,
-          topic: selectedTopic,
-          documentType: "COMPLETION_REPORT",
-          filePath: "",
-          publicId: "",
-          uploadDate: new Date().toISOString(),
-          originalFileName: file.originalFileName,
-        });
-      });
-
-      data.bmDecision.forEach((file) => {
-        documents.push({
-          id: 0,
-          topic: selectedTopic,
-          documentType: "BM_DECISION",
-          filePath: "",
-          publicId: "",
-          uploadDate: new Date().toISOString(),
-          originalFileName: file.originalFileName,
-        });
-      });
-
-      if (data.researchProducts) {
-        data.researchProducts.forEach((file) => {
-          documents.push({
-            id: 0,
-            topic: selectedTopic,
-            documentType: "RESEARCH_PRODUCT",
-            filePath: "",
-            publicId: "",
-            uploadDate: new Date().toISOString(),
-            originalFileName: file.originalFileName,
+      // Gom tất cả file và descriptions (có type) vào 2 mảng duy nhất
+      const files: File[] = [];
+      const descriptions: { description: string; type: string }[] = [];
+      const pushFilesAndDescriptions = (arr: any[] | undefined, type: string) => {
+        if (arr && arr.length > 0) {
+          const validDocs = arr.filter(doc => doc.file instanceof File);
+          validDocs.forEach(doc => {
+            files.push(doc.file);
+            descriptions.push({ description: doc.description, type });
           });
+        }
+      };
+      pushFilesAndDescriptions(data.completionReport, DocumentType.COMPLETION_REPORT);
+      pushFilesAndDescriptions(data.bmDecision, DocumentType.BM_DECISION);
+      pushFilesAndDescriptions(data.researchProducts, DocumentType.RESEARCH_PRODUCT);
+      pushFilesAndDescriptions(data.supportingDocuments, DocumentType.SUPPORTING_DOCUMENT);
+      pushFilesAndDescriptions(data.applicationCertificates, DocumentType.APPLICATION_CERTIFICATE);
+      pushFilesAndDescriptions(data.additionalDocuments, DocumentType.ADDITIONAL_DOCUMENT);
+
+      files.forEach(file => formData.append('files', file));
+      formData.append('descriptions', new Blob([JSON.stringify(descriptions)], { type: 'application/json' }), 'descriptions.json');
+
+      // Gửi lên server
+      const response = await AcceptanceService.submitAcceptance(formData);
+      if (response.data.code === 1000 && response.data.status === 201) {
+        toast({
+          title: 'Nộp hồ sơ thành công',
+          description: 'Hồ sơ đề nghị nghiệm thu đã được gửi thành công.',
+          variant: 'success',
+        });
+        navigate(-1);
+      } else {
+        toast({
+          title: 'Nộp hồ sơ thất bại',
+          description: 'Có lỗi xảy ra khi gửi hồ sơ. Vui lòng thử lại.',
+          variant: 'error',
         });
       }
-
-      // Add other document types similarly
-      if (data.supportingDocuments) {
-        data.supportingDocuments.forEach((file) => {
-          documents.push({
-            id: 0,
-            topic: selectedTopic,
-            documentType: "SUPPORTING_DOCUMENT",
-            filePath: "",
-            publicId: "",
-            uploadDate: new Date().toISOString(),
-            originalFileName: file.originalFileName,
-          });
-        });
-      }
-
-      if (data.applicationCertificates) {
-        data.applicationCertificates.forEach((file) => {
-          documents.push({
-            id: 0,
-            topic: selectedTopic,
-            documentType: "APPLICATION_CERTIFICATE",
-            filePath: "",
-            publicId: "",
-            uploadDate: new Date().toISOString(),
-            originalFileName: file.originalFileName,
-          });
-        });
-      }
-
-      if (data.additionalDocuments) {
-        data.additionalDocuments.forEach((file) => {
-          documents.push({
-            id: 0,
-            topic: selectedTopic,
-            documentType: "ADDITIONAL_DOCUMENT",
-            filePath: "",
-            publicId: "",
-            uploadDate: new Date().toISOString(),
-            originalFileName: file.originalFileName,
-          });
-        });
-      }
-
-      // Mock update
-      toast({
-        title: "Thành công",
-        description: "Hồ sơ đề nghị nghiệm thu đã được nộp thành công",
-        variant: "success",
-      });
-
-      console.log(data);
-      // navigate("/acceptance");
     } catch (error) {
+      console.error('Lỗi khi gửi dữ liệu:', error);
       toast({
-        title: "Lỗi",
-        description: "Không thể nộp hồ sơ. Vui lòng thử lại.",
-        variant: "error",
+        title: 'Lỗi khi gửi dữ liệu',
+        description: 'Vui lòng thử lại sau.',
+        variant: 'error',
       });
     } finally {
       setIsSubmitting(false);
@@ -249,6 +183,13 @@ export default function AcceptanceSubmissionForm() {
     const topic = topics.find((t) => t.id === topicId);
     setSelectedTopic(topic || null);
   };
+
+  if(isSubmitting) {
+    return <Loading onCancel={() => {
+      setIsSubmitting(false);
+      navigate(-1);
+    }} />
+  }
 
   return (
     <div className="space-y-6">
@@ -264,7 +205,7 @@ export default function AcceptanceSubmissionForm() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -341,41 +282,6 @@ export default function AcceptanceSubmissionForm() {
                   </div>
                 </div>
               )}
-
-              <FormField
-                control={form.control}
-                name="submissionDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ngày nộp hồ sơ *</FormLabel>
-                    <FormControl>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn("w-full pl-3 text-left font-normal h-10", !field.value && "text-muted-foreground")}
-                          >
-                            {field.value ? format(parse(field.value, "yyyy-MM-dd", new Date()), "yyyy-MM-dd", { locale: vi }) : <span>Chọn ngày</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value ? parse(field.value, "yyyy-MM-dd", new Date()) : undefined}
-                            onSelect={(date: Date | undefined) => {
-                              field.onChange(date ? format(date, "yyyy-MM-dd") : "");
-                            }}
-                            initialFocus
-                            disabled={(date) => date < new Date("1900-01-01") || date > new Date()}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </CardContent>
           </Card>
 
@@ -442,14 +348,14 @@ export default function AcceptanceSubmissionForm() {
                           onChange: (value: { file: File; description: string }[] | undefined) => field.onChange(value),
                         }}
                         accept=".pdf,.doc,.docx"
-                        maxSize={50}
+                        maxSize={10}
                         label="Báo cáo tổng kết đề tài (05 cuốn) *"
-                        description="Báo cáo tổng kết đề tài đã ký và đóng dấu (PDF, Word - tối đa 50MB mỗi file). Thêm mục mới cho mỗi báo cáo."
+                        description="Báo cáo tổng kết đề tài đã ký và đóng dấu (PDF, Word - tối đa 10MB mỗi file). Thêm mục mới cho mỗi báo cáo."
                         placeholder="Tải lên báo cáo tổng kết"
                       />
                     </FormControl>
                     <p className="text-sm text-gray-500">
-                      Báo cáo tổng kết đề tài đã ký và đóng dấu (PDF, Word - tối đa 50MB mỗi file). Thêm mục mới cho mỗi báo cáo bằng cách nhấn nút “+” bên dưới.
+                      Báo cáo tổng kết đề tài đã ký và đóng dấu (PDF, Word - tối đa 10MB mỗi file). Thêm mục mới cho mỗi báo cáo bằng cách nhấn nút “+” bên dưới.
                     </p>
                     <FormMessage />
                   </FormItem>
@@ -478,14 +384,14 @@ export default function AcceptanceSubmissionForm() {
                           onChange: (value: { file: File; description: string }[] | undefined) => field.onChange(value),
                         }}
                         accept=".pdf,.doc,.docx,.zip,.rar"
-                        maxSize={100}
+                        maxSize={10}
                         label="Các sản phẩm của đề tài"
-                        description="Sản phẩm đề tài theo thuyết minh (PDF, Word, ZIP - tối đa 100MB mỗi file)"
+                        description="Sản phẩm đề tài theo thuyết minh (PDF, Word, ZIP - tối đa 10MB mỗi file)"
                         placeholder="Tải lên sản phẩm đề tài"
                       />
                     </FormControl>
                     <p className="text-sm text-gray-500">
-                      Sản phẩm đề tài theo thuyết minh (PDF, Word, ZIP - tối đa 100MB mỗi file)
+                      Sản phẩm đề tài theo thuyết minh (PDF, Word, ZIP - tối đa 10MB mỗi file)
                     </p>
                     <FormMessage />
                   </FormItem>
@@ -507,14 +413,14 @@ export default function AcceptanceSubmissionForm() {
                           onChange: (value: { file: File; description: string }[] | undefined) => field.onChange(value),
                         }}
                         accept=".pdf,.doc,.docx,.jpg,.png"
-                        maxSize={50}
+                        maxSize={10}
                         label="Tài liệu liên quan đến sản phẩm"
-                        description="Tài liệu liên quan đến sản phẩm đề tài (PDF, Word, Image - tối đa 50MB mỗi file)"
+                        description="Tài liệu liên quan đến sản phẩm đề tài (PDF, Word, Image - tối đa 10MB mỗi file)"
                         placeholder="Tải lên tài liệu liên quan"
                       />
                     </FormControl>
                     <p className="text-sm text-gray-500">
-                      Tài liệu liên quan đến sản phẩm đề tài (PDF, Word, Image - tối đa 50MB mỗi file)
+                      Tài liệu liên quan đến sản phẩm đề tài (PDF, Word, Image - tối đa 10MB mỗi file)
                     </p>
                     <FormMessage />
                   </FormItem>
@@ -536,7 +442,7 @@ export default function AcceptanceSubmissionForm() {
                           onChange: (value: { file: File; description: string }[] | undefined) => field.onChange(value),
                         }}
                         accept=".pdf,.doc,.docx"
-                        maxSize={50}
+                        maxSize={10}
                         label="Văn bản bổ sung khác"
                         description="Các văn bản bổ sung, thay đổi nội dung và văn bản khác liên quan"
                         placeholder="Tải lên văn bản bổ sung"

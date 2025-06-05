@@ -1,5 +1,5 @@
 services:
-  airecruitment-fe-service:
+  scihub-fe-service:
     build:
       context: .
       dockerfile: Dockerfile
