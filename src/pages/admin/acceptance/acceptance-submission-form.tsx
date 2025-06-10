@@ -304,7 +304,7 @@ export default function AcceptanceSubmissionForm() {
                 name="bmDecision"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-red-600">1. Đơn đề nghị nghiệm thu *</FormLabel>
+                    <FormLabel>1. Đơn đề nghị nghiệm thu <span className="text-red-600">*</span></FormLabel>
                     <Alert className="border-blue-200 bg-blue-50">
                       <AlertCircle className="h-4 w-4 text-blue-600" />
                       <AlertDescription className="text-blue-800">
@@ -338,7 +338,7 @@ export default function AcceptanceSubmissionForm() {
                 name="completionReport"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-red-600">2. Báo cáo tổng kết đề tài (05 cuốn) *</FormLabel>
+                    <FormLabel>2. Báo cáo tổng kết đề tài (05 cuốn) <span className="text-red-600">*</span></FormLabel>
                     <FormControl>
                       <MultiFileUpload
                         form={form}

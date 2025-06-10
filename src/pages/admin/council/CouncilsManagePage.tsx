@@ -68,6 +68,7 @@ export default function CouncilManagementPage() {
     const user = useUserStore((state) => state.user)
     // Kiểm tra vai trò ADMIN
     const isAdmin = user?.roles?.some((role) => role.name === "ADMIN") || false
+    const isChairman = user?.roles?.some((role) => role.name === "CHAIRMAN") || false
 
     // Parse URL parameters
     const params = new URLSearchParams(location.search)
@@ -301,7 +302,16 @@ export default function CouncilManagementPage() {
     }
 
     const handleViewDetails = (record) => {
-        navigate(`/admin/councils/${record.id}`)
+        // Check if the current user is a chairman of this specific council
+        const isCurrentUserChairmanOfThisCouncil = user?.id && record.councilMembers?.some(
+            (member) => member.user.id === user.id && member.role === "CHAIRMAN"
+        );
+
+        if (isCurrentUserChairmanOfThisCouncil) {
+            navigate(`/admin/councils/${record.id}`); // Navigate to council detail page
+        } else {
+            navigate(`/admin/councils/${record.id}/topics`); // Navigate to topics for evaluation
+        }
     }
 
     const handleDeleteCouncil = async () => {
@@ -693,6 +703,7 @@ export default function CouncilManagementPage() {
                                         <SelectItem value="all">Tất cả</SelectItem>
                                         <SelectItem value={CouncilType.SELECT_CNDT}>Hội đồng xét duyệt</SelectItem>
                                         <SelectItem value={CouncilType.EVALUATE_TOPIC}>Hội đồng đánh giá</SelectItem>
+                                        <SelectItem value={CouncilType.ACCEPTANCE_JURY}>Hội đồng nghiệm thu</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -728,7 +739,7 @@ export default function CouncilManagementPage() {
                                 onSortChange={handleSortChange}
                             />
                         ) : (
-                            <CouncilGrid councils={councils} loading={loading} />
+                            <CouncilGrid councils={councils} loading={loading} currentUser={user}/>
                         )}
                     </CardContent>
                 </Card>

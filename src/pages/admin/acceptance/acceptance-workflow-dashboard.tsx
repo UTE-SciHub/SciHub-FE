@@ -11,14 +11,13 @@ import { useNavigate } from "react-router-dom"
 import type { Topic } from "@/models/topic"
 import { type Council, CouncilType, getCouncilStatus, getStatusVariant } from "@/models/council"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { TopicStatus } from "@/models/enums/topic-status.enum"
+import { getBadge, getStatusColorHex, TopicStatus } from "@/models/enums/topic-status.enum"
 import { CouncilService } from "@/service/council-service"
 import { AcceptanceService } from "@/service/acceptance-service"
 
 interface AcceptanceDashboardStats {
   totalTopics: number
   pendingAcceptance: number
-  inProgress: number
   completed: number
 }
 
@@ -28,7 +27,6 @@ export default function AcceptanceDashboard() {
   const [stats, setStats] = useState<AcceptanceDashboardStats>({
     totalTopics: 0,
     pendingAcceptance: 0,
-    inProgress: 0,
     completed: 0,
   })
   const [topics, setTopics] = useState<Topic[]>([])
@@ -113,49 +111,20 @@ export default function AcceptanceDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true)
     try {
-      // Fetch topics eligible for acceptance (IN_PROGRESS status)
-      // const topicsResponse = await TopicService.getAll({ status: TopicStatus.IN_PROGRESS })
-
-      // Fetch acceptance councils
-      // const councilsResponse = await CouncilService.getAll({ type: CouncilType.ACCEPTANCE_JURY })
-
-      // Mock data for demonstration
-      const mockTopics: Topic[] = [
-        {
-          id: "1",
-          vietnameseName: "Nghiên cứu ứng dụng AI trong giáo dục",
-          topicCode: "NCKH-2024-001",
-          principalInvestigator: "TS. Nguyễn Văn A",
-          status: TopicStatus.IN_PROGRESS,
-          startDate: "2024-01-01",
-          durationInMonths: 12,
-          endYear: 2024,
-          totalBudget: 100000000,
-          expectedProducts: {
-            scientific: { domestic: 2, international: 1 },
-            training: { masters: 1, students: 2 },
-            commercial: { details: "Phần mềm giáo dục" },
-          },
-          urgency: "Cao",
-          keywords: ["AI", "Giáo dục"],
-          transferForm: ["Báo cáo"],
-          registrationPeriod: {} as any,
-          budgetBreakdown: [],
-          documents: [],
-        },
-      ]
-
       const councilsResponse = await fetchCouncilData()
       setCouncils(councilsResponse)
 
-      setTopics(mockTopics)
+      // Extract topics from all councils
+      const allTopics = councilsResponse.flatMap(council => 
+        council.topicCouncils.map(tc => tc.topic)
+      )
+      setTopics(allTopics)
 
       // Calculate stats
       setStats({
-        totalTopics: mockTopics.length,
-        pendingAcceptance: mockTopics.filter((t) => t.status === TopicStatus.IN_PROGRESS).length,
-        inProgress: 0,
-        completed: 0,
+        totalTopics: allTopics.length,
+        pendingAcceptance: allTopics.filter((t) => t.status === TopicStatus.WAITING_FOR_ACCEPTANCE).length,
+        completed: allTopics.filter((t) => t.status === TopicStatus.ACCEPTED || t.status === TopicStatus.ACCEPTED_WITH_CONDITIONS).length,
       })
     } catch (error) {
       toast({
@@ -165,19 +134,6 @@ export default function AcceptanceDashboard() {
       })
     } finally {
       setLoading(false)
-    }
-  }
-
-  const getTopicStatusBadge = (status: TopicStatus) => {
-    switch (status) {
-      case TopicStatus.IN_PROGRESS:
-        return <Badge className="bg-blue-100 text-blue-800">Đang thực hiện</Badge>
-      case TopicStatus.COMPLETED:
-        return <Badge className="bg-green-100 text-green-800">Hoàn thành</Badge>
-      case TopicStatus.REVIEWED:
-        return <Badge className="bg-purple-100 text-purple-800">Đã duyệt</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
     }
   }
 
@@ -214,7 +170,7 @@ export default function AcceptanceDashboard() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -235,18 +191,6 @@ export default function AcceptanceDashboard() {
                 <p className="text-2xl font-bold text-yellow-600">{stats.pendingAcceptance}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Đang nghiệm thu</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.inProgress}</p>
-              </div>
-              <Users className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -305,7 +249,7 @@ export default function AcceptanceDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex gap-2 items-center">
+                {/* <div className="flex gap-2 items-center">
                   <Button
                     variant={activeFilter === "all" ? "default" : "outline"}
                     size="sm"
@@ -327,7 +271,7 @@ export default function AcceptanceDashboard() {
                   >
                     Hoàn thành
                   </Button>
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>
@@ -341,11 +285,11 @@ export default function AcceptanceDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>STT</TableHead>
                     <TableHead>Mã đề tài</TableHead>
                     <TableHead>Tên đề tài</TableHead>
                     <TableHead>Chủ nhiệm</TableHead>
                     <TableHead>Trạng thái nghiệm thu</TableHead>
-                    <TableHead>Hội đồng</TableHead>
                     <TableHead>Lần nộp</TableHead>
                     <TableHead>Ngày gửi</TableHead>
                     <TableHead>Tài liệu</TableHead>
@@ -353,7 +297,7 @@ export default function AcceptanceDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Object.values(acceptancesGrouped).map((group) => {
+                  {Object.values(acceptancesGrouped).map((group, index) => {
                     const { topic, acceptances } = group;
                     const latestAcceptance = acceptances[acceptances.length - 1];
                     const isExpanded = openTopicId === topic.id;
@@ -364,6 +308,7 @@ export default function AcceptanceDashboard() {
                           className="cursor-pointer hover:bg-blue-50 transition"
                           onClick={() => setOpenTopicId(isExpanded ? null : topic.id)}
                         >
+                          <TableCell>{index + 1}</TableCell>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               {isExpanded ? (
@@ -384,8 +329,7 @@ export default function AcceptanceDashboard() {
                             </a>
                           </TableCell>
                           <TableCell>{topic.principalInvestigator}</TableCell>
-                          <TableCell>{getTopicStatusBadge(topic.status)}</TableCell>
-                          <TableCell>{topic.councilName || '-'}</TableCell>
+                          <TableCell><Badge>{getBadge(topic.status)}</Badge></TableCell>
                           <TableCell>
                             <Badge variant="outline">{acceptances.length} lần</Badge>
                           </TableCell>
@@ -398,7 +342,7 @@ export default function AcceptanceDashboard() {
                             <Badge variant="outline">{latestAcceptance?.documents?.length || 0} tài liệu</Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                            {/* <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                               <Button variant="outline" size="sm" onClick={() => navigate(`/topics/${topic.id}`)}>
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -409,7 +353,7 @@ export default function AcceptanceDashboard() {
                               >
                                 <Upload className="h-4 w-4" />
                               </Button>
-                            </div>
+                            </div> */}
                           </TableCell>
                         </TableRow>
 
@@ -430,8 +374,7 @@ export default function AcceptanceDashboard() {
                                           <div className="flex items-start justify-between">
                                             <div className="space-y-2">
                                               <div className="flex items-center gap-2">
-                                                <span className="font-medium">Lần {index + 1}</span>
-                                                <span className="text-gray-500">#{acc.id}</span>
+                                                <span className="font-medium">Lần #{acc.id}</span>
                                                 {acc.isFinal && (
                                                   <Badge className="bg-green-100 text-green-800">
                                                     Nghiệm thu chính thức

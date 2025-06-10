@@ -68,9 +68,7 @@ const councilFormSchema = z.object({
     decisionNumber: z.string().min(1, {
         message: "Số quyết định không được để trống",
     }),
-    establishmentDate: z.date({
-        required_error: "Vui lòng chọn ngày thành lập",
-    }),
+    establishmentDate: z.date().optional(),
     startDate: z.date({
         required_error: "Vui lòng chọn ngày bắt đầu",
     }),
@@ -372,8 +370,7 @@ export default function CreateCouncilPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Thành lập Hội đồng Xét duyệt</h1>
-                    <p className="text-slate-600 mt-1">Tạo hội đồng mới để xét duyệt chủ nhiệm đề tài</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Thành lập Hội đồng</h1>
                 </div>
             </div>
 
@@ -478,7 +475,7 @@ export default function CreateCouncilPage() {
                                             </FormDescription>
                                         </div>
 
-                                        <FormField
+                                        {/* <FormField
                                             control={form.control}
                                             name="establishmentDate"
                                             render={({ field }) => (
@@ -518,7 +515,7 @@ export default function CreateCouncilPage() {
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
-                                        />
+                                        /> */}
 
                                         <FormField
                                             control={form.control}

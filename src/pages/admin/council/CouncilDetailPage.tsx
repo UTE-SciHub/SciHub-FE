@@ -787,64 +787,93 @@ export default function CouncilDetailPage() {
                                                             </div>
                                                         ) : topicApplications[topicCouncil.topic?.id] ? (
                                                             topicApplications[topicCouncil.topic?.id].length > 0 ? (
-                                                                <Table>
-                                                                    <TableHeader>
-                                                                        <TableRow>
-                                                                            <TableHead className="w-[50px]">#</TableHead>
-                                                                            <TableHead>Ứng viên</TableHead>
-                                                                            <TableHead className="w-[120px]">Trạng thái</TableHead>
-                                                                            <TableHead className="w-[100px]">Điểm</TableHead>
-                                                                            <TableHead className="w-[120px] text-right">Thao tác</TableHead>
-                                                                        </TableRow>
-                                                                    </TableHeader>
-                                                                    <TableBody>
+                                                                <>
+                                                                    <div className="border-b bg-primary text-white px-4 py-3">
+                                                                        <div className="flex items-center">
+                                                                            <div className="w-[50px] font-medium">#</div>
+                                                                            <div className="flex-1 font-medium">Ứng viên</div>
+                                                                            <div className="w-[200px] font-medium">Trạng thái</div>
+                                                                            <div className="w-[100px] font-medium">Điểm</div>
+                                                                            <div className="w-[200px] text-center font-medium">Thao tác</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <Accordion type="single" collapsible className="w-full">
                                                                         {topicApplications[topicCouncil.topic?.id].map((application, index) => (
-                                                                            <TableRow key={application.id}>
-                                                                                <TableCell className="font-medium">{index + 1}</TableCell>
-                                                                                <TableCell>
-                                                                                    <div className="flex items-center space-x-2">
-                                                                                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                                                                                            <User className="h-4 w-4 text-muted-foreground" />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <div className="font-medium">{application.user.name}</div>
-                                                                                            <div className="text-xs text-muted-foreground">
-                                                                                                {application.user.email}
+                                                                            <AccordionItem 
+                                                                                key={application.id} 
+                                                                                value={`item-${application.id}`}
+                                                                                className="border-b last:border-b-0"
+                                                                            >
+                                                                                <div className="flex items-center px-4 py-3">
+                                                                                    <div className="w-[50px] font-medium">{index + 1}</div>
+                                                                                    <div className="flex-1">
+                                                                                        <div className="flex items-center space-x-2">
+                                                                                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                                                                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <div className="font-medium">{application.user.name}</div>
+                                                                                                <div className="text-xs text-muted-foreground">
+                                                                                                    {application.user.email}
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
-                                                                                </TableCell>
-                                                                                <TableCell>{getApplicationStatusBadge(application.status)}</TableCell>
-                                                                                <TableCell>
-                                                                                    {application.totalScore !== null ? (
-                                                                                        <span
-                                                                                            className={
-                                                                                                application.passed
-                                                                                                    ? "text-green-600 font-medium"
-                                                                                                    : "text-red-600 font-medium"
-                                                                                            }
+                                                                                    <div className="w-[200px]">{getApplicationStatusBadge(application.status)}</div>
+                                                                                    <div className="w-[100px]">
+                                                                                        {application.totalScore !== null ? (
+                                                                                            <span
+                                                                                                className={
+                                                                                                    application.passed
+                                                                                                        ? "text-green-600 font-medium"
+                                                                                                        : "text-red-600 font-medium"
+                                                                                                }
+                                                                                            >
+                                                                                                {application.totalScore}
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="text-muted-foreground">Chưa đánh giá</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="w-[200px] flex justify-end">
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant="outline"
+                                                                                            className="h-8 mr-2"
+                                                                                            onClick={() => handleSelectApplication(application)}
                                                                                         >
-                                                                                            {application.totalScore}/100
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span className="text-muted-foreground">Chưa đánh giá</span>
-                                                                                    )}
-                                                                                </TableCell>
-                                                                                <TableCell className="text-right">
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        variant="outline"
-                                                                                        className="h-8"
-                                                                                        onClick={() => handleSelectApplication(application)}
-                                                                                    >
-                                                                                        <FileText className="h-4 w-4" />
-                                                                                        {application.hasEvaluated ? "Xem đánh giá" : "Đánh giá"}
-                                                                                    </Button>
-                                                                                </TableCell>
-                                                                            </TableRow>
+                                                                                            <FileText className="h-4 w-4" />
+                                                                                            {application.hasEvaluated ? "Xem đánh giá" : "Đánh giá"}
+                                                                                        </Button>
+                                                                                        <AccordionTrigger className="w-8 h-8 p-0" />
+                                                                                    </div>
+                                                                                </div>
+                                                                                <AccordionContent>
+                                                                                    <div className="px-4 py-3 bg-muted/5 space-y-4">
+                                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                            <div className="space-y-2">
+                                                                                                <h4 className="text-sm font-medium text-muted-foreground">Kế hoạch nghiên cứu</h4>
+                                                                                                <div className="bg-background p-3 rounded-lg border">
+                                                                                                    <p className="text-sm whitespace-pre-wrap">
+                                                                                                        {application.plan || "Không có thông tin"}
+                                                                                                    </p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="space-y-2">
+                                                                                                <h4 className="text-sm font-medium text-muted-foreground">Động lực nghiên cứu</h4>
+                                                                                                <div className="bg-background p-3 rounded-lg border">
+                                                                                                    <p className="text-sm whitespace-pre-wrap">
+                                                                                                        {application.motivation || "Không có thông tin"}
+                                                                                                    </p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </AccordionContent>
+                                                                            </AccordionItem>
                                                                         ))}
-                                                                    </TableBody>
-                                                                </Table>
+                                                                    </Accordion>
+                                                                </>
                                                             ) : (
                                                                 <div className="p-6 text-center">
                                                                     <Search className="h-10 w-10 mx-auto text-gray-300 mb-2" />

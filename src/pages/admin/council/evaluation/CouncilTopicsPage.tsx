@@ -395,51 +395,6 @@ export default function CouncilTopicsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-50 to-blue-100/50">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-blue-700">Tổng đề tài</p>
-                                    <p className="text-3xl font-bold text-blue-900">{stats.all}</p>
-                                </div>
-                                <div className="p-3 rounded-full bg-blue-200/50">
-                                    <FileText className="h-6 w-6 text-blue-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-green-50 to-green-100/50">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-green-700">Đã đánh giá</p>
-                                    <p className="text-3xl font-bold text-green-900">{stats.evaluated}</p>
-                                </div>
-                                <div className="p-3 rounded-full bg-green-200/50">
-                                    <Award className="h-6 w-6 text-green-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-orange-50 to-orange-100/50">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-orange-700">Chờ đánh giá</p>
-                                    <p className="text-3xl font-bold text-orange-900">{stats.pending}</p>
-                                </div>
-                                <div className="p-3 rounded-full bg-orange-200/50">
-                                    <Clock className="h-6 w-6 text-orange-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
                 {/* Topics List */}
                 <Card className="border-0 shadow-lg">
                     <CardHeader className="pb-4">
@@ -449,12 +404,6 @@ export default function CouncilTopicsPage() {
                                 <CardDescription className="mt-1">
                                     Quản lý và đánh giá {filteredTopics.length} đề tài trong hội đồng
                                 </CardDescription>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-green-600" />
-                                <span className="text-sm font-medium text-green-600">
-                                    {Math.round((stats.evaluated / stats.all) * 100) || 0}% hoàn thành
-                                </span>
                             </div>
                         </div>
                     </CardHeader>
@@ -518,15 +467,7 @@ export default function CouncilTopicsPage() {
                                             </CardHeader>
                                             <CardContent className="pb-3">
                                                 <div className="space-y-3">
-                                                    <div className="flex items-center justify-between p-3 bg-blue-50/50 rounded-lg">
-                                                        <div className="flex items-center gap-2">
-                                                            <Users className="h-4 w-4 text-blue-600" />
-                                                            <span className="text-sm font-medium">Ứng viên</span>
-                                                        </div>
-                                                        <span className="text-lg font-bold text-blue-600">
-                                                            {topic.applicationCount || 0}
-                                                        </span>
-                                                    </div>
+                                                    
                                                     <div className="text-sm">
                                                         <span className="font-medium text-gray-600">Lĩnh vực: </span>
                                                         <span className="text-gray-900">{topic.field?.name || "Chưa phân loại"}</span>

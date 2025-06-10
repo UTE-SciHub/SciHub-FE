@@ -17,16 +17,17 @@ export default function ReviewTopic() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentStep, setCurrentStep] = useState(1);
     const [reviewData, setReviewData] = useState({
-        councilDate: "",
-        meetingLocation: "",
+        councilDate: new Date().toISOString().split('T')[0],
+        meetingLocation: "Phòng họp Khoa học Công nghệ - Đại học Sư phạm Kỹ thuật Đà Nẵng",
         councilDecisionNumber: "",
-        totalMembers: 0,
+        totalMembers: 1,
         totalPresent: 0,
         totalAbsent: 0,
         guests: "",
         approveCount: 0,
         rejectCount: 0,
         approved: false,
+        topicCode: "",
         passedCriteria: [] as string[],
         comments: {
             topicName: "",
@@ -80,6 +81,10 @@ export default function ReviewTopic() {
 
     const handlePreviousStep = () => {
         setCurrentStep(1);
+    };
+
+    const handleFormChange = (data: any) => {
+        setReviewData(data);
     };
 
     const exportToPdf = async () => {
@@ -156,7 +161,10 @@ export default function ReviewTopic() {
             const pdfFile = await exportToPdf();
             if (!pdfFile) throw new Error("Không thể tạo file PDF");
 
-            const approvedData = { approved: reviewData.approved };
+            const approvedData = { 
+                approved: reviewData.approved,
+                topicCode: reviewData.topicCode
+            };
             const jsonBlob = new Blob([JSON.stringify(approvedData)], {
                 type: "application/json",
             });
@@ -218,7 +226,12 @@ export default function ReviewTopic() {
             <Card>
                 <CardContent className="p-0">
                     {currentStep === 1 ? (
-                        <ReviewForm topic={topic} onNextStep={handleNextStep} />
+                        <ReviewForm 
+                            topic={topic} 
+                            onNextStep={handleNextStep} 
+                            formData={reviewData}
+                            onChange={handleFormChange}
+                        />
                     ) : (
                         <div className="space-y-6">
                             <ReviewResult

@@ -14,6 +14,11 @@ const navItems = [
     href: "/my-topics",
     icon: FileTextIcon,
   },
+  {
+    title: "Danh mục biểu mẫu",
+    href: "/template-list",
+    icon: FileTextIcon,
+  },
 ];
 
 const UserMainNav = () => {

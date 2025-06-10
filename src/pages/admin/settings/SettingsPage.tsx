@@ -68,7 +68,7 @@ const SettingsPage = () => {
     const mockTemplates: Template[] = [
         {
             id: "1",
-            code: "R01",
+            code: "BM.01-QT.01-KHCN",
             name: "Đề xuất",
             description: "Đề xuất đề tài KHCN, đề xuất đề án khoa học, đề xuất dự án sản xuất thử nghiệm",
             fileUrl: "/templates/R01.docx",
@@ -77,7 +77,7 @@ const SettingsPage = () => {
         },
         {
             id: "2",
-            code: "R02",
+            code: "BM.01-QT.01-KHCN",
             name: "Thuyết minh",
             description: "Thuyết minh đề tài KHCN, thuyết minh đề án khoa học, thuyết minh dự án sản xuất thử nghiệm",
             fileUrl: "/templates/R02.docx",
@@ -86,7 +86,7 @@ const SettingsPage = () => {
         },
         {
             id: "3",
-            code: "R03",
+            code: "BM.01-QT.01-KHCN",
             name: "Hợp đồng",
             description: "Hợp đồng đề tài cấp ĐHQG-HCM loại A, B, C và hợp đồng đề án khoa học, hợp đồng dự án sản xuất thử nghiệm",
             fileUrl: "/templates/R03.docx",
@@ -280,7 +280,7 @@ const SettingsPage = () => {
         if (loading) {
             return (
                 <div className="flex justify-center items-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin mr-2" />
+                    <Loader2 className="h-8 w-8 animate-spin" />
                     <span>Đang tải dữ liệu...</span>
                 </div>
             );
@@ -378,7 +378,7 @@ const SettingsPage = () => {
                             <TableRow>
                                 <TableCell colSpan={7} className="text-center py-10">
                                     <div className="flex justify-center items-center">
-                                        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                        <Loader2 className="h-6 w-6 animate-spin" />
                                         <span>Đang tải dữ liệu...</span>
                                     </div>
                                 </TableCell>
@@ -447,8 +447,6 @@ const SettingsPage = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="mb-4">
                     <TabsTrigger value="templates">Quản lý biểu mẫu</TabsTrigger>
-                    <TabsTrigger value="general">Cài đặt chung</TabsTrigger>
-                    <TabsTrigger value="notifications">Thông báo</TabsTrigger>
                     <TabsTrigger value="catalog">Danh mục biểu mẫu</TabsTrigger>
                 </TabsList>
 
@@ -461,7 +459,7 @@ const SettingsPage = () => {
                                     <CardDescription>Quản lý các biểu mẫu được sử dụng trong hệ thống.</CardDescription>
                                 </div>
                                 <Button onClick={handleAddTemplate}>
-                                    <Plus className="mr-2 h-4 w-4" />
+                                    <Plus className="h-4 w-4" />
                                     Thêm biểu mẫu
                                 </Button>
                             </div>
@@ -478,33 +476,17 @@ const SettingsPage = () => {
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                         />
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Select value={filterType} onValueChange={setFilterType}>
-                                            <SelectTrigger className="w-[180px]">
-                                                <div className="flex items-center">
-                                                    <Filter className="h-4 w-4 mr-2" />
-                                                    <SelectValue placeholder="Loại tệp" />
-                                                </div>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Tất cả loại tệp</SelectItem>
-                                                <SelectItem value="docx">Word (.docx)</SelectItem>
-                                                <SelectItem value="pdf">PDF (.pdf)</SelectItem>
-                                                <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
                                 </div>
                                 <div className="flex items-center">
                                     <Button variant="outline" size="sm" onClick={toggleViewMode}>
                                         {viewMode === "grid" ? (
                                             <>
-                                                <TableIcon className="h-4 w-4 mr-2" />
+                                                <TableIcon className="h-4 w-4" />
                                                 Xem dạng bảng
                                             </>
                                         ) : (
                                             <>
-                                                <Grid className="h-4 w-4 mr-2" />
+                                                <Grid className="h-4 w-4" />
                                                 Xem dạng lưới
                                             </>
                                         )}
@@ -546,30 +528,6 @@ const SettingsPage = () => {
                                     </Pagination>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="general">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Cài đặt chung</CardTitle>
-                            <CardDescription>Quản lý các cài đặt chung của hệ thống.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">Tính năng đang được phát triển.</p>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="notifications">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Cài đặt thông báo</CardTitle>
-                            <CardDescription>Quản lý các cài đặt thông báo của hệ thống.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">Tính năng đang được phát triển.</p>
                         </CardContent>
                     </Card>
                 </TabsContent>

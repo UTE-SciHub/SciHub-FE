@@ -4,17 +4,32 @@ export interface ChatResponse {
     text: string;
 }
 
+export interface ChatMessage {
+    content: string;
+    isBot: boolean;
+    timestamp?: string;
+}
+
 export class GoogleGenAIService {
     private static readonly GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
     private static ai: GoogleGenAI | undefined;
     private static readonly DOCUMENT_PATH = "/form/QT.01- KHCN_Quản lý và thực hiện đề tài cấp trường.pdf";
     private static readonly MODEL = "gemini-2.0-flash";
+    private static pdfBase64Cache: string | null = null;
 
-    private static buildPrompt(userQuestion: string): string {
+    private static buildPrompt(userQuestion: string, conversationHistory: ChatMessage[]): string {
+        const lastMessages = conversationHistory.slice(-10);
+        const conversationContext = lastMessages.map(msg => 
+            `${msg.isBot ? 'Trợ lý' : 'Người dùng'}: ${msg.content}`
+        ).join('\n');
+
         return `
             Bạn là một trợ lý AI thông minh, chuyên phân tích và trả lời dựa trên nội dung của tài liệu PDF đính kèm. Tài liệu này là quy trình quản lý và thực hiện đề tài cấp trường tại một cơ sở giáo dục. Nhiệm vụ của bạn là đọc, hiểu và trả lời câu hỏi dưới đây chỉ dựa trên thông tin trong tài liệu.
     
-            **Câu hỏi của người dùng**: "${userQuestion}"
+            **Lịch sử hội thoại gần đây**:
+            ${conversationContext}
+    
+            **Câu hỏi hiện tại của người dùng**: "${userQuestion}"
     
             **Hướng dẫn trả lời**:
             1. **Nguồn thông tin**:
@@ -24,6 +39,7 @@ export class GoogleGenAIService {
                - Trả lời ngắn gọn, rõ ràng, và dễ hiểu.
                - Nếu có thông tin liên quan, trích dẫn đoạn văn, số trang, hoặc mục cụ thể trong tài liệu (ví dụ: "Theo mục 3.2, trang 5...").
                - Nếu thông tin cần giải thích thêm, hãy diễn giải một cách đơn giản nhưng vẫn đúng với nội dung tài liệu.
+               - Khi trả lời, hãy xem xét ngữ cảnh từ các câu hỏi trước đó để đảm bảo tính nhất quán và liên tục trong cuộc hội thoại.
             3. **Ngôn ngữ**:
                - Sử dụng tiếng Việt, văn phong trang trọng, phù hợp với bối cảnh học thuật.
                - Tránh suy đoán hoặc thêm thông tin ngoài tài liệu.
@@ -45,6 +61,11 @@ export class GoogleGenAIService {
     }
 
     private static async fetchPDFAsBase64(filePath: string): Promise<string> {
+        // Return cached base64 if available
+        if (GoogleGenAIService.pdfBase64Cache) {
+            return GoogleGenAIService.pdfBase64Cache;
+        }
+
         try {
             const response = await fetch(filePath);
             if (!response.ok) {
@@ -57,6 +78,8 @@ export class GoogleGenAIService {
                     ''
                 )
             );
+            // Cache the base64 string
+            GoogleGenAIService.pdfBase64Cache = base64;
             return base64;
         } catch (error) {
             console.error('Error fetching PDF:', error);
@@ -64,7 +87,7 @@ export class GoogleGenAIService {
         }
     }
 
-    static async generateContent(userQuestion: string): Promise<ChatResponse> {
+    static async generateContent(userQuestion: string, conversationHistory: ChatMessage[]): Promise<ChatResponse> {
         GoogleGenAIService.initializeAI();
 
         if (!GoogleGenAIService.ai) {
@@ -73,7 +96,7 @@ export class GoogleGenAIService {
 
         const pdfBase64 = await GoogleGenAIService.fetchPDFAsBase64(GoogleGenAIService.DOCUMENT_PATH);
 
-        const prompt = GoogleGenAIService.buildPrompt(userQuestion);
+        const prompt = GoogleGenAIService.buildPrompt(userQuestion, conversationHistory);
 
         const contents = [
             { text: prompt },

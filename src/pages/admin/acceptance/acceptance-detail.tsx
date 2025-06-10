@@ -272,8 +272,8 @@ export default function AcceptanceDetail() {
             <DialogTrigger asChild>
               <Button
                 variant="default"
-                disabled={!isFinal}
-                className={!isFinal ? "cursor-not-allowed opacity-50" : ""}
+                disabled={!isFinal || topic.status === 'ACCEPTED'}
+                className={(!isFinal || topic.status === 'ACCEPTED') ? "cursor-not-allowed opacity-50" : ""}
               >
                 <CheckCircle className="h-4 w-4" />
                 Xác nhận nghiệm thu
@@ -321,8 +321,8 @@ export default function AcceptanceDetail() {
             <DialogTrigger asChild>
               <Button
                 variant="destructive"
-                disabled={!isFinal}
-                className={!isFinal ? "cursor-not-allowed opacity-50" : ""}
+                disabled={!isFinal || topic.status === 'ACCEPTED'}
+                className={(!isFinal || topic.status === 'ACCEPTED') ? "cursor-not-allowed opacity-50" : ""}
               >
                 <XCircle className="h-4 w-4" />
                 Từ chối hồ sơ

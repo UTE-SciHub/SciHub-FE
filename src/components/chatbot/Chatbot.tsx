@@ -29,7 +29,17 @@ const Chatbot: React.FC<ChatbotProps> = ({
     {
       content: 'Xin chào! Tôi là trợ lý UTE-SciHub. Tôi có thể giúp gì cho bạn?',
       isBot: true,
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+    {
+      content: 'Bạn có thể hỏi tôi bất kỳ câu hỏi nào về quy trình quản lý và thực hiện đề tài cấp trường.',
+      isBot: true,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+    {
+      content: 'Ví dụ: "Quy trình phê duyệt đề tài được thực hiện như thế nào?"',
+      isBot: true,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -73,8 +83,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
         };
         setMessages(prevMessages => [...prevMessages, loadingMessage]);
 
-        // Call the Google GenAI service
-        const response = await GoogleGenAIService.generateContent(userPrompt);
+        // Call the Google GenAI service with conversation history
+        const response = await GoogleGenAIService.generateContent(userPrompt, messages);
         
         // Remove the loading message and add the actual response
         setMessages(prevMessages => {
@@ -150,17 +160,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
           >
             <XIcon className="h-5 w-5" />
           </button>
-        </div>
-
-        {/* Welcome message */}
-        <div className="p-4 text-center text-gray-600 text-sm border-b border-gray-200 bg-gradient-to-b from-blue-50 to-white">
-          <p className="font-medium">Bắt đầu trò chuyện với trợ lý UTE-SciHub</p>
-          <p className="text-xs mt-1">
-            Hỏi bất kỳ câu hỏi nào về quy trình quản lý và thực hiện đề tài cấp trường
-          </p>
-          <p className="text-xs mt-1 italic">
-            Ví dụ: "Quy trình phê duyệt đề tài được thực hiện như thế nào?"
-          </p>
         </div>
 
         {/* Messages - increased height */}

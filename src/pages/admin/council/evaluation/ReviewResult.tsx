@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Check, Download, X } from "lucide-react"
 import { formatDate } from "@/utils/dateTimeFormat"
-import html2canvas from "html2canvas"
+import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf"
 import useUserStore from "@/store/userStore"
 import { CRITERIA_DETAILS } from "@/models/evaluation-detail"
@@ -30,37 +30,52 @@ export default function ReviewResult({ topic, reviewData }: ReviewResultProps) {
         : (reviewData.totalScore >= 55 && hasPassedMinimumScores)
 
     const exportToPdf = async () => {
-        if (!pdfRef.current) {
-            return
-        }
-
-        setIsExporting(true)
+        if (!pdfRef.current) return;
+        setIsExporting(true);
         try {
             const canvas = await html2canvas(pdfRef.current, {
                 scale: 2,
                 useCORS: true,
                 logging: false,
-            })
+            });
 
-            const imgData = canvas.toDataURL("image/png")
+            const imgData = canvas.toDataURL("image/png");
             const pdf = new jsPDF({
                 orientation: "portrait",
                 unit: "mm",
                 format: "a4",
-            })
+            });
 
-            // Add the captured canvas as an image
-            const imgWidth = 210
-            const imgHeight = (canvas.height * imgWidth) / canvas.width
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
 
-            pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight)
-            pdf.save(`Phiếu đánh giá - ${topic.topicCode}.pdf`)
+            // Kích thước ảnh theo mm
+            const imgProps = pdf.getImageProperties(imgData);
+            const imgWidth = pageWidth;
+            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            // Trang đầu tiên
+            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            // Thêm các trang tiếp theo nếu còn nội dung
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save("Phieu_danh_gia.pdf");
         } catch (error) {
-            console.error("Error exporting PDF:", error)
+            console.error("Error exporting PDF:", error);
         } finally {
-            setIsExporting(false)
+            setIsExporting(false);
         }
-    }
+    };
 
     return (
         <div className="space-y-6">
@@ -109,14 +124,14 @@ export default function ReviewResult({ topic, reviewData }: ReviewResultProps) {
 
                                 {/* Scoring Table */}
                                 <div className="overflow-x-auto">
-                                    <table className="min-w-full border-collapse border border-gray-300">
+                                    <table className="min-w-full border-collapse border border-gray-300 text-xs">
                                         <thead>
                                             <tr>
-                                                <th className="border border-gray-300 p-2 text-center w-12">STT</th>
-                                                <th className="border border-gray-300 p-2 text-left">Nội dung đánh giá</th>
-                                                <th className="border border-gray-300 p-2 text-center w-28">Điểm tối thiểu</th>
-                                                <th className="border border-gray-300 p-2 text-center w-28">Điểm tối đa</th>
-                                                <th className="border border-gray-300 p-2 text-center w-28">Điểm đánh giá</th>
+                                                <th className="border border-gray-300 p-2 text-center w-12 text-xs">STT</th>
+                                                <th className="border border-gray-300 p-2 text-left text-xs">Nội dung đánh giá</th>
+                                                <th className="border border-gray-300 p-2 text-center w-28 text-xs">Điểm tối thiểu</th>
+                                                <th className="border border-gray-300 p-2 text-center w-28 text-xs">Điểm tối đa</th>
+                                                <th className="border border-gray-300 p-2 text-center w-28 text-xs">Điểm đánh giá</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -129,7 +144,7 @@ export default function ReviewResult({ topic, reviewData }: ReviewResultProps) {
                                                     <td className="border border-gray-300 p-2 text-center">{reviewData[criteria.id] || 0}</td>
                                                 </tr>
                                             ))}
-                                            <tr className="font-bold">
+                                            <tr className="font-bold text-xs">
                                                 <td colSpan={2} className="border border-gray-300 p-2 text-right">
                                                     Cộng
                                                 </td>

@@ -54,6 +54,8 @@ import TopicMembersPage from "@/pages/admin/topics/my-topic/TopicMembersPage";
 import AcceptanceDashboard from "@/pages/admin/acceptance/acceptance-workflow-dashboard";
 import AcceptanceSubmissionForm from "@/pages/admin/acceptance/acceptance-submission-form";
 import AcceptanceDetail from "@/pages/admin/acceptance/acceptance-detail";
+import MyTopicMilestones from "@/pages/topics/MyTopicMileTones";
+import TemplateListPage from "@/pages/admin/settings/TemplateListPage";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -74,10 +76,12 @@ const routers = createBrowserRouter([
           { path: "registration/:id", element: <RegistrationPeriodDetail /> },
           { path: "topic-proposal", element: <TopicProposal /> },
           { path: "my-topics", element: <MyTopic /> },
+          { path: "my-topic/:topicId/milestones", element: <MyTopicMilestones /> },
           { path: "topic/edit/:id", element: <EditTopic /> },
           { path: "topic/:id", element: <ViewTopic /> },
         ],
       },
+      { path: "template-list", element: <TemplateListPage /> },
     ],
   },
   {
