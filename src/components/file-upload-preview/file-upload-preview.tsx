@@ -16,6 +16,7 @@ interface FileUploadPreviewProps {
     existingFile?: string // URL to an existing file
     height?: string | number // New prop for preview height
     disabled?: boolean // New prop to disable the component
+    displayName?: string // New prop to show a custom name instead of the actual file name
 }
 
 export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
@@ -31,6 +32,7 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
     existingFile,
     height = "500px", // Default height
     disabled = false, // Default to enabled
+    displayName = "" // Default to empty (use actual file name)
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [fileName, setFileName] = useState<string>("")
@@ -236,8 +238,8 @@ export const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({
                             <div className="file-info">
                                 <FileText className="file-icon" />
                                 <div className="file-details">
-                                    <div className="file-name" title={fileName}>
-                                        {fileName}
+                                    <div className="file-name" title={displayName || fileName}>
+                                        {displayName || fileName}
                                     </div>
                                     {fileSize && <div className="file-size ml-2">{fileSize}</div>}
                                     {isExistingFile && <div className="file-badge">File hiện tại</div>}
@@ -350,6 +352,7 @@ export const FormFileUploadPreview = ({
     existingFile,
     height,
     disabled,
+    displayName,
 }: {
     field: any
     fieldState: any
@@ -362,6 +365,7 @@ export const FormFileUploadPreview = ({
     existingFile?: string
     height?: string | number
     disabled?: boolean
+    displayName?: string
 }) => {
     return (
         <FileUploadPreview
@@ -377,6 +381,7 @@ export const FormFileUploadPreview = ({
             existingFile={existingFile}
             height={height}
             disabled={disabled}
+            displayName={displayName}
         />
     )
 }

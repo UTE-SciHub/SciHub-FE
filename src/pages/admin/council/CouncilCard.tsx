@@ -5,12 +5,14 @@ import { getCouncilTypeBadgeClass, getCouncilTypeText } from "@/models/council"
 import { formatDateString } from "@/utils/dateTimeFormat"
 import { CalendarCheck, CalendarClock, CalendarX, Eye, FileText, Users } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import type { User } from "@/models/user"
 
 interface CouncilCardProps {
-    council: any
+    council: any,
+    currentUser?: User
 }
 
-export default function CouncilCard({ council }: CouncilCardProps) {
+export default function CouncilCard({ council, currentUser }: CouncilCardProps) {
     const navigate = useNavigate()
 
     const getCouncilStatus = (council: any) => {
@@ -74,7 +76,16 @@ export default function CouncilCard({ council }: CouncilCardProps) {
                 <div className="flex justify-between items-start">
                     <h3
                         className="text-lg font-semibold text-primary hover:underline cursor-pointer line-clamp-2"
-                        onClick={() => navigate(`/admin/councils/${council.id}/topics`)}
+                        onClick={() => {
+                            const isCurrentUserChairmanOfThisCouncil = currentUser?.id && council.councilMembers?.some(
+                                (member: any) => member.user.id === currentUser.id && member.role === "CHAIRMAN"
+                            );
+                            if(isCurrentUserChairmanOfThisCouncil) {
+                                navigate(`/admin/councils/${council.id}`)
+                            } else {
+                                navigate(`/admin/councils/${council.id}/topics`)
+                            }
+                        }}
                     >
                         {council.name}
                     </h3>
@@ -141,7 +152,16 @@ export default function CouncilCard({ council }: CouncilCardProps) {
                     variant="default"
                     size="sm"
                     className="gap-1"
-                    onClick={() => navigate(`/admin/councils/${council.id}/topics`)}
+                    onClick={() => {
+                        const isCurrentUserChairmanOfThisCouncil = currentUser?.id && council.councilMembers?.some(
+                            (member: any) => member.user.id === currentUser.id && member.role === "CHAIRMAN"
+                        );
+                        if(isCurrentUserChairmanOfThisCouncil) {
+                            navigate(`/admin/councils/${council.id}`)
+                        } else {
+                            navigate(`/admin/councils/${council.id}/topics`)
+                        }
+                    }}
                 >
                     <Eye className="h-4 w-4" />
                     <span>Đánh giá chủ nhiệm</span>

@@ -104,37 +104,55 @@ const RegisterCNDTPage = () => {
             render: (_, record) => record.registrationPeriod?.title || "N/A",
         },
         {
+            key: "status",
+            title: "Trạng thái",
+            width: "120px",
+            render: (_, record) => (
+                <div className="flex justify-center">
+                    {record.hasApplied ? (
+                        <Badge
+                            className="text-sm bg-green-500 text-white whitespace-nowrap text-center px-2 py-1"
+                            aria-label={`Đã đăng ký đề tài ${record.vietnameseName}`}
+                        >
+                            Đã đăng ký
+                        </Badge>
+                    ) : (
+                        <Badge
+                            className="text-sm bg-gray-400 text-white whitespace-nowrap text-center px-2 py-1"
+                            aria-label={`Chưa đăng ký đề tài ${record.vietnameseName}`}
+                        >
+                            Chưa đăng ký
+                        </Badge>
+                    )}
+                </div>
+            ),
+        },
+        {
             key: "actions",
             title: "Hành động",
-            width: "150px",
+            width: "120px",
             render: (_, record) => (
-                <div className="flex gap-2">
+                <div className="flex justify-center">
                     {record.hasApplied ? (
-                        <>
-                            <Badge
-                                className="text-sm bg-green-500 text-white"
-                                aria-label={`Đã đăng ký đề tài ${record.vietnameseName}`}
-                            >
-                                Đã đăng ký
-                            </Badge>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                    setDeleteApplicationId(record.applicationId!);
-                                    setIsDeleteDialogOpen(true);
-                                }}
-                                disabled={record.applicationStatus !== "PENDING" || !record.applicationId}
-                                aria-label={`Xóa đăng ký đề tài ${record.vietnameseName}`}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                                Xóa
-                            </Button>
-                        </>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="whitespace-nowrap"
+                            onClick={() => {
+                                setDeleteApplicationId(record.applicationId!);
+                                setIsDeleteDialogOpen(true);
+                            }}
+                            disabled={!record.applicationId}
+                            aria-label={`Xóa đăng ký đề tài ${record.vietnameseName}`}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Xóa
+                        </Button>
                     ) : (
                         <Button
                             variant="default"
                             size="sm"
+                            className="whitespace-nowrap"
                             onClick={() => handleRegister(record)}
                             aria-label={`Đăng ký đề tài ${record.vietnameseName}`}
                         >

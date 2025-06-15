@@ -1,29 +1,27 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
-    ArrowLeft,
-    Calendar,
-    Download,
-    Edit,
-    FileText,
-    Info,
-    MoreHorizontal,
-    Trash2,
-    Users,
-    Plus,
-    Clock,
-    CheckCircle,
-    AlertCircle,
-    ChevronLeft,
-    ChevronRight,
-    ExternalLink,
-    Clipboard,
-    Share2,
-    User,
-    BarChart,
-    Search,
+  ArrowLeft,
+  Calendar,
+  Download,
+  Edit,
+  FileText,
+  Info,
+  MoreHorizontal,
+  Trash2,
+  Users,
+  Plus,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Clipboard,
+  Share2,
+  User,
+  BarChart,
+  Search,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -32,29 +30,29 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
 import {
-    type Council,
-    getCouncilTypeText,
-    getCouncilTypeBadgeClass,
-    getCouncilStatus,
-    getStatusVariant,
-    getMemberRoleText,
-    getMemberRoleBadgeClass,
+  type Council,
+  getCouncilTypeText,
+  getCouncilTypeBadgeClass,
+  getCouncilStatus,
+  getStatusVariant,
+  getMemberRoleText,
+  getMemberRoleBadgeClass,
 } from "@/models/council"
 import { CouncilService } from "@/service/council-service"
 import { TopicApplicationService } from "@/service/topic-application-service"
@@ -64,7 +62,11 @@ import { ApplicationStatus, type TopicApplication } from "@/models/topic-applica
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import TopicSummaryModal from "@/pages/admin/council/TopicSummaryModal"
-import ApproveTopicsModal from "@/pages/admin/council/ApproveTopicsModal"
+
+import TopicEvaluationModal from "@/pages/admin/council/evaluation/TopicEvaluationModal"
+import { EvaluationService } from "@/service/evaluation-service"
+import { getTotalMaxScore, getTotalMinScore, getTotalScore } from "@/models/evaluation-detail"
+import type { Topic } from "@/models/topic"
 
 export default function CouncilDetailPage() {
     const { id } = useParams<{ id: string }>()
@@ -75,11 +77,14 @@ export default function CouncilDetailPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [topicApplications, setTopicApplications] = useState<Record<number, TopicApplication[]>>({})
     const [loadingApplications, setLoadingApplications] = useState<Record<number, boolean>>({})
-    const [selectedTopic, setSelectedTopic] = useState<any>(null)
+    const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
-    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false)
+    const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false)
+    const [selectedApplication, setSelectedApplication] = useState<TopicApplication | null>(null)
+    const [evaluationDetail, setEvaluationDetail] = useState<any>(null)
+    const minRequiredScore = getTotalMinScore()
+    const maxPossibleScore = getTotalMaxScore()
 
-    // Lấy thông tin chi tiết hội đồng
     useEffect(() => {
         const fetchCouncilDetail = async () => {
             if (!id) return
@@ -126,17 +131,6 @@ export default function CouncilDetailPage() {
         }
     }
 
-    // Hàm lấy chữ cái đầu của tên
-    const getInitials = (name: string) => {
-        if (!name) return "U"
-        return name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .substring(0, 2)
-    }
-
     // Hàm copy link
     const copyToClipboard = () => {
         navigator.clipboard.writeText(window.location.href)
@@ -146,7 +140,6 @@ export default function CouncilDetailPage() {
         })
     }
 
-    // Hàm lấy danh sách ứng viên của đề tài
     const fetchTopicApplications = async (topicId: string) => {
         if (topicApplications[topicId]) return
 
@@ -169,7 +162,6 @@ export default function CouncilDetailPage() {
         }
     }
 
-    // Hàm hiển thị trạng thái ứng viên
     const getApplicationStatusBadge = (status: ApplicationStatus) => {
         switch (status) {
             case ApplicationStatus.APPROVED:
@@ -184,21 +176,58 @@ export default function CouncilDetailPage() {
         }
     }
 
-    // Hàm mở modal tổng kết đề tài
-    const handleOpenSummaryModal = (topic: any) => {
+    const handleOpenSummaryModal = (topic: Topic) => {
         setSelectedTopic(topic)
         setIsSummaryModalOpen(true)
     }
 
-    // Hàm mở modal phê duyệt đề tài
-    const handleOpenApproveModal = () => {
-        setIsApproveModalOpen(true)
+    // Updated function to navigate to the approve topics page instead of opening modal
+    const handleOpenApproveTopics = () => {
+        navigate(`/admin/councils/${id}/approve-topics`)
     }
 
-    // Hàm xử lý sau khi phê duyệt thành công
-    const handleApproveSuccess = () => {
-        setIsApproveModalOpen(false)
-        setActiveTab("topics")
+    const handleEvaluationComplete = async (evaluationData: any) => {
+        const completeEvaluationData = {
+            researchOverviewScore: evaluationData.researchOverviewScore,
+            urgencyScore: evaluationData.urgencyScore,
+            objectiveScore: evaluationData.objectiveScore,
+            approachMethodScore: evaluationData.approachMethodScore,
+            contentAndTimelineScore: evaluationData.contentAndTimelineScore,
+            productScore: evaluationData.productScore,
+            effectivenessScore: evaluationData.effectivenessScore,
+            experienceScore: evaluationData.experienceScore,
+            institutionCapabilityScore: evaluationData.institutionCapabilityScore,
+            budgetScore: evaluationData.budgetScore,
+            totalScore: evaluationData.totalScore,
+            additionalComments: evaluationData.additionalComments || "",
+        }
+
+        if (!selectedApplication || !council) return
+        const data = {
+            ...completeEvaluationData,
+            councilId: council.id,
+        }
+
+        try {
+            const response = await EvaluationService.submitEvaluate(selectedApplication.id, data)
+            if (response.status !== 200) {
+                throw new Error("Evaluation failed")
+            }
+            toast({
+                title: "Đánh giá thành công",
+                description: "Đã gửi kết quả đánh giá ứng viên thành công.",
+            })
+        } catch (error) {
+            console.error("Error submitting evaluation:", error)
+            toast({
+                title: "Lỗi",
+                description: "Đánh giá không thành công. Vui lòng thử lại.",
+                variant: "error",
+            })
+        } finally {
+            setIsEvaluationModalOpen(false)
+            fetchTopicApplications(selectedTopic.id)
+        }
     }
 
     if (isLoading) {
@@ -250,6 +279,38 @@ export default function CouncilDetailPage() {
 
     const status = getCouncilStatus(council)
 
+    const handleSelectApplication = async (application: TopicApplication) => {
+        setSelectedApplication(application)
+        setSelectedTopic(application.topic)
+        setEvaluationDetail(null)
+
+        if (application.hasEvaluated) {
+            try {
+                const response = await EvaluationService.getEvaluationDetail(application.id)
+                if (response.status === 200 && response.data.data) {
+                    const totalScore = getTotalScore(response.data.data)
+                    const evaluationData = {
+                        ...response.data.data,
+                        totalScore: totalScore,
+                        passedAssessment: totalScore >= minRequiredScore,
+                        councilDate: new Date().toISOString(),
+                    }
+
+                    setEvaluationDetail(evaluationData)
+                }
+            } catch (error) {
+                console.error("Error fetching evaluation data:", error)
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể tải dữ liệu đánh giá chi tiết. Hiển thị dữ liệu cơ bản.",
+                    variant: "error",
+                })
+            }
+        }
+
+        setIsEvaluationModalOpen(true)
+    }
+
     return (
         <div className="space-y-6">
             {/* Breadcrumb & Navigation */}
@@ -277,8 +338,8 @@ export default function CouncilDetailPage() {
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" className="h-9" onClick={copyToClipboard}>
-                        <Clipboard className="h-4 w-4 mr-1.5" />
+                    <Button variant="secondary" size="sm" className="h-9" onClick={copyToClipboard}>
+                        <Clipboard className="h-4 w-4" />
                         Sao chép link
                     </Button>
                     <Button
@@ -287,7 +348,7 @@ export default function CouncilDetailPage() {
                         className="h-9"
                         onClick={() => navigate(`/admin/councils/edit/${council.id}`)}
                     >
-                        <Edit className="h-4 w-4 mr-1.5" />
+                        <Edit className="h-4 w-4" />
                         Chỉnh sửa
                     </Button>
                 </div>
@@ -326,11 +387,11 @@ export default function CouncilDetailPage() {
                                     className="bg-white/80 border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
                                     onClick={() => window.open("#", "_blank")}
                                 >
-                                    <Download className="h-4 w-4 mr-2" />
+                                    <Download className="h-4 w-4" />
                                     Tải quyết định
                                 </Button>
-                                <Button variant="default" onClick={handleOpenApproveModal}>
-                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                <Button variant="default" onClick={handleOpenApproveTopics}>
+                                    <CheckCircle className="h-4 w-4" />
                                     Phê duyệt đề tài
                                 </Button>
                                 <DropdownMenu>
@@ -391,7 +452,6 @@ export default function CouncilDetailPage() {
                     </CardContent>
                 </div>
             </Card>
-
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="border-b border-gray-200 mb-6">
@@ -506,19 +566,19 @@ export default function CouncilDetailPage() {
                         <Card className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                             <CardHeader
                                 className={`pb-4 pt-5 ${status === "Đang hoạt động"
-                                    ? "bg-gradient-to-r from-green-50 to-green-100"
-                                    : status === "Sắp diễn ra"
-                                        ? "bg-gradient-to-r from-blue-50 to-blue-100"
-                                        : "bg-gradient-to-r from-gray-50 to-gray-100"
+                                        ? "bg-gradient-to-r from-green-50 to-green-100"
+                                        : status === "Sắp diễn ra"
+                                            ? "bg-gradient-to-r from-blue-50 to-blue-100"
+                                            : "bg-gradient-to-r from-gray-50 to-gray-100"
                                     }`}
                             >
                                 <h3 className="text-base font-semibold text-gray-800 flex items-center">
                                     <Info
                                         className={`h-5 w-5 mr-2 ${status === "Đang hoạt động"
-                                            ? "text-green-600"
-                                            : status === "Sắp diễn ra"
-                                                ? "text-blue-600"
-                                                : "text-gray-600"
+                                                ? "text-green-600"
+                                                : status === "Sắp diễn ra"
+                                                    ? "text-blue-600"
+                                                    : "text-gray-600"
                                             }`}
                                     />
                                     Trạng thái
@@ -528,14 +588,14 @@ export default function CouncilDetailPage() {
                                 <div className="flex flex-col items-center text-center">
                                     <div
                                         className={`
-                      w-20 h-20 rounded-full flex items-center justify-center mb-4
-                      ${status === "Đang hoạt động"
+                                                w-20 h-20 rounded-full flex items-center justify-center mb-4
+                                                ${status === "Đang hoạt động"
                                                 ? "bg-green-100"
                                                 : status === "Sắp diễn ra"
                                                     ? "bg-blue-100"
                                                     : "bg-gray-100"
                                             }
-                    `}
+                                        `}
                                     >
                                         {status === "Đang hoạt động" ? (
                                             <CheckCircle className="h-10 w-10 text-green-600" />
@@ -547,10 +607,10 @@ export default function CouncilDetailPage() {
                                     </div>
                                     <p
                                         className={`text-lg font-semibold ${status === "Đang hoạt động"
-                                            ? "text-green-700"
-                                            : status === "Sắp diễn ra"
-                                                ? "text-blue-700"
-                                                : "text-gray-700"
+                                                ? "text-green-700"
+                                                : status === "Sắp diễn ra"
+                                                    ? "text-blue-700"
+                                                    : "text-gray-700"
                                             }`}
                                     >
                                         {status}
@@ -677,7 +737,7 @@ export default function CouncilDetailPage() {
                                     className="bg-white"
                                     onClick={() => navigate(`/admin/councils/edit/${council.id}`)}
                                 >
-                                    <Edit className="h-4 w-4 mr-2" />
+                                    <Edit className="h-4 w-4" />
                                     Chỉnh sửa đề tài
                                 </Button>
                             </div>
@@ -686,7 +746,18 @@ export default function CouncilDetailPage() {
                             {council.topicCouncils && council.topicCouncils.length > 0 ? (
                                 <Accordion type="single" collapsible className="w-full">
                                     {council.topicCouncils.map((topicCouncil) => (
-                                        <AccordionItem key={topicCouncil.id} value={`topic-${topicCouncil.id}`}>
+                                        <AccordionItem
+                                            key={topicCouncil.id}
+                                            value={`topic-${topicCouncil.id}`}
+                                            onClick={() => {
+                                                if (
+                                                    !topicApplications[topicCouncil.topic?.id] &&
+                                                    !loadingApplications[topicCouncil.topic?.id]
+                                                ) {
+                                                    fetchTopicApplications(topicCouncil.topic?.id)
+                                                }
+                                            }}
+                                        >
                                             <AccordionTrigger className="px-6 py-4 hover:bg-gray-50 transition-colors">
                                                 <div className="flex flex-col items-start text-left">
                                                     <div className="font-medium text-gray-900">{topicCouncil.topic?.vietnameseName}</div>
@@ -703,7 +774,7 @@ export default function CouncilDetailPage() {
                                                             onClick={() => handleOpenSummaryModal(topicCouncil.topic)}
                                                             className="bg-white text-amber-600 border-amber-200 hover:bg-amber-50"
                                                         >
-                                                            <BarChart className="h-4 w-4 mr-2" />
+                                                            <BarChart className="h-4 w-4" />
                                                             Tổng kết
                                                         </Button>
                                                     </div>
@@ -716,68 +787,93 @@ export default function CouncilDetailPage() {
                                                             </div>
                                                         ) : topicApplications[topicCouncil.topic?.id] ? (
                                                             topicApplications[topicCouncil.topic?.id].length > 0 ? (
-                                                                <Table>
-                                                                    <TableHeader>
-                                                                        <TableRow>
-                                                                            <TableHead className="w-[50px]">#</TableHead>
-                                                                            <TableHead>Ứng viên</TableHead>
-                                                                            <TableHead className="w-[120px]">Trạng thái</TableHead>
-                                                                            <TableHead className="w-[100px]">Điểm</TableHead>
-                                                                            <TableHead className="w-[120px] text-right">Thao tác</TableHead>
-                                                                        </TableRow>
-                                                                    </TableHeader>
-                                                                    <TableBody>
+                                                                <>
+                                                                    <div className="border-b bg-primary text-white px-4 py-3">
+                                                                        <div className="flex items-center">
+                                                                            <div className="w-[50px] font-medium">#</div>
+                                                                            <div className="flex-1 font-medium">Ứng viên</div>
+                                                                            <div className="w-[200px] font-medium">Trạng thái</div>
+                                                                            <div className="w-[100px] font-medium">Điểm</div>
+                                                                            <div className="w-[200px] text-center font-medium">Thao tác</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <Accordion type="single" collapsible className="w-full">
                                                                         {topicApplications[topicCouncil.topic?.id].map((application, index) => (
-                                                                            <TableRow key={application.id}>
-                                                                                <TableCell className="font-medium">{index + 1}</TableCell>
-                                                                                <TableCell>
-                                                                                    <div className="flex items-center space-x-2">
-                                                                                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                                                                                            <User className="h-4 w-4 text-muted-foreground" />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <div className="font-medium">{application.user.name}</div>
-                                                                                            <div className="text-xs text-muted-foreground">
-                                                                                                {application.user.email}
+                                                                            <AccordionItem 
+                                                                                key={application.id} 
+                                                                                value={`item-${application.id}`}
+                                                                                className="border-b last:border-b-0"
+                                                                            >
+                                                                                <div className="flex items-center px-4 py-3">
+                                                                                    <div className="w-[50px] font-medium">{index + 1}</div>
+                                                                                    <div className="flex-1">
+                                                                                        <div className="flex items-center space-x-2">
+                                                                                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                                                                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <div className="font-medium">{application.user.name}</div>
+                                                                                                <div className="text-xs text-muted-foreground">
+                                                                                                    {application.user.email}
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
-                                                                                </TableCell>
-                                                                                <TableCell>{getApplicationStatusBadge(application.status)}</TableCell>
-                                                                                <TableCell>
-                                                                                    {application.totalScore !== null ? (
-                                                                                        <span
-                                                                                            className={
-                                                                                                application.passed
-                                                                                                    ? "text-green-600 font-medium"
-                                                                                                    : "text-red-600 font-medium"
-                                                                                            }
+                                                                                    <div className="w-[200px]">{getApplicationStatusBadge(application.status)}</div>
+                                                                                    <div className="w-[100px]">
+                                                                                        {application.totalScore !== null ? (
+                                                                                            <span
+                                                                                                className={
+                                                                                                    application.passed
+                                                                                                        ? "text-green-600 font-medium"
+                                                                                                        : "text-red-600 font-medium"
+                                                                                                }
+                                                                                            >
+                                                                                                {application.totalScore}
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="text-muted-foreground">Chưa đánh giá</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="w-[200px] flex justify-end">
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant="outline"
+                                                                                            className="h-8 mr-2"
+                                                                                            onClick={() => handleSelectApplication(application)}
                                                                                         >
-                                                                                            {application.totalScore}/100
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span className="text-muted-foreground">Chưa đánh giá</span>
-                                                                                    )}
-                                                                                </TableCell>
-                                                                                <TableCell className="text-right">
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        variant="outline"
-                                                                                        className="h-8"
-                                                                                        onClick={() =>
-                                                                                            navigate(
-                                                                                                `/admin/councils/${council.id}/topics/${topicCouncil.topic?.id}/applications/${application.id}`,
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        <FileText className="h-4 w-4 mr-2" />
-                                                                                        {application.totalScore !== null ? "Xem đánh giá" : "Đánh giá"}
-                                                                                    </Button>
-                                                                                </TableCell>
-                                                                            </TableRow>
+                                                                                            <FileText className="h-4 w-4" />
+                                                                                            {application.hasEvaluated ? "Xem đánh giá" : "Đánh giá"}
+                                                                                        </Button>
+                                                                                        <AccordionTrigger className="w-8 h-8 p-0" />
+                                                                                    </div>
+                                                                                </div>
+                                                                                <AccordionContent>
+                                                                                    <div className="px-4 py-3 bg-muted/5 space-y-4">
+                                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                            <div className="space-y-2">
+                                                                                                <h4 className="text-sm font-medium text-muted-foreground">Kế hoạch nghiên cứu</h4>
+                                                                                                <div className="bg-background p-3 rounded-lg border">
+                                                                                                    <p className="text-sm whitespace-pre-wrap">
+                                                                                                        {application.plan || "Không có thông tin"}
+                                                                                                    </p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="space-y-2">
+                                                                                                <h4 className="text-sm font-medium text-muted-foreground">Động lực nghiên cứu</h4>
+                                                                                                <div className="bg-background p-3 rounded-lg border">
+                                                                                                    <p className="text-sm whitespace-pre-wrap">
+                                                                                                        {application.motivation || "Không có thông tin"}
+                                                                                                    </p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </AccordionContent>
+                                                                            </AccordionItem>
                                                                         ))}
-                                                                    </TableBody>
-                                                                </Table>
+                                                                    </Accordion>
+                                                                </>
                                                             ) : (
                                                                 <div className="p-6 text-center">
                                                                     <Search className="h-10 w-10 mx-auto text-gray-300 mb-2" />
@@ -855,19 +951,22 @@ export default function CouncilDetailPage() {
                             topic={selectedTopic}
                             applications={topicApplications[selectedTopic.id] || []}
                             onClose={() => setIsSummaryModalOpen(false)}
-                            councilId={council.id} />
+                            councilId={council.id}
+                        />
                     )}
                 </DialogContent>
             </Dialog>
 
-            {/* Approve Topics Modal */}
-            <Dialog open={isApproveModalOpen} onOpenChange={setIsApproveModalOpen}>
-                <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0">
-                    {council && (
-                        <ApproveTopicsModal
-                            councilId={Number(council.id)}
-                            onClose={() => setIsApproveModalOpen(false)}
-                            onSuccess={handleApproveSuccess}
+            {/* Evaluation Modal */}
+            <Dialog open={isEvaluationModalOpen} onOpenChange={setIsEvaluationModalOpen}>
+                <DialogContent className="max-w-3xl min-h-[70vh] overflow-auto p-0">
+                    {selectedTopic && selectedApplication && (
+                        <TopicEvaluationModal
+                            topic={selectedTopic}
+                            application={selectedApplication}
+                            existingData={evaluationDetail}
+                            onCancel={() => setIsEvaluationModalOpen(false)}
+                            onComplete={handleEvaluationComplete}
                         />
                     )}
                 </DialogContent>

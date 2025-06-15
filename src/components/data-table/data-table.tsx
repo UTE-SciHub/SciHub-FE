@@ -47,15 +47,17 @@ const DataTable: React.FC<DataTableProps> = ({
         }
     }, [location.search]);
 
-    // Internal state for selected rows
     const [internalSelectedRowKeys, setInternalSelectedRowKeys] = useState<string[]>(selectedRowKeys || []);
 
-    // Update internal state when prop changes
     useEffect(() => {
         setInternalSelectedRowKeys(selectedRowKeys);
     }, [selectedRowKeys]);
 
-    // Function to get the key for each row
+    const getValueByPath = (obj: any, path: string): any => {
+        if (!obj || !path) return undefined;
+        return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), obj);
+    };
+
     const getRowKey = (record: any, index: number): string => {
         if (typeof rowKey === "function") {
             return rowKey(record);
@@ -63,7 +65,6 @@ const DataTable: React.FC<DataTableProps> = ({
         return record[rowKey]?.toString() || `row-${index}`;
     };
 
-    // Calculate pagination values
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const maxPageButtons = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
@@ -217,11 +218,11 @@ const DataTable: React.FC<DataTableProps> = ({
                                                             ? "text-center"
                                                             : ""
                                                 }
-                                                title={record[column.key]} // Hiển thị tooltip khi di chuột
+                                                title={getValueByPath(record, column.key)} // Hiển thị tooltip khi di chuột
                                             >
                                                 {column.render
-                                                    ? column.render(record[column.key], record, index)
-                                                    : record[column.key]}
+                                                    ? column.render(getValueByPath(record, column.key), record, index)
+                                                    : getValueByPath(record, column.key)}
                                             </TableCell>
                                         ))}
                                     </TableRow>

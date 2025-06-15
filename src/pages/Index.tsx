@@ -187,7 +187,7 @@ const Index = () => {
       
       {/* Chatbot component positioned at the bottom right corner */}
       <Chatbot 
-        title="UTE-SciHub Trợ lý" 
+        title="UTE-SciHub Trợ lý AI" 
         initialMessages={[
           {
             content: "Xin chào! Tôi là trợ lý ảo của UTE-SciHub. Tôi có thể giúp gì cho bạn?",

@@ -1,6 +1,4 @@
-"use client"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -34,9 +32,10 @@ interface ReviewFormProps {
     topic: any
     onNextStep: (data: any) => void
     formData: any
+    onChange?: (data: any) => void
 }
 
-export default function ReviewForm({ topic, onNextStep, formData }: ReviewFormProps) {
+export default function ReviewForm({ topic, onNextStep, formData, onChange }: ReviewFormProps) {
     const user = useUserStore((state) => state.user)
     const [totalScore, setTotalScore] = useState(0)
     const minRequiredScore = getTotalMinScore()
@@ -48,19 +47,49 @@ export default function ReviewForm({ topic, onNextStep, formData }: ReviewFormPr
         mode: "onChange",
     })
 
-    // Reset form with formData when it changes
     useEffect(() => {
         if (formData) {
-            form.reset(formData)
+            const completeFormData = {
+                ...Object.fromEntries(CRITERIA_DETAILS.map((criteria) => [
+                    criteria.id, 
+                    formData[criteria.id] !== undefined ? formData[criteria.id] : criteria.minScore
+                ])),
+                additionalComments: formData.additionalComments || "",
+                ...formData
+            };
+            form.reset(completeFormData);
         }
     }, [formData, form])
 
-    // Calculate total score whenever form values change
     const watchAllFields = form.watch()
+    
     useEffect(() => {
         const sum = CRITERIA_DETAILS.reduce((total, criteria) => total + (watchAllFields[criteria.id] || 0), 0)
         setTotalScore(sum)
     }, [watchAllFields])
+    
+    const isInitialRender = useRef(true)
+    const prevValues = useRef(watchAllFields)
+    
+    useEffect(() => {
+        if (isInitialRender.current) {
+            isInitialRender.current = false
+            return
+        }
+        
+        const hasChanged = JSON.stringify(prevValues.current) !== JSON.stringify(watchAllFields)
+        
+        if (onChange && hasChanged && form.formState.isDirty) {
+            prevValues.current = {...watchAllFields}
+            
+            onChange({
+                ...watchAllFields,
+                totalScore,
+                passedAssessment: totalScore >= minRequiredScore,
+                councilDate: new Date().toISOString(),
+            })
+        }
+    }, [totalScore, form.formState.isDirty])
 
     const handleSubmit = (data: z.infer<typeof formSchema>) => {
         // Calculate final total score
@@ -193,6 +222,16 @@ export default function ReviewForm({ topic, onNextStep, formData }: ReviewFormPr
                         )}
                     />
                 </div>
+                
+                {/* Hidden submit button that can be triggered programmatically */}
+                <button 
+                    id="review-form-submit-button" 
+                    type="submit" 
+                    className="hidden"
+                    aria-hidden="true"
+                >
+                    Submit
+                </button>
             </form>
         </Form>
     )

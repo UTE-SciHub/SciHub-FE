@@ -161,6 +161,7 @@ export default function Login() {
                     useUserStore.getState().setUser(user)
 
                     toast({
+                        title: "Thông báo",
                         description: "Đăng nhập thành công!",
                         variant: "success",
                         duration: 2000,
@@ -245,7 +246,7 @@ export default function Login() {
                                                 <Input
                                                     {...field}
                                                     type="text"
-                                                    placeholder="example@techzen.vn"
+                                                    placeholder="example@ute.udn.vn"
                                                     className="h-11 border-gray-300 focus:border-[#1e3a8a] focus:ring-[#1e3a8a]"
                                                 />
                                             </FormControl>

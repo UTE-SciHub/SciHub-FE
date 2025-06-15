@@ -1,12 +1,14 @@
 import { Loader2 } from "lucide-react"
 import CouncilCard from "./CouncilCard"
+import type { User } from "@/models/user"
 
 interface CouncilGridProps {
     councils: any[]
-    loading?: boolean
+    loading?: boolean,
+    currentUser?: User,
 }
 
-export default function CouncilGrid({ councils, loading = false }: CouncilGridProps) {
+export default function CouncilGrid({ councils, loading = false, currentUser }: CouncilGridProps) {
     if (loading) {
         return (
             <div className="flex justify-center items-center py-12">
@@ -26,7 +28,7 @@ export default function CouncilGrid({ councils, loading = false }: CouncilGridPr
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {councils.map((council) => (
-                <CouncilCard key={council.id} council={council} />
+                <CouncilCard key={council.id} council={council} currentUser={currentUser}/>
             ))}
         </div>
     )

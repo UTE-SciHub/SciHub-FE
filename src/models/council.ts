@@ -11,6 +11,7 @@ export enum CouncilMemberRole {
 export enum CouncilType {
     SELECT_CNDT = "SELECT_CNDT", // Hội đồng xét duyệt chủ nhiệm
     EVALUATE_TOPIC = "EVALUATE_TOPIC", // Hội đồng đánh giá
+    ACCEPTANCE_JURY = "ACCEPTANCE_JURY", // Hội đồng nghiệm thu
 }
 
 export interface Council {
@@ -60,6 +61,8 @@ export const getCouncilTypeBadgeClass = (type: CouncilType) => {
             return "bg-blue-50 text-blue-700 border-blue-200"
         case CouncilType.EVALUATE_TOPIC:
             return "bg-purple-50 text-purple-700 border-purple-200"
+        case CouncilType.ACCEPTANCE_JURY:
+            return "bg-green-50 text-green-700 border-green-200"
         default:
             return "bg-gray-50 text-gray-700 border-gray-200"
     }
@@ -127,6 +130,8 @@ export const getCouncilTypeText = (type: CouncilType) => {
             return "Xét duyệt"
         case CouncilType.EVALUATE_TOPIC:
             return "Đánh giá"
+        case CouncilType.ACCEPTANCE_JURY:
+            return "Nghiệm thu"
         default:
             return type
     }

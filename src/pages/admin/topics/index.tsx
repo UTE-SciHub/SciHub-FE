@@ -22,7 +22,7 @@ import { Department } from "@/models/department";
 import { ResearchType } from "@/models/research-type";
 import { ResearchField } from "@/models/research-field";
 import { Category } from "@/models/category";
-import { getBadge, TopicStatus } from "@/models/enums/topic-status.enum";
+import { getBadge, statusColors, TopicStatus } from "@/models/enums/topic-status.enum";
 import useDebounce from "@/hooks/use-debounce";
 import { formatVND } from "@/utils/common";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -38,7 +38,7 @@ const TopicsPage = () => {
     const navigate = useNavigate();
     const user = useUserStore((state) => state.user);
     const roles = (user?.roles || []).map((role: { id: string; name: string }) => role.name);
-    const isAdmin = roles.includes(Roles.ADMIN);
+    const isAdmin = roles.includes(Roles.ADMIN) || roles.includes(Roles.PQLKHHTQT);
     const userEmail = user?.email || "";
 
     const params = new URLSearchParams(location.search);
@@ -111,21 +111,6 @@ const TopicsPage = () => {
     const [isAssignCategoryModalOpen, setIsAssignCategoryModalOpen] = useState(false);
 
     const debouncedSearchQuery = useDebounce(searchTerm, 300);
-    const statusColors: { [key in TopicStatus]: string } = {
-        [TopicStatus.DRAFT]: "#6366F1",          // Indigo-500
-        [TopicStatus.SUBMITTED]: "#3B82F6",      // Blue-500
-        [TopicStatus.REVIEWED]: "#60A5FA",       // Blue-400
-        [TopicStatus.NEED_REVISION]: "#F59E0B",  // Amber-500
-        [TopicStatus.ASSIGNED]: "#EAB308",       // Yellow-500
-        [TopicStatus.APPROVED]: "#22C55E",       // Green-500
-        [TopicStatus.REJECTED]: "#EF4444",       // Red-500
-        [TopicStatus.IN_CATALOG]: "#A855F7",     // Purple-500
-        [TopicStatus.IN_PROGRESS]: "#06B6D4",    // Cyan-500
-        [TopicStatus.COMPLETED]: "#10B981",      // Emerald-500
-        [TopicStatus.CANCELLED]: "#EC4899",      // Pink-500
-        [TopicStatus.DELETED]: "#6B7280",        // Gray-500
-        [TopicStatus.ALL]: "#9CA3AF",            // Gray-400
-    };
 
     // Lấy danh sách đề tài hợp lệ (SUBMITTED hoặc REVIEWED) để truyền vào modal
     const validSelectedTopicIds = selectedRows
