@@ -342,11 +342,11 @@ const ListCategory = () => {
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Danh sách danh mục nghiên cứu</h1>
-                    <p className="text-muted-foreground mt-1">Quản lý các danh mục nghiên cứu của đề tài</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Danh sách loại đề tài</h1>
+                    <p className="text-muted-foreground mt-1">Quản lý các loại đề tài của đề tài</p>
                 </div>
                 <Button onClick={() => setIsAddModalOpen(true)}>
-                    <CirclePlus /> Thêm danh mục
+                    <CirclePlus /> Thêm loại đề tài
                 </Button>
             </div>
             <Card>

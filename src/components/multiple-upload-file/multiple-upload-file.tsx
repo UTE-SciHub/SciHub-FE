@@ -194,13 +194,13 @@ export default function MultiFileUpload<TFieldValues extends FieldValues>({
             "text-xs font-medium px-2 py-0.5 rounded border";
         switch (status) {
             case "pending":
-                return <Badge className={`${baseClass} bg-amber-50 text-amber-700 border-amber-200`}>Pending</Badge>;
+                return <Badge className={`${baseClass} bg-amber-50 text-amber-700 border-amber-200`}>Chờ</Badge>;
             case "uploading":
-                return <Badge className={`${baseClass} bg-blue-50 text-blue-700 border-blue-200`}>Uploading</Badge>;
+                return <Badge className={`${baseClass} bg-blue-50 text-blue-700 border-blue-200`}>Đang tải</Badge>;
             case "complete":
-                return <Badge className={`${baseClass} bg-green-50 text-green-700 border-green-200`}>Complete</Badge>;
+                return <Badge className={`${baseClass} bg-green-50 text-green-700 border-green-200`}>Hoàn thành</Badge>;
             case "error":
-                return <Badge className={`${baseClass} bg-red-50 text-red-700 border-red-200`}>Error</Badge>;
+                return <Badge className={`${baseClass} bg-red-50 text-red-700 border-red-200`}>Lỗi</Badge>;
         }
     };
 

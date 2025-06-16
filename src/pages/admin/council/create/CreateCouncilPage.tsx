@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { vi } from "date-fns/locale"
-import { CalendarIcon, Check, ChevronRight, Loader2, Plus, Save, Search, Trash2, Users } from "lucide-react"
+import { CalendarIcon, Check, ChevronRight, Loader2, Plus, Save, Search, Trash2, UserPlus, Users } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -39,6 +39,9 @@ import { TopicStatus } from "@/models/enums/topic-status.enum"
 import { RegistrationPeriod } from "@/models/registraion-period"
 import { RegistrationService } from "@/service/registration-service"
 import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
+import { AvatarFallback } from "@radix-ui/react-avatar"
+import { getInitialsAvt } from "@/utils/common"
 
 // Custom useDebounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -65,9 +68,7 @@ const councilFormSchema = z.object({
     decisionNumber: z.string().min(1, {
         message: "Số quyết định không được để trống",
     }),
-    establishmentDate: z.date({
-        required_error: "Vui lòng chọn ngày thành lập",
-    }),
+    establishmentDate: z.date().optional(),
     startDate: z.date({
         required_error: "Vui lòng chọn ngày bắt đầu",
     }),
@@ -139,17 +140,21 @@ export default function CreateCouncilPage() {
         fetchPeriods()
     }, [])
 
-    // Fetch topics based on debounced search term and period ID
     useEffect(() => {
         const fetchTopics = async () => {
             setIsLoadingTopics(true)
             try {
+                const councilType = form.watch('type');
+                let statusParam: any = TopicStatus.REVIEWED;
+                if (councilType === CouncilType.ACCEPTANCE_JURY) {
+                    statusParam = TopicStatus.IN_PROGRESS;
+                }
                 const response = await TopicService.getAll({
                     p: 1,
                     s: 1000,
                     q: debouncedTopicSearchTerm,
                     periodId: selectedPeriodId !== "all" ? selectedPeriodId : undefined,
-                    status: TopicStatus.IN_CATALOG
+                    status: statusParam
                 })
                 const topics = Array.isArray(response.data.data) ? response.data.data : []
                 setFilteredTopics(topics)
@@ -167,9 +172,8 @@ export default function CreateCouncilPage() {
         }
 
         fetchTopics()
-    }, [debouncedTopicSearchTerm, selectedPeriodId])
+    }, [debouncedTopicSearchTerm, selectedPeriodId, form.watch('type')])
 
-    // Fetch users based on debounced search term
     useEffect(() => {
         const fetchUsers = async () => {
             setIsLoadingUsers(true)
@@ -210,17 +214,14 @@ export default function CreateCouncilPage() {
         setSelectedTopics((prev) => prev.filter((topic) => topic.id !== topicId))
     }
 
-    // Check if a user is already a member
     const isUserMember = (userId: string) => {
         return councilMembers.some((member) => member.user.id === userId)
     }
 
-    // Add a member to the council
     const addMember = (user: User, userId: string) => {
         if (!isUserMember(userId)) {
             const role = selectedRoles[userId] || CouncilMemberRole.MEMBER
             setCouncilMembers([...councilMembers, { user, role }])
-            setIsMemberDialogOpen(false)
         }
     }
 
@@ -308,12 +309,6 @@ export default function CreateCouncilPage() {
                 topics: selectedTopics.map((topic) => topic.id),
             }
 
-            // // If there's a decision file, upload it first
-            // if (decisionFile) {
-            //     console.log("Uploading decision file:", decisionFile.name)
-            //     await new Promise((resolve) => setTimeout(resolve, 500))
-            // }
-
             const result = await CouncilService.create(councilData)
 
             if (result.status === 201 && result.data.code === 1000) {
@@ -322,7 +317,7 @@ export default function CreateCouncilPage() {
                     description: "Hội đồng đã được tạo thành công",
                     variant: "success",
                 })
-                // navigate("/councils")
+                navigate("/admin/councils")
             } else {
                 toast({
                     title: "Lỗi",
@@ -375,8 +370,7 @@ export default function CreateCouncilPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Thành lập Hội đồng Xét duyệt</h1>
-                    <p className="text-slate-600 mt-1">Tạo hội đồng mới để xét duyệt chủ nhiệm đề tài</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Thành lập Hội đồng</h1>
                 </div>
             </div>
 
@@ -457,6 +451,7 @@ export default function CreateCouncilPage() {
                                                         <SelectContent>
                                                             <SelectItem value={CouncilType.SELECT_CNDT}>Hội đồng xét duyệt</SelectItem>
                                                             <SelectItem value={CouncilType.EVALUATE_TOPIC}>Hội đồng đánh giá</SelectItem>
+                                                            <SelectItem value={CouncilType.ACCEPTANCE_JURY}>Hội đồng nghiệm thu</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     <FormDescription>Loại hội đồng quyết định chức năng và nhiệm vụ</FormDescription>
@@ -480,7 +475,7 @@ export default function CreateCouncilPage() {
                                             </FormDescription>
                                         </div>
 
-                                        <FormField
+                                        {/* <FormField
                                             control={form.control}
                                             name="establishmentDate"
                                             render={({ field }) => (
@@ -520,7 +515,7 @@ export default function CreateCouncilPage() {
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
-                                        />
+                                        /> */}
 
                                         <FormField
                                             control={form.control}
@@ -635,6 +630,17 @@ export default function CreateCouncilPage() {
                                 </TabsContent>
 
                                 <TabsContent value="topics" className="p-6">
+                                    <div className="mb-4">
+                                        {form.watch('type') === CouncilType.ACCEPTANCE_JURY ? (
+                                            <div className="rounded-md bg-blue-50 border border-blue-200 px-4 py-3 text-blue-800 text-sm">
+                                                Chỉ chọn các đề tài có trạng thái <b>"Đang thực hiện" (IN_PROGRESS)</b> để nghiệm thu.
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-md bg-blue-50 border border-blue-200 px-4 py-3 text-blue-800 text-sm">
+                                                Chỉ chọn các đề tài <b>"Đã được duyệt" (REVIEWED</b>) để xét duyệt.
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="space-y-6">
                                         <div className="flex justify-between items-center">
                                             <div>
@@ -739,7 +745,17 @@ export default function CreateCouncilPage() {
                                                     <TableBody>
                                                         {councilMembers.map((member) => (
                                                             <TableRow key={member.user.id}>
-                                                                <TableCell className="font-medium">{member.user.name}</TableCell>
+                                                                <TableCell className="font-medium">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <Avatar className="h-9 w-9 border">
+                                                                            <AvatarImage src={member.user.imageUrl} alt={member.user.name} />
+                                                                            <AvatarFallback className="bg-primary/10 text-primary">{getInitialsAvt(member.user.name)}</AvatarFallback>
+                                                                        </Avatar>
+                                                                        <div>
+                                                                            <div className="font-medium">{member.user.name || "Chưa cập nhật"}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </TableCell>
                                                                 <TableCell>{member.user.email}</TableCell>
                                                                 <TableCell>
                                                                     <Select
@@ -889,6 +905,7 @@ export default function CreateCouncilPage() {
                                                             </Button>
                                                         ) : (
                                                             <Button type="button" variant="default" size="sm" className="w-full" onClick={() => addTopic(topic)}>
+                                                                <Plus className="h-4 w-4" />
                                                                 Chọn
                                                             </Button>
                                                         )}
@@ -920,7 +937,7 @@ export default function CreateCouncilPage() {
             </Dialog>
 
             <Dialog open={isMemberDialogOpen} onOpenChange={setIsMemberDialogOpen}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0">
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
                     <DialogHeader className="px-6 pt-6 pb-4 border-b">
                         <DialogTitle>Thêm thành viên</DialogTitle>
                         <DialogDescription>Tìm kiếm và thêm thành viên vào hội đồng</DialogDescription>
@@ -938,7 +955,7 @@ export default function CreateCouncilPage() {
                         </div>
                     </div>
 
-                    <ScrollArea className="h-[400px]">
+                    <ScrollArea>
                         <div className="p-6">
                             {isLoadingUsers ? (
                                 <div className="flex justify-center items-center h-40">
@@ -948,7 +965,7 @@ export default function CreateCouncilPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Họ và tên</TableHead>
+                                            <TableHead className="w-[400px]">Họ và tên</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead className="w-[180px]">Vai trò</TableHead>
                                             <TableHead className="w-[100px]"></TableHead>
@@ -960,7 +977,17 @@ export default function CreateCouncilPage() {
                                                 const isMember = isUserMember(user.id)
                                                 return (
                                                     <TableRow key={user.id}>
-                                                        <TableCell className="font-medium">{user.name}</TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex items-center gap-3">
+                                                                <Avatar className="h-9 w-9 border">
+                                                                    <AvatarImage src={user.imageUrl} alt={user.name} />
+                                                                    <AvatarFallback className="bg-primary/10 text-primary">{getInitialsAvt(user.name)}</AvatarFallback>
+                                                                </Avatar>
+                                                                <div>
+                                                                    <div className="font-medium">{user.name || "Chưa cập nhật"}</div>
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
                                                         <TableCell>{user.email}</TableCell>
                                                         <TableCell>
                                                             <Select
@@ -993,6 +1020,7 @@ export default function CreateCouncilPage() {
                                                                     className="w-full"
                                                                     onClick={() => addMember(user, user.id)}
                                                                 >
+                                                                    <UserPlus className="h-4 w-4" />
                                                                     Thêm
                                                                 </Button>
                                                             )}

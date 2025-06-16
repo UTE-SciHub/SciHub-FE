@@ -39,38 +39,42 @@ const ReviewResult = forwardRef<HTMLDivElement, { topic: Topic; reviewData: any 
                         </div>
 
                         <div>
-                            <p><span className="font-semibold">2. Chủ nhiệm đề tài:</span> {topic.principalInvestigator}</p>
+                            <p><span className="font-semibold">2. Mã đề tài:</span> {reviewData.topicCode}</p>
+                        </div>
+
+                        <div>
+                            <p><span className="font-semibold">3. Chủ nhiệm đề tài:</span> {topic.principalInvestigator}</p>
                         </div>
 
                         <div>
                             <p>
-                                <span className="font-semibold">3. Ngày họp:</span> {reviewData.councilDate ? formatDate(reviewData.councilDate) : ""}
+                                <span className="font-semibold">4. Ngày họp:</span> {reviewData.councilDate ? formatDate(reviewData.councilDate) : ""}
                                 <span className="ml-4">Địa điểm: {reviewData.meetingLocation || ""}</span>
                             </p>
                         </div>
 
                         <div>
-                            <p><span className="font-semibold">4. Quyết định thành lập hội đồng số:</span> ............ ngày ........ tháng ........ năm ........</p>
+                            <p><span className="font-semibold">5. Quyết định thành lập hội đồng số:</span> {reviewData.councilDecisionNumber || "............"} ngày ........ tháng ........ năm ........</p>
                         </div>
 
                         <div>
                             <p>
-                                <span className="font-semibold">5. Thành viên Hội đồng:</span> Tổng số: {reviewData.totalPresent + reviewData.totalAbsent || "........"}
+                                <span className="font-semibold">6. Thành viên Hội đồng:</span> Tổng số: {reviewData.totalMembers || "........"}
                                 <span className="ml-4">Có mặt: {reviewData.totalPresent || "........"}</span>
                                 <span className="ml-4">Vắng mặt: {reviewData.totalAbsent || "........"}</span>
                             </p>
                         </div>
 
                         <div>
-                            <p><span className="font-semibold">6. Khách mời dự:</span> .................................</p>
+                            <p><span className="font-semibold">7. Khách mời dự:</span> {reviewData.guests || "................................."}</p>
                         </div>
 
                         <div>
-                            <p className="font-semibold">7. Kết quả bỏ phiếu đánh giá:</p>
+                            <p className="font-semibold">8. Kết quả bỏ phiếu đánh giá:</p>
                             <ul className="list-disc ml-8">
-                                <li>Số phiếu đánh giá ở mức "Đạt": {reviewData.approveCount || "........"}</li>
-                                <li>Số phiếu đánh giá ở mức "Không đạt": {reviewData.rejectCount || "........"}</li>
-                                <li>Điểm số chung: {reviewData.approved ? "Đạt" : "Không đạt"} ☐</li>
+                                <li>Số phiếu đánh giá ở mức "Đạt": {reviewData.approveCount || "........"} phiếu</li>
+                                <li>Số phiếu đánh giá ở mức "Không đạt": {reviewData.rejectCount || "........"} phiếu</li>
+                                <li>Kết luận: {reviewData.approved ? "Đạt" : "Không đạt"}</li>
                             </ul>
                             <p className="text-xs italic ml-4">
                                 <span className="font-semibold">Ghi chú:</span> Đánh giá chung được xếp loại "Đạt" nếu trên 2/3 thành viên có mặt của hội đồng xếp loại "Đạt"
@@ -78,9 +82,9 @@ const ReviewResult = forwardRef<HTMLDivElement, { topic: Topic; reviewData: any 
                         </div>
 
                         <div>
-                            <p className="font-semibold">8. Kết luận của Hội đồng:</p>
+                            <p className="font-semibold">9. Kết luận của Hội đồng:</p>
                             <p className="ml-4">
-                                8.1 Đề tài đưa vào danh mục tuyển chọn đề tài KHCN cấp Trường:
+                                9.1 Đề tài đưa vào danh mục tuyển chọn đề tài KHCN cấp Trường:
                                 <span className="mx-2">
                                     {reviewData.approved ? "Có ☒" : "Có ☐"}
                                 </span>
@@ -90,8 +94,8 @@ const ReviewResult = forwardRef<HTMLDivElement, { topic: Topic; reviewData: any 
                             </p>
 
                             <div className="ml-4 mt-2">
-                                <p>8.2 Các nội dung sửa đổi, bổ sung (nếu cần):</p>
-                                <table className="w-full border-collapse border border-gray-400 mt-2">
+                                <p>9.2 Các nội dung sửa đổi, bổ sung (nếu cần):</p>
+                                <table className="w-full border-collapse border border-gray-400">
                                     <thead>
                                         <tr>
                                             <th className="border border-gray-400 p-2 text-center w-12">TT</th>
@@ -134,7 +138,7 @@ const ReviewResult = forwardRef<HTMLDivElement, { topic: Topic; reviewData: any 
                         </div>
 
                         <div>
-                            <p className="font-semibold">9. Ý kiến khác:</p>
+                            <p className="font-semibold">10. Ý kiến khác:</p>
                             <p className="ml-4 min-h-[60px] border-b border-dotted border-gray-400">
                                 {reviewData.comments?.additionalNotes || ""}
                             </p>

@@ -1,11 +1,10 @@
 import { useEffect, useState, useMemo } from "react"
-import { Eye, Pencil, Trash2, FilePlus, Send, X, Save, BarChart2, Clock } from "lucide-react"
+import { Eye, Pencil, Trash2, FilePlus, Send, X, Save, BarChart2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
 import { TopicService } from "@/service/topic-service"
-import { MilestoneService } from "@/service/milestone-service"
 import type { Topic } from "@/models/topic"
 import { getBadge, getStatusClass, TopicStatus } from "@/models/enums/topic-status.enum"
 import { formatVND } from "@/utils/common"
@@ -29,7 +28,6 @@ import { RegistrationService } from "@/service/registration-service"
 import type { RegistrationPeriod } from "@/models/registraion-period"
 import { RegistrationPeriodStatus } from "@/models/enums/registration-period-status"
 import Loading from "@/components/loading/loading"
-import MilestoneAccordion from "@/pages/admin/topics/milestone/MilestoneAccordion"
 import FeedbackList from "@/pages/admin/topics/feedback/FeedbackList"
 import type { Milestone } from "@/models/milestone"
 
@@ -53,12 +51,8 @@ const MyTopic = () => {
   const [openConfirmDelete, setOpenConfirmDelete] = useState(false)
 
   // New states for milestone and feedback functionality
-  const [viewingMilestones, setViewingMilestones] = useState(false)
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
-  const [milestones, setMilestones] = useState<Milestone[]>([])
   const [viewingReviews, setViewingReviews] = useState(false)
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null)
-  const [loadingMilestones, setLoadingMilestones] = useState(false)
 
   const navigate = useNavigate()
 
@@ -107,37 +101,9 @@ const MyTopic = () => {
     }
   }
 
-  // New function to fetch milestones for a topic
-  const fetchMilestones = async (topicId: string) => {
-    setLoadingMilestones(true)
-    try {
-      const response = await MilestoneService.getByTopicId(topicId)
-      if (response.status === 200 && response.data.code === 1000) {
-        setMilestones(response.data.data)
-      } else {
-        toast({
-          title: "Có lỗi xảy ra!",
-          description: "Không thể tải thông tin tiến độ. Vui lòng thử lại sau.",
-          variant: "error",
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching milestones:", error)
-      toast({
-        title: "Có lỗi xảy ra!",
-        description: "Không thể tải thông tin tiến độ. Vui lòng thử lại sau.",
-        variant: "error",
-      })
-    } finally {
-      setLoadingMilestones(false)
-    }
-  }
-
   // Function to view milestones and feedback for a topic
-  const handleViewMilestones = async (topic: Topic) => {
-    setSelectedTopic(topic)
-    setViewingMilestones(true)
-    await fetchMilestones(topic.id)
+  const handleViewMilestones = (topic: Topic) => {
+    navigate(`/my-topic/${topic.id}/milestones`)
   }
 
   // Function to view reviews for a milestone
@@ -242,9 +208,13 @@ const MyTopic = () => {
         render: (value: string) => value || "N/A",
       },
       {
-        key: "englishName",
-        title: "Tên tiếng Anh",
-        sortable: true,
+        key: "category.name",
+        title: "Loại đề tài",
+        render: (value: string) => value || "N/A",
+      },
+      {
+        key: "field.name",
+        title: "Lĩnh vực",
         render: (value: string) => value || "N/A",
       },
       {
@@ -464,7 +434,7 @@ const MyTopic = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận nộp đề tài</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-rose-500">
               Bạn có chắc chắn muốn nộp đề tài này? Sau khi nộp, bạn sẽ không thể chỉnh sửa đề tài nữa.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -505,75 +475,6 @@ const MyTopic = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* New Dialog for viewing milestones and feedback */}
-      <Dialog open={viewingMilestones} onOpenChange={setViewingMilestones}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Tiến độ và đánh giá: {selectedTopic?.vietnameseName}</DialogTitle>
-          </DialogHeader>
-
-          {loadingMilestones ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="w-8 h-8 border-4 border-t-transparent border-primary rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {milestones.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                  <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 mb-2">Chưa có giai đoạn nào được tạo cho đề tài này</p>
-                  <p className="text-gray-500 text-sm">Vui lòng liên hệ với quản trị viên để biết thêm thông tin</p>
-                </div>
-              ) : (
-                <MilestoneAccordion
-                  milestones={milestones}
-                  topicId={selectedTopic?.id || ""}
-                  onViewReviews={handleViewReviews}
-                  isCouncilView={true}
-                />
-              )}
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setViewingMilestones(false)}>
-                  Đóng
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog for viewing reviews */}
-      <Dialog open={viewingReviews} onOpenChange={setViewingReviews}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Đánh giá từ hội đồng</DialogTitle>
-          </DialogHeader>
-
-          {selectedMilestone && (
-            <div className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                <h3 className="font-medium text-blue-800 mb-2">Thông tin giai đoạn</h3>
-                <p className="text-sm text-blue-700 mb-1">
-                  <span className="font-medium">Mô tả:</span> {selectedMilestone.description}
-                </p>
-                <p className="text-sm text-blue-700">
-                  <span className="font-medium">Ngày dự kiến hoàn thành:</span>{" "}
-                  {selectedMilestone.expectedCompletionDate}
-                </p>
-              </div>
-
-              <FeedbackList reviews={selectedMilestone.reviews || []} />
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setViewingReviews(false)}>
-                  Đóng
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

@@ -52,7 +52,7 @@ const ReviewResult: React.FC<ReviewResultProps> = ({ topic, reviewData }) => {
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
             pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-            pdf.save(`Phiếu đánh giá - ${topic.topicCode}.pdf`);
+            pdf.save(`Phiếu đánh giá.pdf`);
         } catch (error) {
             console.error("Error exporting PDF:", error);
         } finally {

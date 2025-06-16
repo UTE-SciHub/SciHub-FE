@@ -213,12 +213,17 @@ export default function EditCouncilPage() {
         const fetchTopics = async () => {
             setIsLoadingTopics(true)
             try {
+                const councilType = form.watch('type');
+                let statusParam: any = TopicStatus.REVIEWED;
+                if (councilType === CouncilType.ACCEPTANCE_JURY) {
+                    statusParam = TopicStatus.IN_PROGRESS;
+                }
                 const response = await TopicService.getAll({
                     p: 1,
                     s: 1000,
                     q: debouncedTopicSearchTerm,
                     periodId: selectedPeriodId !== "all" ? selectedPeriodId : undefined,
-                    status: TopicStatus.IN_CATALOG,
+                    status: statusParam
                 })
                 const topics = Array.isArray(response.data.data) ? response.data.data : []
                 setFilteredTopics(topics)
@@ -236,7 +241,7 @@ export default function EditCouncilPage() {
         }
 
         fetchTopics()
-    }, [debouncedTopicSearchTerm, selectedPeriodId])
+    }, [debouncedTopicSearchTerm, selectedPeriodId, form.watch('type')])
 
     // Fetch users based on debounced search term
     useEffect(() => {
@@ -546,6 +551,7 @@ export default function EditCouncilPage() {
                                                         <SelectContent>
                                                             <SelectItem value={CouncilType.SELECT_CNDT}>Hội đồng xét duyệt</SelectItem>
                                                             <SelectItem value={CouncilType.EVALUATE_TOPIC}>Hội đồng đánh giá</SelectItem>
+                                                            <SelectItem value={CouncilType.ACCEPTANCE_JURY}>Hội đồng nghiệm thu</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     <FormDescription>Loại hội đồng quyết định chức năng và nhiệm vụ</FormDescription>
@@ -977,17 +983,12 @@ export default function EditCouncilPage() {
                                                     <TableCell>
                                                         {isTopicSelected(topic.id) ? (
                                                             <Button type="button" variant="ghost" size="sm" className="w-full" disabled>
-                                                                <Check className="h-4 w-4 mr-2" />
+                                                                <Check className="h-4 w-4" />
                                                                 Đã chọn
                                                             </Button>
                                                         ) : (
-                                                            <Button
-                                                                type="button"
-                                                                variant="default"
-                                                                size="sm"
-                                                                className="w-full"
-                                                                onClick={() => addTopic(topic)}
-                                                            >
+                                                            <Button type="button" variant="default" size="sm" className="w-full" onClick={() => addTopic(topic)}>
+                                                                <Plus className="h-4 w-4" />
                                                                 Chọn
                                                             </Button>
                                                         )}

@@ -41,3 +41,15 @@ export const parseVND = (value) => {
     const numericValue = value.replace(/[^0-9]/g, '');
     return numericValue ? Number(numericValue) : undefined;
 };
+
+const fundingSourceOptions = [
+    { value: "GOVERNMENT", label: "Nhà nước" },
+    { value: "ENTERPRISE", label: "Doanh nghiệp" },
+    { value: "SELF_FUNDED", label: "Tự túc" },
+    { value: "OTHER", label: "Khác" },
+];
+
+export const getFundingSourceLabel = (value: string) => {
+    const option = fundingSourceOptions.find(opt => opt.value === value);
+    return option?.label;
+}

@@ -29,26 +29,17 @@ const Chatbot: React.FC<ChatbotProps> = ({
     {
       content: 'Xin chào! Tôi là trợ lý UTE-SciHub. Tôi có thể giúp gì cho bạn?',
       isBot: true,
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
     {
-      content: 'Quy trình phê duyệt đề tài được thực hiện như thế nào?',
-      isBot: false,
-      timestamp: new Date().toLocaleTimeString(),
-    },
-    {
-      content: `Dựa trên tài liệu "QUY TRÌNH QUẢN LÝ ĐỀ TÀI KHOA HỌC VÀ CÔNG NGHỆ CẤP TRƯỜNG", quy trình phê duyệt đề tài được thực hiện như sau:
-
-1. **Xác định Danh mục đề tài:** 
-Phòng QLKH&HTQT tham mưu cho BGH Nhà trường ban hành quyết định thành lập hội đồng đánh giá các đề xuất và xác định danh mục đề tài. Hội đồng tổ chức họp, đánh giá dựa trên các tiêu chí (tên đề tài, tính cấp thiết, mục tiêu, nội dung nghiên cứu, sản phẩm và kết quả dự kiến của các đề tài) ghi nhận xét vào phiếu chấm và tổng hợp kết quả bằng biên bản cuộc họp (Trang 8).
-
-2. **Xét duyệt chủ nhiệm đề tài:** 
-Phòng QLKH&HTQT tham mưu đề xuất BGH Nhà trường ban hành quyết định thành lập hội đồng tuyển chọn chủ nhiệm đề tài. Hội đồng tổ chức họp, đánh giá theo các tiêu chí tuyển chọn CNĐT, ghi nhận xét vào phiếu chấm và tổng hợp kết quả bằng biên bản cuộc họp. CNĐT trình bày nội dung nghiên cứu của đề tài tại buổi họp. Sau khi có kết quả của các Hội đồng tuyển chọn CNĐT, Phòng QLKH&HTQT gửi Biên bản họp hội đồng đến các CNĐT (Trang 9).
-
-3. **Phê duyệt đề tài:** 
-Hiệu trưởng ban hành Quyết định phê duyệt Danh sách chủ nhiệm đề tài và định mức kinh phí cấp cho các đề tài (Trang 9).`,
+      content: 'Bạn có thể hỏi tôi bất kỳ câu hỏi nào về quy trình quản lý và thực hiện đề tài cấp trường.',
       isBot: true,
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+    {
+      content: 'Ví dụ: "Quy trình phê duyệt đề tài được thực hiện như thế nào?"',
+      isBot: true,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -92,8 +83,8 @@ Hiệu trưởng ban hành Quyết định phê duyệt Danh sách chủ nhiệm
         };
         setMessages(prevMessages => [...prevMessages, loadingMessage]);
 
-        // Call the Google GenAI service
-        const response = await GoogleGenAIService.generateContent(userPrompt);
+        // Call the Google GenAI service with conversation history
+        const response = await GoogleGenAIService.generateContent(userPrompt, messages);
         
         // Remove the loading message and add the actual response
         setMessages(prevMessages => {
@@ -169,17 +160,6 @@ Hiệu trưởng ban hành Quyết định phê duyệt Danh sách chủ nhiệm
           >
             <XIcon className="h-5 w-5" />
           </button>
-        </div>
-
-        {/* Welcome message */}
-        <div className="p-4 text-center text-gray-600 text-sm border-b border-gray-200 bg-gradient-to-b from-blue-50 to-white">
-          <p className="font-medium">Bắt đầu trò chuyện với trợ lý UTE-SciHub</p>
-          <p className="text-xs mt-1">
-            Hỏi bất kỳ câu hỏi nào về quy trình quản lý và thực hiện đề tài cấp trường
-          </p>
-          <p className="text-xs mt-1 italic">
-            Ví dụ: "Quy trình phê duyệt đề tài được thực hiện như thế nào?"
-          </p>
         </div>
 
         {/* Messages - increased height */}

@@ -602,7 +602,7 @@ const AdminUsers = () => {
                     onChange={handleSearchChange}
                   />
                 </div>
-                <Select
+                {/* <Select
                   value={statusFilter}
                 >
                   <SelectTrigger className="w-full md:w-[180px]">
@@ -614,7 +614,7 @@ const AdminUsers = () => {
                     <SelectItem value="blocked">Đã chặn</SelectItem>
                     <SelectItem value="inactive">Không hoạt động</SelectItem>
                   </SelectContent>
-                </Select>
+                </Select> */}
 
                 <div className="h-10 flex flex-1 justify-end items-center">
                   {selectedRowKeys.length > 0 ? (

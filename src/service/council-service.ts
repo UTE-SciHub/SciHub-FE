@@ -4,8 +4,8 @@ import axiosClient from "@/utils/axiosClient"
 const BASE_URL = import.meta.env.VITE_BASE_URL
 
 interface GetAllParams {
-    page: number
-    size: number
+    page?: number
+    size?: number
     q?: string
     type?: string
     status?: string

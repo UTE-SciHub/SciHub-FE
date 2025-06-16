@@ -6,6 +6,7 @@ import { ResearchField } from "@/models/research-field";
 import { ResearchType } from "@/models/research-type";
 import { TopicCouncil } from "@/models/topic-council";
 import { TopicMember } from "@/models/topic-member";
+import { Document } from "@/models/document";
 
 export interface ExpectedProduct {
     scientific: {
@@ -63,4 +64,5 @@ export interface Topic {
     createdBy?: string;
     updatedBy?: string;
     topicCouncils?: TopicCouncil[];
+    documents?: Document[];
 }

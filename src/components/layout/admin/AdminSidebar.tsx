@@ -22,6 +22,8 @@ import {
   Book,
   FilePlus,
   UserCogIcon,
+  TableProperties,
+  CircleCheckBig,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/service/auth-service";
@@ -73,16 +75,50 @@ const sidebarItems: SidebarItem[] = [
     href: "/admin/topics",
     icon: Folder,
     subItems: [
-      { title: "Danh sách đề tài", href: "/admin/topics", icon: List, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER] },
-      { title: "Đăng ký đề tài", href: "/admin/topic-proposal", icon: FileText, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.TEACHER] },
+      {
+        title: "Danh sách đề tài",
+        href: "/admin/topics",
+        icon: List,
+        allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA]
+      },
+      {
+        title: "Xác định danh mục đề tài",
+        href: "/admin/topics/classification",
+        icon: BookOpen,
+        allowedRoles: [Roles.PQLKHHTQT],
+      },
+      {
+        title: "Loại đề tài",
+        href: "/admin/categories",
+        icon: TableProperties,
+        allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT],
+      },
+      {
+        title: "Danh sách lĩnh vực nghiên cứu",
+        href: "/admin/research-fields",
+        icon: Microscope,
+        allowedRoles: [Roles.ADMIN],
+      },
+      {
+        title: "Danh sách loại hình nghiên cứu",
+        href: "/admin/research-types",
+        icon: Book,
+        allowedRoles: [Roles.ADMIN],
+      },
+      {
+        title: "Đề tài chủ nhiệm",
+        href: "/admin/lecturer-topics",
+        icon: BookOpen,
+        allowedRoles: [Roles.TEACHER],
+      },
+      {
+        title: "Đăng ký chủ nhiệm",
+        href: "/admin/registration-cndt",
+        icon: FilePlus,
+        allowedRoles: [Roles.ADMIN, Roles.TEACHER],
+      },
     ],
     allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA, Roles.TEACHER],
-  },
-  {
-    title: "Danh mục đề tài",
-    href: "/admin/categories",
-    icon: List,
-    allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT],
   },
   {
     title: "Quản lý hợp đồng",
@@ -115,34 +151,24 @@ const sidebarItems: SidebarItem[] = [
     allowedRoles: [Roles.ADMIN],
   },
   {
-    title: "Danh sách lĩnh vực nghiên cứu",
-    href: "/admin/research-fields",
-    icon: Microscope,
-    allowedRoles: [Roles.ADMIN],
-  },
-  {
-    title: "Danh sách loại hình nghiên cứu",
-    href: "/admin/research-types",
-    icon: Book,
-    allowedRoles: [Roles.ADMIN],
-  },
-  {
-    title: "Đăng ký CNDT",
-    href: "/admin/registration-cndt",
-    icon: FilePlus,
-    allowedRoles: [Roles.ADMIN, Roles.TEACHER],
-  },
-  {
-    title: "Danh sách hội đồng",
-    href: "/admin/councils",
+    title: "Quản lý hội đồng",
     icon: Users,
+    href: "/admin/councils",
     allowedRoles: [Roles.ADMIN, Roles.TEACHER, Roles.BGH, Roles.PQLKHHTQT, Roles.COUNCIL_MEMBER],
-  },
-  {
-    title: "Đề tài chủ nhiệm",
-    href: "/admin/lecturer-topics",
-    icon: BookOpen,
-    allowedRoles: [Roles.TEACHER],
+    subItems: [
+      {
+        title: "Danh sách hội đồng",
+        href: "/admin/councils",
+        icon: Users,
+        allowedRoles: [Roles.ADMIN, Roles.TEACHER, Roles.BGH, Roles.PQLKHHTQT, Roles.COUNCIL_MEMBER],
+      },
+      {
+        title: "Hội đồng nghiệm thu",
+        href: "/admin/acceptance",
+        icon: CircleCheckBig,
+        allowedRoles: [Roles.ADMIN, Roles.TEACHER, Roles.BGH, Roles.PQLKHHTQT, Roles.COUNCIL_MEMBER],
+      },
+    ],
   },
   {
     title: "Cài đặt hệ thống",
@@ -154,6 +180,7 @@ const sidebarItems: SidebarItem[] = [
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [isUserInteracted, setIsUserInteracted] = useState(false); // Theo dõi tương tác của người dùng
   const navigate = useNavigate();
   const location = useLocation();
   const user = useUserStore((state) => state.user);
@@ -171,22 +198,31 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle }) => {
     return false;
   };
 
-  // Open submenu automatically when a child route is active
+  // Chỉ mở submenu tự động khi chưa có tương tác của người dùng
   useEffect(() => {
+    if (isUserInteracted) return; // Bỏ qua nếu người dùng đã tương tác
+
     const activeParent = sidebarItems.find((item) =>
       item.subItems?.some((subItem) => location.pathname === subItem.href && hasAccess(subItem)),
     );
+
     if (activeParent && hasAccess(activeParent)) {
       setOpenSubmenu(activeParent.title);
+    } else {
+      setOpenSubmenu(null); // Đóng tất cả nếu không có submenu active
     }
-  }, [location.pathname, roles]);
+  }, [location.pathname, roles, isUserInteracted]);
 
   const toggleSubmenu = (title: string, event: React.MouseEvent) => {
     if (collapsed || !hasAccess(sidebarItems.find((item) => item.title === title)!)) return;
 
-    if (sidebarItems.find((item) => item.title === title)?.subItems) {
+    const item = sidebarItems.find((item) => item.title === title);
+    if (item?.subItems) {
       event.preventDefault();
-      setOpenSubmenu(openSubmenu === title ? null : title);
+      setIsUserInteracted(true); // Đánh dấu người dùng đã tương tác
+      setOpenSubmenu(openSubmenu === title ? null : title); // Đóng hoặc mở submenu
+    } else {
+      navigate(item?.href || "/admin");
     }
   };
 

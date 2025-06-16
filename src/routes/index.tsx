@@ -47,6 +47,15 @@ import MeetingMinutesPage from "@/pages/admin/council/MeetingMinutes";
 import LecturerTopicsPage from "@/pages/admin/topics/my-topic/LecturerTopicsPage";
 import TopicFeedbackPage from "@/pages/admin/topics/feedback/TopicFeedbackPage";
 import TopicProgressPage from "@/pages/admin/topics/feedback/TopicProgressPage";
+import ContractList from "@/pages/admin/contract/ContractList";
+import SettingsPage from "@/pages/admin/settings/SettingsPage";
+import ApproveTopicsPage from "@/pages/admin/council/ApprovedTopicPage";
+import TopicMembersPage from "@/pages/admin/topics/my-topic/TopicMembersPage";
+import AcceptanceDashboard from "@/pages/admin/acceptance/acceptance-workflow-dashboard";
+import AcceptanceSubmissionForm from "@/pages/admin/acceptance/acceptance-submission-form";
+import AcceptanceDetail from "@/pages/admin/acceptance/acceptance-detail";
+import MyTopicMilestones from "@/pages/topics/MyTopicMileTones";
+import TemplateListPage from "@/pages/admin/settings/TemplateListPage";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -67,10 +76,12 @@ const routers = createBrowserRouter([
           { path: "registration/:id", element: <RegistrationPeriodDetail /> },
           { path: "topic-proposal", element: <TopicProposal /> },
           { path: "my-topics", element: <MyTopic /> },
+          { path: "my-topic/:topicId/milestones", element: <MyTopicMilestones /> },
           { path: "topic/edit/:id", element: <EditTopic /> },
           { path: "topic/:id", element: <ViewTopic /> },
         ],
       },
+      { path: "template-list", element: <TemplateListPage /> },
     ],
   },
   {
@@ -92,6 +103,7 @@ const routers = createBrowserRouter([
           { path: "classification", element: <EvaluateTopicPage /> },
           { path: ":id/classification", element: <ReviewTopic /> },
           { path: "pm-evaluate/:id", element: <PMReviewPage /> },
+          { path: ":id/members", element: <TopicMembersPage /> },
         ],
       },
       {
@@ -103,9 +115,10 @@ const routers = createBrowserRouter([
           { path: "edit/:id", element: <EditCouncilPage /> },
           { path: "metting-minutes", element: <MeetingMinutesPage /> },
           { path: ":councilId/feedback/:topicId", element: <TopicFeedbackPage /> },
+          { path: ":id/approve-topics", element: <ApproveTopicsPage /> },
         ]
       },
-      { path: "contracts", element: <AdminContracts /> },
+      { path: "contracts", element: <ContractList /> },
       { path: "finance", element: <AdminFinance /> },
       { path: "announcements", element: <AdminAnnouncements /> },
       { path: "lecturer-topics", element: <LecturerTopicsPage /> },
@@ -124,7 +137,13 @@ const routers = createBrowserRouter([
       { path: "research-fields", element: <ListResearchField /> },
       { path: "research-types", element: <ListResearchType /> },
       { path: "categories", element: <ListCategory /> },
-      { path: "registration-cndt", element: <RegisterCNDTPage /> }
+      { path: "registration-cndt", element: <RegisterCNDTPage /> },
+      { path: "settings", element: <SettingsPage /> },
+      { path: "acceptance", children: [
+        { index: true, element: <AcceptanceDashboard /> },
+        {path: "submit", element: <AcceptanceSubmissionForm />},
+        {path: ":acceptanceId", element: <AcceptanceDetail />},
+      ]},
     ],
   },
   { path: "*", element: <NotFoundPage /> },

@@ -12,7 +12,7 @@ import { MilestoneService } from "@/service/milestone-service"
 import type { Milestone } from "@/models/milestone"
 import Loading from "@/components/loading/loading"
 import { ArrowLeft, Plus, FileText, Calendar, DollarSign } from "lucide-react"
-import { formatVND } from "@/utils/common"
+import { formatVND, getFundingSourceLabel } from "@/utils/common"
 import { formatDateString } from "@/utils/dateTimeFormat"
 import { getBadge, getStatusClass } from "@/models/enums/topic-status.enum"
 import { ProgressService } from "@/service/progress-service"
@@ -382,7 +382,7 @@ const TopicProgressPage: React.FC = () => {
                             {topic.fundingSource && (
                                 <div>
                                     <p className="text-sm text-gray-500">Nguồn kinh phí</p>
-                                    <p className="font-medium">{topic.fundingSource}</p>
+                                    <p className="font-medium">{getFundingSourceLabel(topic.fundingSource)}</p>
                                 </div>
                             )}
                         </div>

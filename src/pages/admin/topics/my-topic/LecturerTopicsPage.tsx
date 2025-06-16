@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { Eye, FilePlus, Lock, Unlock, MoreHorizontal, BarChart3 } from "lucide-react"
+import { Eye, FilePlus, Lock, Unlock, MoreHorizontal, BarChart3, Users, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useNavigate } from "react-router-dom"
@@ -30,24 +30,15 @@ interface SubmitFormValues {
 
 const LecturerTopicsPage = () => {
     const [myTopics, setMyTopics] = useState<Topic[]>([])
-    const [researchFields, setResearchFields] = useState<ResearchField[]>([])
     const [loading, setLoading] = useState(false)
     const [currentPageTopics, setCurrentPageTopics] = useState(1)
     const [itemsPerPageTopics, setItemsPerPageTopics] = useState(10)
     const [totalItemsTopics, setTotalItemsTopics] = useState(0)
-    const [currentPageFields, setCurrentPageFields] = useState(1)
-    const [itemsPerPageFields, setItemsPerPageFields] = useState(5)
-    const [totalItemsFields, setTotalItemsFields] = useState(0)
     const [sortByTopics, setSortByTopics] = useState<string | null>(null)
     const [orderTopics, setOrderTopics] = useState<string | null>(null)
-    const [sortByFields, setSortByFields] = useState<string | null>("createdAt")
-    const [orderFields, setOrderFields] = useState<string | null>("desc")
     const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null)
     const [periods, setPeriods] = useState<RegistrationPeriod[]>([])
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [selectedResearchField, setSelectedResearchField] = useState<ResearchField | null>(null)
-    const [searchQueryFields, setSearchQueryFields] = useState("")
-    const [delFlagFields, setDelFlagFields] = useState<string>("all")
 
     const navigate = useNavigate()
     const user = useUserStore((state) => state.user)
@@ -57,8 +48,6 @@ const LecturerTopicsPage = () => {
             period: "",
         },
     })
-
-    const debouncedSearchQueryFields = useDebounce(searchQueryFields, 300)
 
     // Fetch my topics
     const fetchMyTopics = async () => {
@@ -101,39 +90,9 @@ const LecturerTopicsPage = () => {
         }
     }
 
-    // Fetch research fields
-    const fetchResearchFields = async () => {
-        setLoading(true)
-        try {
-            const requestParams = {
-                p: currentPageFields,
-                s: itemsPerPageFields,
-                q: debouncedSearchQueryFields,
-                sort: sortByFields,
-                order: orderFields,
-                delFlag: delFlagFields === "all" ? undefined : delFlagFields === "true",
-            }
-            const response = await ResearchFieldService.getAll(requestParams)
-            setResearchFields(response.data.data)
-            setTotalItemsFields(response.data.totalItems)
-        } catch (error) {
-            console.error("Error fetching research fields:", error)
-            toast({
-                title: "Có lỗi trong quá trình lấy dữ liệu!",
-                variant: "error",
-            })
-        } finally {
-            setLoading(false)
-        }
-    }
-
     useEffect(() => {
         fetchMyTopics()
     }, [currentPageTopics, itemsPerPageTopics, sortByTopics, orderTopics])
-
-    useEffect(() => {
-        fetchResearchFields()
-    }, [currentPageFields, itemsPerPageFields, debouncedSearchQueryFields, sortByFields, orderFields, delFlagFields])
 
     const handleDelete = async (topicId: string) => {
         if (!topicId) return
@@ -212,37 +171,6 @@ const LecturerTopicsPage = () => {
         }
     }
 
-    const handleViewResearchField = (researchField: ResearchField) => {
-        setSelectedResearchField(researchField)
-    }
-
-    const handleStatusChange = async (researchField: ResearchField, newStatus: boolean) => {
-        setLoading(true)
-        try {
-            const response = await ResearchFieldService.updateStatus(researchField.id!, newStatus)
-            if (response.status === 200 && response.data.code === 1000) {
-                toast({
-                    title: `Đã ${newStatus ? "mở khóa" : "khóa"} lĩnh vực ${researchField.name} thành công!`,
-                    variant: "success",
-                })
-                fetchResearchFields()
-            } else {
-                toast({
-                    title: `Có lỗi trong quá trình ${newStatus ? "mở khóa" : "khóa"} lĩnh vực ${researchField.name}!`,
-                    variant: "error",
-                })
-            }
-        } catch (error) {
-            console.error("Error updating status:", error)
-            toast({
-                title: `Có lỗi trong quá trình ${newStatus ? "mở khóa" : "khóa"} lĩnh vực ${researchField.name}!`,
-                variant: "error",
-            })
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const columnsTopics = useMemo(
         () => [
             {
@@ -252,20 +180,36 @@ const LecturerTopicsPage = () => {
                 render: (value: string) => value || "N/A",
             },
             {
-                key: "englishName",
-                title: "Tên tiếng Anh",
-                sortable: true,
+                key: "category.name",
+                title: "Loại đề tài",
                 render: (value: string) => value || "N/A",
             },
             {
-                key: "durationInMonths",
-                title: "TG thực hiện (tháng)",
-                sortable: true,
-                render: (value: number) => value || "N/A",
+                key: "field.name",
+                title: "Lĩnh vực",
+                render: (value: string) => value || "N/A",
+            },
+            {
+                key: "department.name",
+                title: "Đơn vị",
+                render: (value: string) => value || "N/A",
+            },
+            {
+                key: "startDate",
+                title: "TG thực hiện",
+                render: (_: any, record: Topic) => {
+                    const start = record.startDate
+                        ? new Date(record.startDate).toLocaleDateString("vi-VN")
+                        : "N/A";
+                    const duration = record.durationInMonths
+                        ? `${record.durationInMonths} tháng`
+                        : "N/A";
+                    return `${start} - ${duration}`;
+                },
             },
             {
                 key: "totalBudget",
-                title: "Tổng chi phí dự kiến (đ)",
+                title: "Chi phí dự kiến (đ)",
                 sortable: true,
                 render: (value: number) => (value ? formatVND(value) : "N/A"),
             },
@@ -282,24 +226,49 @@ const LecturerTopicsPage = () => {
                 render: (_: any, record: Topic) => (
                     <div className="flex gap-2">
                         <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="default" size="sm" onClick={() => navigate(`/topic/${record.id}`)}>
-                                        <Eye className="h-4 w-4 text-white" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Xem chi tiết</TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="outline" size="sm" onClick={() => navigate(`/admin/lecturer/topic-progress/${record.id}`)}>
-                                        <BarChart3 className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Tiến độ thực hiện</TooltipContent>
-                            </Tooltip>
+                            <div className="flex items-center gap-2">
+                                {/* Nút xem chi tiết */}
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => navigate(`/topic/${record.id}`)}
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Xem chi tiết</TooltipContent>
+                                </Tooltip>
+
+                                {/* Nút tiến độ thực hiện */}
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => navigate(`/admin/lecturer/topic-progress/${record.id}`)}
+                                        >
+                                            <BarChart3 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Tiến độ thực hiện</TooltipContent>
+                                </Tooltip>
+
+                                {/* Nút thành viên */}
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => navigate(`/admin/topics/${record.id}/members`)}
+                                        >
+                                            <Users className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Thành viên</TooltipContent>
+                                </Tooltip>
+                            </div>
                         </TooltipProvider>
                     </div>
                 ),
@@ -307,90 +276,6 @@ const LecturerTopicsPage = () => {
         ],
         [navigate],
     )
-
-    const columnsFields = useMemo(
-        () => [
-            { key: "name", title: "Tên lĩnh vực", width: "100px", sortable: true },
-            { key: "description", title: "Mô tả", width: "150px" },
-            { key: "delFlag", title: "Trạng thái", width: "80px", render: (_, record) => getStatusBadge(record.delFlag) },
-            { key: "createdAt", title: "Ngày tạo", width: "150px", sortable: true },
-            {
-                key: "actions",
-                title: "Thao tác",
-                width: "80px",
-                render: (_, record) => (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Mở menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                                onSelect={(e) => {
-                                    e.preventDefault()
-                                    handleViewResearchField(record)
-                                }}
-                            >
-                                <Eye className="mr-2 h-4 w-4" />
-                                Xem chi tiết
-                            </DropdownMenuItem>
-                            {record.delFlag ? (
-                                <DropdownMenuItem
-                                    className="text-green-500"
-                                    onSelect={(e) => {
-                                        e.preventDefault()
-                                        handleStatusChange(record, false)
-                                    }}
-                                >
-                                    <Unlock className="mr-2 h-4 w-4" />
-                                    Mở khóa
-                                </DropdownMenuItem>
-                            ) : (
-                                <DropdownMenuItem
-                                    className="text-destructive"
-                                    onSelect={(e) => {
-                                        e.preventDefault()
-                                        handleStatusChange(record, true)
-                                    }}
-                                >
-                                    <Lock className="mr-2 h-4 w-4" />
-                                    Khóa
-                                </DropdownMenuItem>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                ),
-            },
-        ],
-        [],
-    )
-
-    const getStatusBadge = (status: boolean | string) => {
-        const isLocked = status === true
-        const badgeConfig = {
-            text: isLocked ? "Khóa" : "Mở khóa",
-            bgColor: isLocked ? "bg-rose-100" : "bg-green-100",
-            textColor: isLocked ? "text-rose-700" : "text-green-700",
-            icon: isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />,
-        }
-
-        return (
-            <div className="flex">
-                <span
-                    className={`
-            inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
-            ${badgeConfig.bgColor} ${badgeConfig.textColor}
-            transition-colors duration-200 hover:${badgeConfig.bgColor.replace("100", "200")}
-          `}
-                >
-                    {badgeConfig.icon}
-                    {badgeConfig.text}
-                </span>
-            </div>
-        )
-    }
 
     if (loading) {
         return <Loading />
@@ -400,16 +285,23 @@ const LecturerTopicsPage = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-start flex-col md:flex-row gap-4">
                 <div>
-                    <h1 className="font-bold text-2xl tracking-tight">Danh sách đề tài & lĩnh vực nghiên cứu</h1>
-                    <p className="text-[#6b7280]">Xem, quản lý đề tài và lĩnh vực nghiên cứu của bạn</p>
+                    <h1 className="font-bold text-2xl tracking-tight">Danh sách đề tài chủ nhiệm của tôi</h1>
+                    <p className="text-[#6b7280]">Xem, quản lý đề tài chủ nhiệm của bạn</p>
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <Button
-                        className="bg-[#2563eb] hover:bg-[#1e40af] transition-all"
+                        variant="outline"
                         onClick={() => navigate("/topic-proposal")}
                     >
                         <FilePlus className="h-4 w-4" />
                         Tạo đề tài
+                    </Button>
+                    <Button
+                        variant="default"
+                        onClick={() => navigate("/admin/acceptance/submit")}
+                    >
+                        <Save className="h-4 w-4" />
+                        Nộp hồ sơ nghiệm thu
                     </Button>
                 </div>
             </div>
@@ -417,7 +309,6 @@ const LecturerTopicsPage = () => {
             {/* Topics Section */}
             <Card>
                 <CardContent className="p-4">
-                    <h2 className="text-xl font-semibold mb-4">Danh sách đề tài của tôi</h2>
                     <DataTable
                         columns={columnsTopics}
                         data={myTopics}

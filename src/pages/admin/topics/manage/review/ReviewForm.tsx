@@ -8,7 +8,8 @@ import {
     FormField,
     FormItem,
     FormLabel,
-    FormMessage
+    FormMessage,
+    FormDescription
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -27,19 +28,18 @@ import { Topic } from "@/models/topic";
 import { ChevronRight } from "lucide-react";
 
 const reviewSchema = z.object({
-    councilDate: z.string().min(1, "Vui lòng chọn ngày họp"),
-    meetingLocation: z.string().min(1, "Vui lòng nhập địa điểm"),
-    councilDecisionNumber: z.string().min(1, "Vui lòng nhập số quyết định thành lập hội đồng"),
+    councilDate: z.string().min(1, "Ngày họp là bắt buộc"),
+    meetingLocation: z.string().min(1, "Địa điểm họp là bắt buộc"),
+    councilDecisionNumber: z.string().min(1, "Số quyết định là bắt buộc"),
     totalMembers: z.number().min(1, "Tổng số thành viên phải lớn hơn 0"),
     totalPresent: z.number().min(0, "Số thành viên có mặt không được âm"),
     totalAbsent: z.number().min(0, "Số thành viên vắng mặt không được âm"),
-    guests: z.string().optional().refine((val) => !val || val.length >= 5, {
-        message: "Danh sách khách mời phải có ít nhất 5 ký tự nếu điền",
-    }),
+    guests: z.string().optional(),
     approveCount: z.number().min(0, "Số phiếu đạt không được âm"),
     rejectCount: z.number().min(0, "Số phiếu không đạt không được âm"),
     approved: z.boolean(),
-    passedCriteria: z.array(z.string()).optional(),
+    topicCode: z.string().min(1, "Mã đề tài là bắt buộc"),
+    passedCriteria: z.array(z.string()),
     comments: z.object({
         topicName: z.string().optional(),
         objectives: z.string().optional(),
@@ -61,13 +61,14 @@ type ReviewFormValues = z.infer<typeof reviewSchema>;
 interface ReviewFormProps {
     topic: Topic;
     onNextStep: (data: any) => void;
+    formData?: any;
+    onChange?: (data: any) => void;
 }
 
-export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
-    const [formData, setFormData] = useState<ReviewFormValues | null>(null);
-
-    const form = useForm<ReviewFormValues>({
+export default function ReviewForm({ topic, onNextStep, formData, onChange }: ReviewFormProps) {
+    const form = useForm({
         resolver: zodResolver(reviewSchema),
+        mode: "onSubmit",
         defaultValues: formData || {
             councilDate: new Date().toISOString().split('T')[0],
             meetingLocation: "Phòng họp Khoa học Công nghệ - Đại học Sư phạm Kỹ thuật Đà Nẵng",
@@ -79,6 +80,7 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
             approveCount: 0,
             rejectCount: 0,
             approved: false,
+            topicCode: "",
             passedCriteria: [],
             comments: {
                 topicName: "",
@@ -91,30 +93,55 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
         },
     });
 
+    // Reset form when formData changes
     useEffect(() => {
         if (formData) {
-            form.reset(formData);
+            Object.entries(formData).forEach(([key, value]) => {
+                form.setValue(key as any, value, { shouldValidate: false });
+            });
         }
     }, [formData, form]);
 
-    useEffect(() => {
-        const totalMembers = form.getValues("totalMembers");
-        const totalPresent = form.getValues("totalPresent");
-        const absent = Math.max(0, totalMembers - totalPresent);
-        form.setValue("totalAbsent", absent, { shouldValidate: true });
-    }, [form.watch("totalMembers"), form.watch("totalPresent"), form]);
+    const onSubmit = (data: any) => {
+        // Ép kiểu các trường số về number trước khi validate và submit
+        const fixedData = {
+            ...data,
+            totalMembers: Number(data.totalMembers),
+            totalPresent: Number(data.totalPresent),
+            totalAbsent: Number(data.totalAbsent),
+            approveCount: Number(data.approveCount),
+            rejectCount: Number(data.rejectCount),
+        };
+        onNextStep(fixedData);
+    };
+
+    const handleFormChange = () => {
+        const currentData = form.getValues();
+        onChange?.(currentData);
+    };
 
     useEffect(() => {
-        const totalPresent = form.getValues("totalPresent");
-        const approveCount = form.getValues("approveCount");
-        const reject = Math.max(0, totalPresent - approveCount);
-        form.setValue("rejectCount", reject, { shouldValidate: true });
+        const subscription = form.watch(() => {
+            handleFormChange();
+        });
+        return () => subscription.unsubscribe();
+    }, [form]);
+
+    // Update reject count when totalPresent or approveCount changes
+    useEffect(() => {
+        const totalPresent = Number(form.watch("totalPresent"));
+        const approveCount = Number(form.watch("approveCount"));
+        const reject = totalPresent - approveCount;
+        form.setValue("rejectCount", Number(reject), { shouldValidate: true });
     }, [form.watch("totalPresent"), form.watch("approveCount"), form]);
 
-    const onSubmit = (data: ReviewFormValues) => {
-        setFormData(data);
-        onNextStep(data);
-    };
+    // Update totalAbsent when totalMembers and totalPresent change
+    useEffect(() => {
+        const totalMembers = Number(form.watch("totalMembers"));
+        const totalPresent = Number(form.watch("totalPresent"));
+        const absent = totalMembers - totalPresent;
+        form.setValue("totalAbsent", Number(absent), { shouldValidate: true });
+    }, [form.watch("totalMembers"), form.watch("totalPresent"), form]);
 
     return (
         <div className="p-6" style={{ fontFamily: "Times New Roman" }}>
@@ -140,48 +167,60 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="md:col-span-1">
-                                    <FormField
-                                        control={form.control}
-                                        name="councilDate"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>3. Ngày họp:</FormLabel>
-                                                <FormControl>
-                                                    <Input type="date" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <FormField
-                                        control={form.control}
-                                        name="meetingLocation"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Địa điểm:</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} placeholder="Nhập địa điểm họp" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="topicCode"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>3. Mã đề tài:</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Nhập mã đề tài"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="councilDate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>4. Ngày họp:</FormLabel>
+                                            <FormControl>
+                                                <Input type="date" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </div>
 
-                            <div>
-                                <p className="font-medium">4. Quyết định thành lập hội đồng số:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="meetingLocation"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>5. Địa điểm họp:</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Nhập địa điểm họp" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                 <FormField
                                     control={form.control}
                                     name="councilDecisionNumber"
                                     render={({ field }) => (
                                         <FormItem>
+                                            <FormLabel>6. Số quyết định:</FormLabel>
                                             <FormControl>
-                                                <Input {...field} placeholder="Số quyết định" className="mt-2" />
+                                                <Input placeholder="Nhập số quyết định" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -195,12 +234,16 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                     name="totalMembers"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>5. Thành viên Hội đồng: Tổng số:</FormLabel>
+                                            <FormLabel>7. Thành viên Hội đồng: Tổng số:</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     type="number"
                                                     {...field}
-                                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                    onChange={(e) => {
+                                                        const value = isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber;
+                                                        field.onChange(value);
+                                                        form.setValue("totalMembers", value, { shouldValidate: true });
+                                                    }}
                                                     min={0}
                                                     placeholder="Số thành viên"
                                                 />
@@ -220,7 +263,11 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                                     <Input
                                                         type="number"
                                                         {...field}
-                                                        onChange={(e) => field.onChange(Math.max(0, parseInt(e.target.value) || 0))}
+                                                        onChange={(e) => {
+                                                            const value = isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber;
+                                                            field.onChange(value);
+                                                            form.setValue("totalPresent", value, { shouldValidate: true });
+                                                        }}
                                                         min={0}
                                                     />
                                                 </FormControl>
@@ -238,7 +285,11 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                                     <Input
                                                         type="number"
                                                         {...field}
-                                                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                        onChange={(e) => {
+                                                            const value = isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber;
+                                                            field.onChange(value);
+                                                            form.setValue("totalAbsent", value, { shouldValidate: true });
+                                                        }}
                                                         min={0}
                                                         readOnly
                                                     />
@@ -251,7 +302,7 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                             </div>
 
                             <div>
-                                <p className="font-medium">6. Khách mời dự:</p>
+                                <p className="font-medium">8. Khách mời dự:</p>
                                 <FormField
                                     control={form.control}
                                     name="guests"
@@ -267,7 +318,7 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                             </div>
 
                             <div className="space-y-4">
-                                <p className="font-medium">7. Kết quả bỏ phiếu đánh giá:</p>
+                                <p className="font-medium">9. Kết quả bỏ phiếu đánh giá:</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
                                     <FormField
                                         control={form.control}
@@ -279,7 +330,11 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                                     <Input
                                                         type="number"
                                                         {...field}
-                                                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                        onChange={(e) => {
+                                                            const value = isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber;
+                                                            field.onChange(value);
+                                                            form.setValue("approveCount", value, { shouldValidate: true });
+                                                        }}
                                                         min={0}
                                                     />
                                                 </FormControl>
@@ -297,7 +352,11 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                                     <Input
                                                         type="number"
                                                         {...field}
-                                                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                        onChange={(e) => {
+                                                            const value = isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber;
+                                                            field.onChange(value);
+                                                            form.setValue("rejectCount", value, { shouldValidate: true });
+                                                        }}
                                                         min={0}
                                                         readOnly
                                                     />
@@ -318,12 +377,17 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                                 <FormControl>
                                                     <Checkbox
                                                         checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                        id="approved"
+                                                        onCheckedChange={(checked) => {
+                                                            field.onChange(checked);
+                                                            form.setValue("approved", checked, { shouldValidate: true });
+                                                        }}
                                                     />
                                                 </FormControl>
                                                 <div className="space-y-1 leading-none">
-                                                    <FormLabel htmlFor="approved">Đạt</FormLabel>
+                                                    <FormLabel>Đề tài đạt yêu cầu</FormLabel>
+                                                    <FormDescription>
+                                                        Đánh dấu nếu đề tài đạt yêu cầu và được phép triển khai
+                                                    </FormDescription>
                                                 </div>
                                             </FormItem>
                                         )}
@@ -335,14 +399,14 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                             </div>
 
                             <div className="space-y-4">
-                                <p className="font-medium">8. Kết luận của Hội đồng:</p>
+                                <p className="font-medium">10. Kết luận của Hội đồng:</p>
                                 <div className="ml-4">
                                     <FormField
                                         control={form.control}
                                         name="approved"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                <FormLabel className="text-base font-normal">8.1 Đề tài đưa vào danh mục tuyển chọn đề tài KHCN cấp Trường:</FormLabel>
+                                                <FormLabel className="text-base font-normal">10.1 Đề tài đưa vào danh mục tuyển chọn đề tài KHCN cấp Trường:</FormLabel>
                                                 <FormControl>
                                                     <div className="flex items-center space-x-2">
                                                         <label className="flex items-center space-x-2">
@@ -369,7 +433,7 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                                 </div>
 
                                 <div className="ml-4">
-                                    <p className="font-medium">8.2 Các nội dung sửa đổi, bổ sung (nếu cần):</p>
+                                    <p className="font-medium">10.2 Các nội dung sửa đổi, bổ sung (nếu cần):</p>
                                     <Table className="mt-2 border-collapse border border-gray-200">
                                         <TableHeader>
                                             <TableRow>
@@ -493,7 +557,7 @@ export default function ReviewForm({ topic, onNextStep }: ReviewFormProps) {
                             </div>
 
                             <div className="space-y-2">
-                                <p className="font-medium">9. Ý kiến khác:</p>
+                                <p className="font-medium">11. Ý kiến khác:</p>
                                 <FormField
                                     control={form.control}
                                     name="comments.additionalNotes"

@@ -3,11 +3,6 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   FileTextIcon,
-  ClipboardCheckIcon,
-  FileSignatureIcon,
-  GanttChartIcon,
-  CheckCircleIcon,
-  ArchiveIcon,
   Menu,
   Home
 } from 'lucide-react';
@@ -23,6 +18,11 @@ const navItems = [
   {
     title: "Đề tài của tôi",
     href: "/my-topics",
+    icon: FileTextIcon,
+  },
+  {
+    title: "Danh mục biểu mẫu",
+    href: "/template-list",
     icon: FileTextIcon,
   },
 ];
