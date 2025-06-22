@@ -1,3 +1,5 @@
+import { CouncilMember } from "@/models/council"
+
 export interface EvaluationDetail {
     id?: number;
     researchOverviewScore: number;
@@ -16,6 +18,10 @@ export interface EvaluationDetail {
     updatedAt?: string;
     createdBy?: string;
     updatedBy?: string;
+}
+
+export interface EvaluationDetailWithMember extends EvaluationDetail {
+    councilMember: CouncilMember
 }
 
 export const CRITERIA_DETAILS = [

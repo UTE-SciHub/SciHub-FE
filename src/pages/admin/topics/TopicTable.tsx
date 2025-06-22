@@ -75,7 +75,7 @@ const TopicsTable = ({
         {
             key: "principalInvestigator",
             title: "Chủ nhiệm",
-            width: "150px",
+            width: "200px",
             sortable: true,
         },
         {

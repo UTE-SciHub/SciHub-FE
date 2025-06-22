@@ -532,6 +532,23 @@ export default function CouncilManagementPage() {
             ),
         },
         {
+            key: "chairman",
+            title: "Chủ tịch",
+            width: "200px",
+            render: (_, record) => {
+                const chairman = record.councilMembers?.find((member) => member.role === "CHAIRMAN")
+
+                return chairman ? (
+                    <div className="space-y-1">
+                        <div className="font-medium">{chairman.user.name}</div>
+                        <div className="text-sm text-muted-foreground">{chairman.user.email}</div>
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground">Chưa có</span>
+                )
+            },
+        },
+        {
             key: "status",
             title: "Trạng thái",
             width: "120px",
@@ -643,11 +660,11 @@ export default function CouncilManagementPage() {
                 {isAdmin && (
                     <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
                         <Button variant="outline" size="sm" onClick={() => setIsExportDialogOpen(true)}>
-                            <Download className="h-4 w-4 mr-2" />
+                            <Download className="h-4 w-4" />
                             Xuất danh sách
                         </Button>
                         <Button size="sm" onClick={() => navigate("/admin/councils/create")}>
-                            <PlusCircle className="h-4 w-4 mr-2" />
+                            <PlusCircle className="h-4 w-4" />
                             Thêm mới
                         </Button>
                     </div>
@@ -723,7 +740,7 @@ export default function CouncilManagementPage() {
 
                         {isAdmin ? (
                             <DataTable
-                                minHeight="500px"
+                                minHeight="auto"
                                 loading={loading}
                                 columns={columns}
                                 data={councils}

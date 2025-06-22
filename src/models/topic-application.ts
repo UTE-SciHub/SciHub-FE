@@ -1,3 +1,4 @@
+import { EvaluationDetailWithMember } from "@/models/evaluation-detail";
 import { Topic } from "@/models/topic";
 import { UserMemberResponse } from "@/models/user-member-response";
 
@@ -12,6 +13,7 @@ export interface TopicApplication {
     passed: boolean | null;
     notes: string;
     hasEvaluated: boolean;
+    evaluationDetails?: EvaluationDetailWithMember[]
 }
 
 export enum ApplicationStatus {
