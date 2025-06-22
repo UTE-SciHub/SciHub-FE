@@ -867,6 +867,77 @@ export default function CouncilDetailPage() {
                                                                                                     </p>
                                                                                                 </div>
                                                                                             </div>
+
+                                                                                            <div className="space-y-2">
+                                                                                                <h4 className="text-sm font-medium text-muted-foreground">Đánh giá của hội đồng</h4>
+                                                                                                {application.evaluationDetails &&
+                                                                                                application.evaluationDetails.length > 0 ? (
+                                                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                                        {application.evaluationDetails.map((evaluation) => {
+                                                                                                            const totalScore = getTotalScore(evaluation)
+
+                                                                                                            return (
+                                                                                                                <Card
+                                                                                                                    key={evaluation.id}
+                                                                                                                    className="bg-background"
+                                                                                                                >
+                                                                                                                    <CardHeader className="p-4 flex flex-row items-center justify-between">
+                                                                                                                        <div className="flex items-center gap-3">
+                                                                                                                            <Avatar className="h-9 w-9">
+                                                                                                                                <AvatarImage
+                                                                                                                                    src={
+                                                                                                                                        evaluation.councilMember
+                                                                                                                                    .user.imageUrl ||
+                                                                                                                                        "/avatar-default.jpg"
+                                                                                                                                    }
+                                                                                                                                />
+                                                                                                                            </Avatar>
+                                                                                                                            <div>
+                                                                                                                                <p className="font-semibold text-sm">
+                                                                                                                                    {
+                                                                                                                                        evaluation.councilMember
+                                                                                                                                    .user.name
+                                                                                                                                }
+                                                                                                                            </p>
+                                                                                                                                <p className="text-xs text-muted-foreground">
+                                                                                                                                    {getMemberRoleText(
+                                                                                                                                        evaluation.councilMember
+                                                                                                                                    .role,
+                                                                                                                                )}
+                                                                                                                                </p>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                        <Badge
+                                                                                                                            variant={
+                                                                                                                                totalScore >=
+                                                                                                                                minRequiredScore
+                                                                                                                                    ? "default"
+                                                                                                                                    : "destructive"
+                                                                                                                            }
+                                                                                                                        >
+                                                                                                                            {totalScore} /{" "}
+                                                                                                                            {maxPossibleScore}
+                                                                                                                        </Badge>
+                                                                                                                    </CardHeader>
+                                                                                                                    {evaluation.additionalComments && (
+                                                                                                                        <CardContent className="p-4 pt-0">
+                                                                                                                            <p className="text-xs italic text-muted-foreground">
+                                                                                                                                "{evaluation.additionalComments}"
+                                                                                                                            </p>
+                                                                                                                        </CardContent>
+                                                                                                                    )}
+                                                                                                                </Card>
+                                                                                                            )
+                                                                                                        })}
+                                                                                                    </div>
+                                                                                                ) : (
+                                                                                                    <div className="text-center py-6 bg-background rounded-lg border">
+                                                                                                        <p className="text-sm text-muted-foreground">
+                                                                                                            Chưa có đánh giá nào.
+                                                                                                        </p>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </AccordionContent>

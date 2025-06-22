@@ -560,18 +560,46 @@ const TopicsPage = () => {
                                     <BarChart
                                         data={departmentData}
                                         layout="vertical"
-                                        margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                                        margin={{ top: 10, right: 30, left: 20, bottom: 10 }}
                                     >
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis type="number" />
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                        <XAxis 
+                                            type="number" 
+                                            tickFormatter={(value) => `${value}`}
+                                            axisLine={{ stroke: '#E5E7EB' }}
+                                            tickLine={{ stroke: '#E5E7EB' }}
+                                            domain={[0, 'dataMax']}
+                                            allowDecimals={false}
+                                            tickCount={10}
+                                        />
                                         <YAxis
                                             type="category"
                                             dataKey="name"
                                             tick={{ fontSize: 12 }}
-                                            width={140}
+                                            width={160}
+                                            axisLine={{ stroke: '#E5E7EB' }}
+                                            tickLine={{ stroke: '#E5E7EB' }}
                                         />
-                                        <Tooltip />
-                                        <Bar dataKey="value" fill="#A78BFA" />
+                                        <Tooltip 
+                                            formatter={(value: number) => [`${value} đề tài`, 'Số lượng']}
+                                            contentStyle={{
+                                                backgroundColor: 'white',
+                                                border: '1px solid #E5E7EB',
+                                                borderRadius: '6px',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                            }}
+                                        />
+                                        <Legend 
+                                            verticalAlign="top" 
+                                            height={36}
+                                            formatter={(value) => 'Số lượng đề tài'}
+                                        />
+                                        <Bar 
+                                            dataKey="value" 
+                                            fill="#6366F1"
+                                            radius={[0, 4, 4, 0]}
+                                            maxBarSize={40}
+                                        />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </CardContent>
@@ -604,7 +632,7 @@ const TopicsPage = () => {
                                 </Button>
                                 {selectedRows.length > 0 && (
                                     <>
-                                        <Button
+                                        {/* <Button
                                             variant="default"
                                             className="bg-green-600 hover:bg-green-700"
                                             onClick={() => {
@@ -619,7 +647,7 @@ const TopicsPage = () => {
                                         >
                                             <ListCheck className="w-4 h-4" />
                                             Xác định danh mục
-                                        </Button>
+                                        </Button> */}
                                         <Button
                                             variant="outline"
                                             className="text-rose-500"

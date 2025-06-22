@@ -504,7 +504,7 @@ export default function CouncilTopicsPage() {
                                                             <Star className="h-4 w-4" />
                                                             Đánh giá
                                                         </Button>
-                                                        <Button
+                                                        {/* <Button
                                                             size="sm"
                                                             onClick={() => handleSummarizeTopic(topic)}
                                                             variant="outline"
@@ -512,7 +512,7 @@ export default function CouncilTopicsPage() {
                                                         >
                                                             <Award className="h-4 w-4" />
                                                             Tổng kết
-                                                        </Button>
+                                                        </Button> */}
                                                     </div>
                                                 ) : (
                                                     <Button

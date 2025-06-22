@@ -5,13 +5,14 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Download, FileText, BarChart2, Trophy, Medal, Award, CheckCircle2 } from "lucide-react"
 import { type TopicApplication, ApplicationStatus } from "@/models/topic-application"
-import { getTotalMaxScore, getTotalMinScore } from "@/models/evaluation-detail"
+import { getTotalMaxScore, getTotalMinScore, getTotalScore } from "@/models/evaluation-detail"
 import { toast } from "@/hooks/use-toast"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getInitialsAvt } from "@/utils/common"
 import { Progress } from "@/components/ui/progress"
 import { EvaluationService } from "@/service/evaluation-service"
+import { getMemberRoleText } from "@/models/council"
 import {
     Dialog,
     DialogTitle as DialogTitleComponent,
@@ -289,22 +290,99 @@ export default function TopicSummaryModal({ topic, applications = [], onClose, c
                                                                     <div className="flex justify-between items-center mb-4">
                                                                         <span className="font-semibold text-gray-700">Tổng điểm:</span>
                                                                         <span
-                                                                            className={`text-2xl font-bold ${application.passed ? "text-emerald-600" : "text-red-600"
-                                                                                }`}
+                                                                            className={`text-2xl font-bold ${
+                                                                                application.passed ? "text-emerald-600" : "text-red-600"
+                                                                            }`}
                                                                         >
                                                                             {application.totalScore?.toFixed(1)}
                                                                         </span>
                                                                     </div>
                                                                     <Progress
                                                                         value={((application.totalScore || 0) / maxScore) * 100}
-                                                                        className={`h-3 ${application.passed
+                                                                        className={`h-3 ${
+                                                                            application.passed
                                                                                 ? "[&>div]:bg-gradient-to-r [&>div]:from-emerald-500 [&>div]:to-emerald-600"
                                                                                 : "[&>div]:bg-gradient-to-r [&>div]:from-red-500 [&>div]:to-red-600"
-                                                                            }`}
+                                                                        }`}
                                                                     />
                                                                     <div className="flex justify-between text-xs text-gray-500 mt-2">
                                                                         <span>Điểm tối thiểu: {minScore}</span>
                                                                     </div>
+                                                                </div>
+                                                                <div className="mt-6">
+                                                                    <h4 className="font-semibold text-gray-900 text-lg mb-4">
+                                                                        Đánh giá chi tiết từ hội đồng
+                                                                    </h4>
+                                                                    {application.evaluationDetails &&
+                                                                    application.evaluationDetails.length > 0 ? (
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                            {application.evaluationDetails.map((evaluation) => {
+                                                                                const totalScore = getTotalScore(evaluation)
+                                                                                return (
+                                                                                    <Card
+                                                                                        key={evaluation.id}
+                                                                                        className="bg-white border-gray-200 shadow-sm"
+                                                                                    >
+                                                                                        <CardHeader className="p-4 flex flex-row items-center justify-between">
+                                                                                            <div className="flex items-center gap-3">
+                                                                                                <Avatar className="h-9 w-9">
+                                                                                                    <AvatarImage
+                                                                                                        src={
+                                                                                                            evaluation.councilMember
+                                                                                                                ?.user?.imageUrl ||
+                                                                                                            "/avatar-default.jpg"
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <AvatarFallback>
+                                                                                                        {getInitialsAvt(
+                                                                                                            evaluation.councilMember
+                                                                                                                ?.user?.name,
+                                                                                                        )}
+                                                                                                    </AvatarFallback>
+                                                                                                </Avatar>
+                                                                                                <div>
+                                                                                                    <p className="font-semibold text-sm">
+                                                                                                        {
+                                                                                                            evaluation.councilMember
+                                                                                                                ?.user?.name
+                                                                                                        }
+                                                                                                    </p>
+                                                                                                    <p className="text-xs text-muted-foreground">
+                                                                                                        {getMemberRoleText(
+                                                                                                            evaluation.councilMember
+                                                                                                                ?.role,
+                                                                                                        )}
+                                                                                                    </p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <Badge
+                                                                                                variant={
+                                                                                                    totalScore >= minScore
+                                                                                                        ? "default"
+                                                                                                        : "destructive"
+                                                                                                }
+                                                                                            >
+                                                                                                {totalScore} / {maxScore}
+                                                                                            </Badge>
+                                                                                        </CardHeader>
+                                                                                        {evaluation.additionalComments && (
+                                                                                            <CardContent className="p-4 pt-0">
+                                                                                                <p className="text-xs italic text-muted-foreground">
+                                                                                                    "{evaluation.additionalComments}"
+                                                                                                </p>
+                                                                                            </CardContent>
+                                                                                        )}
+                                                                                    </Card>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="text-center py-6 bg-gray-50 rounded-lg border">
+                                                                            <p className="text-sm text-muted-foreground">
+                                                                                Chưa có đánh giá chi tiết.
+                                                                            </p>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         )}

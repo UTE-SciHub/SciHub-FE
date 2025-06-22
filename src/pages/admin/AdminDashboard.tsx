@@ -6,71 +6,39 @@ import { useNavigate } from 'react-router-dom';
 import { RegistrationPeriodStatus } from '@/models/enums/registration-period-status';
 import { formatDate, formatDateString, formatDateTime } from '@/utils/dateTimeFormat';
 import { useEffect, useState } from 'react';
-import { RegistrationService } from '@/service/registration-service';
+import { DashboardService } from '@/service/dashboard-service';
 import { toast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-// Mockup data
-const systemOverview = {
-  topics: { total: 150, submitted: 50, approved: 80, rejected: 20 },
-  councils: { total: 30, active: 10, upcoming: 15, closed: 5 },
-  users: { total: 200, active: 180, inactive: 20 },
-  registrationPeriods: { total: 10, open: 3, closed: 7 },
-};
+// Types
+interface DashboardOverview {
+  topics: { total: number; submitted: number; approved: number; rejected: number };
+  councils: { total: number; active: number; upcoming: number; closed: number };
+  users: { total: number; active: number; inactive: number };
+  activeCouncils: Array<{ id: number, name: string, topicCount : number, startDate: string, endDate: string}>
+  registrationPeriods: { total: number; open: number; closed: number };
+  categoryDistribution: Array<{ name: string; count: number }>;
+  researchFieldDistribution: Array<{ name: string; count: number }>;
+}
 
-const currentRegistrationPeriod = {
-  id: "STT_UTE_20250501_DK",
-  title: "Đợt đăng ký đề tài nghiên cứu UTE 2025 - Đợt 1",
-  decisionNumber: "QD123/2025",
-  startDate: "2025-05-01",
-  endDate: "2025-05-15",
-  status: RegistrationPeriodStatus.OPEN,
-};
+interface PendingEvaluation {
+  topicId: string;
+  topicName: string;
+  applicant: string;
+  evaluated: boolean;
+}
 
-const pendingTopics = [
-  { id: "TOPIC2025-001", vietnameseName: "Nghiên cứu ứng dụng AI trong y học", topicCode: "AI2025-001", applications: 5 },
-  { id: "TOPIC2025-002", vietnameseName: "Phát triển hệ thống năng lượng tái tạo", topicCode: "ENERGY2025-001", applications: 3 },
-];
+interface RecentActivity {
+  description: string;
+  date: string;
+}
 
-const activeCouncils = [
-  { id: "COUNCIL2025-001", name: "Hội đồng AI 2025", topicCount: 3, startDate: "2025-05-01", endDate: "2025-06-30" },
-  { id: "COUNCIL2025-002", name: "Hội đồng Năng lượng 2025", topicCount: 2, startDate: "2025-05-10", endDate: "2025-07-15" },
-];
+interface BudgetInfo {
+  approved: number;
+  remaining: number;
+}
 
-const categoryDistribution = [
-  { name: "Công nghệ thông tin", count: 50 },
-  { name: "Kỹ thuật điện", count: 30 },
-  { name: "Khoa học tự nhiên", count: 20 },
-];
-
-const researchFieldDistribution = [
-  { name: "Trí tuệ nhân tạo", count: 40 },
-  { name: "Năng lượng tái tạo", count: 25 },
-  { name: "Y học", count: 15 },
-];
-
-const userTopics = [
-  { id: "TOPIC2025-003", vietnameseName: "Nghiên cứu IoT trong nông nghiệp", role: "Chủ nhiệm", status: "APPROVED" },
-  { id: "TOPIC2025-004", vietnameseName: "Phát triển robot tự động", role: "Thành viên", status: "SUBMITTED" },
-];
-
-const pendingEvaluations = [
-  { topicId: "TOPIC2025-005", topicName: "Nghiên cứu blockchain", applicant: "Nguyễn Văn A", evaluated: false },
-  { topicId: "TOPIC2025-006", topicName: "Ứng dụng VR trong giáo dục", applicant: "Trần Thị B", evaluated: true },
-];
-
-const budgetInfo = {
-  approved: 5000000000,
-  remaining: 2000000000,
-};
-
-const recentActivities = [
-  { description: "Đề tài 'Nghiên cứu AI' vừa được tạo", date: "2025-05-10" },
-  { description: "Hội đồng 'AI 2025' vừa được tạo", date: "2025-05-09" },
-  { description: "Đợt đăng ký 'Đợt 1 - UTE 2025' vừa mở", date: "2025-05-08" },
-];
-
-// Hàm hỗ trợ
+// Helper functions
 const getStatusVariant = (status: RegistrationPeriodStatus | string) => {
   switch (status) {
     case RegistrationPeriodStatus.OPEN:
@@ -102,34 +70,86 @@ const getStatusText = (status: RegistrationPeriodStatus) => {
 
 const Index = () => {
   const navigate = useNavigate();
-  const [registrationPeriods, setRegistrationPeriods] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [systemOverview, setSystemOverview] = useState<DashboardOverview | null>(null);
 
-  const fetchRegistrationPeriods = async () => {
+  // Mockup data for sections not provided by getDashboardOverview
+  const currentRegistrationPeriod = {
+    id: "STT_UTE_20250501_DK",
+    title: "Đợt đăng ký đề tài nghiên cứu UTE 2025 - Đợt 1",
+    decisionNumber: "QD123/2025",
+    startDate: "2025-05-01",
+    endDate: "2025-05-15",
+    status: RegistrationPeriodStatus.OPEN,
+  };
+
+  const pendingTopics = [
+    { id: "TOPIC2025-001", vietnameseName: "Nghiên cứu ứng dụng AI trong y học", topicCode: "AI2025-001", applications: 5 },
+    { id: "TOPIC2025-002", vietnameseName: "Phát triển hệ thống năng lượng tái tạo", topicCode: "ENERGY2025-001", applications: 3 },
+  ];
+
+  const activeCouncils = [
+    { id: "COUNCIL2025-001", name: "Hội đồng AI 2025", topicCount: 3, startDate: "2025-05-01", endDate: "2025-06-30" },
+    { id: "COUNCIL2025-002", name: "Hội đồng Năng lượng 2025", topicCount: 2, startDate: "2025-05-10", endDate: "2025-07-15" },
+  ];
+
+  const userTopics = [
+    { id: "TOPIC2025-003", vietnameseName: "Nghiên cứu IoT trong nông nghiệp", role: "Chủ nhiệm", status: "APPROVED" },
+    { id: "TOPIC2025-004", vietnameseName: "Phát triển robot tự động", role: "Thành viên", status: "SUBMITTED" },
+  ];
+
+  const pendingEvaluations: PendingEvaluation[] = [
+    { topicId: "TOPIC2025-005", topicName: "Nghiên cứu blockchain", applicant: "Nguyễn Văn A", evaluated: false },
+    { topicId: "TOPIC2025-006", topicName: "Ứng dụng VR trong giáo dục", applicant: "Trần Thị B", evaluated: true },
+  ];
+
+  const budgetInfo: BudgetInfo = {
+    approved: 5000000000,
+    remaining: 2000000000,
+  };
+
+  const recentActivities: RecentActivity[] = [
+    { description: "Đề tài 'Nghiên cứu AI' vừa được tạo", date: "2025-05-10" },
+    { description: "Hội đồng 'AI 2025' vừa được tạo", date: "2025-05-09" },
+    { description: "Đợt đăng ký 'Đợt 1 - UTE 2025' vừa mở", date: "2025-05-08" },
+  ];
+
+  const fetchDashboardData = async () => {
     try {
-      const response = await RegistrationService.getAll({
-        p: 1,
-        s: 4,
-        sort: 'createdAt',
-        order: 'desc',
+      setLoading(true);
+      const response = await DashboardService.getDashboardOverview();
+
+      const data = response.data;
+
+      setSystemOverview({
+        topics: data.topics,
+        councils: data.councils,
+        users: data.users,
+        registrationPeriods: data.registrationPeriods,
+        categoryDistribution: data.categoryDistribution,
+        researchFieldDistribution: data.researchFieldDistribution,
+        activeCouncils: data.activeCouncils,
       });
 
-      if (response.status !== 200 || response.data.code !== 1000) {
-        throw new Error("Lỗi khi tải dữ liệu");
-      }
-
-      setRegistrationPeriods(response.data.data);
     } catch (error) {
       toast({
         title: 'Lỗi',
-        description: 'Lỗi khi tải dữ liệu.',
+        description: 'Lỗi khi tải dữ liệu dashboard.',
         variant: 'error',
       });
+      console.log(error)
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRegistrationPeriods();
+    fetchDashboardData();
   }, []);
+
+  if (loading || !systemOverview) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -155,9 +175,9 @@ const Index = () => {
           <CardContent>
             <p className="text-2xl font-bold">{systemOverview.topics.total}</p>
             <div className="mt-2 text-sm text-muted-foreground">
-              <p>Chờ duyệt: {systemOverview.topics.submitted}</p>
-              <p>Đã xác nhận: {systemOverview.topics.approved}</p>
-              <p>Cần điều chỉnh: {systemOverview.topics.rejected}</p>
+              <p><span className="text-yellow-500">Chờ duyệt:</span> {systemOverview.topics.submitted}</p>
+              <p><span className="text-green-500">Đã xác nhận:</span> {systemOverview.topics.approved}</p>
+              <p><span className="text-red-500">Cần điều chỉnh:</span> {systemOverview.topics.rejected}</p>
             </div>
           </CardContent>
         </Card>
@@ -170,9 +190,9 @@ const Index = () => {
           <CardContent>
             <p className="text-2xl font-bold">{systemOverview.councils.total}</p>
             <div className="mt-2 text-sm text-muted-foreground">
-              <p>Đang hoạt động: {systemOverview.councils.active}</p>
-              <p>Sắp diễn ra: {systemOverview.councils.upcoming}</p>
-              <p>Đã kết thúc: {systemOverview.councils.closed}</p>
+              <p><span className="text-green-500">Đang hoạt động:</span> {systemOverview.councils.active}</p>
+              <p><span className="text-yellow-500">Sắp diễn ra:</span> {systemOverview.councils.upcoming}</p>
+              <p><span className="text-red-500">Đã kết thúc:</span> {systemOverview.councils.closed}</p>
             </div>
           </CardContent>
         </Card>
@@ -185,8 +205,8 @@ const Index = () => {
           <CardContent>
             <p className="text-2xl font-bold">{systemOverview.users.total}</p>
             <div className="mt-2 text-sm text-muted-foreground">
-              <p>Đang hoạt động: {systemOverview.users.active}</p>
-              <p>Bị khóa: {systemOverview.users.inactive}</p>
+              <p><span className="text-green-500">Đang hoạt động:</span> {systemOverview.users.active}</p>
+              <p><span className="text-red-500">Bị khóa:</span> {systemOverview.users.inactive}</p>
             </div>
           </CardContent>
         </Card>
@@ -199,8 +219,8 @@ const Index = () => {
           <CardContent>
             <p className="text-2xl font-bold">{systemOverview.registrationPeriods.total}</p>
             <div className="mt-2 text-sm text-muted-foreground">
-              <p>Đang mở: {systemOverview.registrationPeriods.open}</p>
-              <p>Đã đóng: {systemOverview.registrationPeriods.closed}</p>
+              <p><span className="text-green-500">Đang mở:</span> {systemOverview.registrationPeriods.open}</p>
+              <p><span className="text-red-500">Đã đóng:</span> {systemOverview.registrationPeriods.closed}</p>
             </div>
           </CardContent>
         </Card>
@@ -215,29 +235,33 @@ const Index = () => {
             <CardDescription>Thông tin về đợt đăng ký đang mở</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Badge variant={getStatusVariant(currentRegistrationPeriod.status)}>
-                  {getStatusText(currentRegistrationPeriod.status)}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {formatDateString(currentRegistrationPeriod.startDate)} - {formatDateString(currentRegistrationPeriod.endDate)}
-                </span>
+            {currentRegistrationPeriod ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Badge variant={getStatusVariant(currentRegistrationPeriod.status)}>
+                    {getStatusText(currentRegistrationPeriod.status)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDateString(currentRegistrationPeriod.startDate)} - {formatDateString(currentRegistrationPeriod.endDate)}
+                  </span>
+                </div>
+                <p className="text-sm font-medium">
+                  {currentRegistrationPeriod.title.length > 100
+                    ? `${currentRegistrationPeriod.title.substring(0, 100)}...`
+                    : currentRegistrationPeriod.title}
+                </p>
+                <Button
+                  variant="link"
+                  className="text-primary-500 gap-1"
+                  onClick={() => navigate(`/registration/${currentRegistrationPeriod.id}`)}
+                >
+                  Xem chi tiết
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
-              <p className="text-sm font-medium">
-                {currentRegistrationPeriod.title.length > 100
-                  ? `${currentRegistrationPeriod.title.substring(0, 100)}...`
-                  : currentRegistrationPeriod.title}
-              </p>
-              <Button
-                variant="link"
-                className="text-primary-500 gap-1"
-                onClick={() => navigate(`/registration/${currentRegistrationPeriod.id}`)}
-              >
-                Xem chi tiết
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Không có đợt đăng ký nào đang mở</p>
+            )}
           </CardContent>
         </Card>
 
@@ -258,7 +282,7 @@ const Index = () => {
                     </div>
                     <p className="text-base font-semibold leading-tight">{topic.vietnameseName}</p>
                     <div className="text-sm text-muted-foreground">
-                      Số đơn ứng tuyển: {topic.applications}
+                      Số đơn ứng tuyển: <span className="text-green-500">{topic.applications}</span>
                     </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary-500 transition-colors" />
@@ -282,7 +306,7 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {activeCouncils.map((council) => (
+              {systemOverview.activeCouncils.map((council) => (
                 <div key={council.id} className="flex items-center justify-between group">
                   <div className="space-y-1">
                     <p className="text-base font-semibold leading-tight">{council.name}</p>
@@ -317,13 +341,13 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {categoryDistribution.map((category, index) => (
+              {systemOverview.categoryDistribution.map((category, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <span className="text-sm font-medium">{category.name}</span>
                   <div className="flex-1 h-4 bg-gray-200 rounded">
                     <div
                       className="h-4 bg-primary rounded"
-                      style={{ width: `${(category.count / 150) * 100}%` }}
+                      style={{ width: `${(category.count / (systemOverview.topics.total || 1)) * 100}%` }}
                     />
                   </div>
                   <span className="text-sm text-muted-foreground">{category.count}</span>
@@ -341,122 +365,16 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {researchFieldDistribution.map((field, index) => (
+              {systemOverview.researchFieldDistribution.map((field, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <span className="text-sm font-medium">{field.name}</span>
                   <div className="flex-1 h-4 bg-gray-200 rounded">
                     <div
                       className="h-4 bg-primary rounded"
-                      style={{ width: `${(field.count / 150) * 100}%` }}
+                      style={{ width: `${(field.count / (systemOverview.topics.total || 1)) * 100}%` }}
                     />
                   </div>
                   <span className="text-sm text-muted-foreground">{field.count}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Section 4: Thông tin cá nhân */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Đề tài của người dùng */}
-        <Card className="animate-fade-in" style={{ animationDelay: '550ms' }}>
-          <CardHeader>
-            <CardTitle>Đề tài của bạn</CardTitle>
-            <CardDescription>Các đề tài bạn đang tham gia</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {userTopics.map((topic) => (
-                <div key={topic.id} className="flex items-center justify-between group">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getStatusVariant(topic.status)}>{topic.status}</Badge>
-                      <span className="text-sm font-medium text-muted-foreground">{topic.role}</span>
-                    </div>
-                    <p className="text-base font-semibold leading-tight">{topic.vietnameseName}</p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary-500 transition-colors" />
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 text-center">
-              <Button variant="link" className="text-primary-500 gap-1">
-                Xem tất cả đề tài
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Đánh giá cần thực hiện */}
-        <Card className="animate-fade-in" style={{ animationDelay: '600ms' }}>
-          <CardHeader>
-            <CardTitle>Đánh giá cần thực hiện</CardTitle>
-            <CardDescription>Các đơn ứng tuyển cần đánh giá</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pendingEvaluations.map((evaluation) => (
-                <div key={evaluation.topicId} className="flex items-center justify-between group">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={evaluation.evaluated ? "default" : "secondary"}>
-                        {evaluation.evaluated ? "Đã đánh giá" : "Chưa đánh giá"}
-                      </Badge>
-                    </div>
-                    <p className="text-base font-semibold leading-tight">{evaluation.topicName}</p>
-                    <div className="text-sm text-muted-foreground">
-                      Ứng viên: {evaluation.applicant}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary-500 transition-colors" />
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 text-center">
-              <Button variant="link" className="text-primary-500 gap-1">
-                Xem tất cả đánh giá
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Section 5: Thông tin bổ sung */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {/* Ngân sách */}
-        <Card className="md:col-span-1 animate-fade-in" style={{ animationDelay: '650ms' }}>
-          <CardHeader className="flex flex-row items-center gap-3">
-            <DollarSign className="h-6 w-6 text-primary" />
-            <CardTitle>Ngân sách</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Tổng ngân sách đã phê duyệt</p>
-              <p className="text-2xl font-bold">{budgetInfo.approved.toLocaleString()} VNĐ</p>
-              <p className="text-sm font-medium mt-4">Tổng ngân sách còn lại</p>
-              <p className="text-2xl font-bold">{budgetInfo.remaining.toLocaleString()} VNĐ</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Hoạt động gần đây */}
-        <Card className="md:col-span-2 animate-fade-in" style={{ animationDelay: '700ms' }}>
-          <CardHeader className="flex flex-row items-center gap-3">
-            <Activity className="h-6 w-6 text-primary" />
-            <CardTitle>Hoạt động gần đây</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-base font-semibold leading-tight">{activity.description}</p>
-                    <div className="text-sm text-muted-foreground">{activity.date}</div>
-                  </div>
                 </div>
               ))}
             </div>
