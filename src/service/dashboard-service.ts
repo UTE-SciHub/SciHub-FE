@@ -51,4 +51,18 @@ export class DashboardService {
         const response = await axiosClient.get(`${BASE_URL}dashboard/recent-activities`);
         return response.data;
     }
+
+    static async getResearchProcess(year: number) {
+        const response = await axiosClient.get(`${BASE_URL}dashboard/research-process`, {
+            params: { year }
+        });
+        return response.data;
+    }
+
+    static async getTopicProgress(year: number) {
+        const response = await axiosClient.get(`${BASE_URL}dashboard/topic-progress`, {
+            params: { year }
+        });
+        return response.data;
+    }
 } 
