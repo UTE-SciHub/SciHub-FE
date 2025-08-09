@@ -323,7 +323,12 @@ const TopicProgressPage: React.FC = () => {
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500">Chủ nhiệm đề tài</p>
-                                <p className="font-medium">{topic.principalInvestigator}</p>
+                                <p className="font-medium">
+                                    {topic.members
+                                        .filter((member) => member.role === "INVESTIGATOR")
+                                        .map((member) => `${member.user.name} (${member.user.email})`)
+                                    }
+                                </p>
                             </div>
                             {topic.englishName && (
                                 <div>

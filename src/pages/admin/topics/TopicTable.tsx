@@ -75,8 +75,20 @@ const TopicsTable = ({
         {
             key: "principalInvestigator",
             title: "Chủ nhiệm",
-            width: "150px",
+            width: "200px",
             sortable: true,
+            render: (_, record) => {
+                const chairman = record.members?.find((member) => member.role === "INVESTIGATOR")
+
+                return chairman ? (
+                    <div className="space-y-1">
+                        <div className="font-medium">{chairman.user.name}</div>
+                        <div className="text-sm text-muted-foreground">{chairman.user.email}</div>
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground">Chưa có</span>
+                )
+            },
         },
         {
             key: "department",

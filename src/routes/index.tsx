@@ -56,6 +56,7 @@ import AcceptanceSubmissionForm from "@/pages/admin/acceptance/acceptance-submis
 import AcceptanceDetail from "@/pages/admin/acceptance/acceptance-detail";
 import MyTopicMilestones from "@/pages/topics/MyTopicMileTones";
 import TemplateListPage from "@/pages/admin/settings/TemplateListPage";
+import TopicDashboard from "@/pages/admin/topics/TopicDashboard";
 
 const routers = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -93,6 +94,7 @@ const routers = createBrowserRouter([
     ),
     children: [
       { index: true, element: <AdminDashboard /> },
+      { path: "dashboard/topic-process", element: <TopicDashboard /> },
       {
         path: "topics",
         children: [

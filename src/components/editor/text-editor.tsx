@@ -38,7 +38,7 @@ export const RichTextEditor = ({
     onBlur,
 }: RichTextEditorProps) => {
     const [charCount, setCharCount] = useState(0)
-    const TINYMCE_API_KEY = import.meta.env.VITE_NEXT_PUBLIC_TINYMCE_API_KEY
+    const TINYMCE_API_KEY = 'yqe5lcxb3x7ttjhksx8x0pqq7bfwvkgnlp05pilrkpf7y7ny'
     const [wordCount, setWordCount] = useState(0)
     const [isFocused, setIsFocused] = useState(false)
     const editorRef = useRef<any>(null)

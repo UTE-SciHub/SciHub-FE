@@ -57,18 +57,12 @@ const sidebarItems: SidebarItem[] = [
     href: "/admin/reports",
     icon: BarChart2,
     subItems: [
-      { title: "Báo cáo tổng quan", href: "/admin/reports/overview", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.BGH] },
-      { title: "Báo cáo chi tiết", href: "/admin/reports/details", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.BGH] },
-      { title: "Báo cáo theo lĩnh vực", href: "/admin/reports/fields", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.BGH] },
-      { title: "Báo cáo theo loại hình", href: "/admin/reports/types", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.BGH] },
+      { title: "Báo cáo tổng quan", href: "/admin/dashboard/topic-process", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT] },
+      { title: "Báo cáo chi tiết", href: "/admin/reports/details", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT] },
+      { title: "Báo cáo theo lĩnh vực", href: "/admin/reports/fields", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT] },
+      { title: "Báo cáo theo loại hình", href: "/admin/reports/types", icon: BarChart2, allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT] },
     ],
-    allowedRoles: [Roles.ADMIN, Roles.BGH],
-  },
-  {
-    title: "Thông báo",
-    href: "/admin/announcements",
-    icon: Bell,
-    allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.TEACHER],
+    allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT],
   },
   {
     title: "Quản lý đề tài",
@@ -81,12 +75,12 @@ const sidebarItems: SidebarItem[] = [
         icon: List,
         allowedRoles: [Roles.ADMIN, Roles.PQLKHHTQT, Roles.BCNKHOA]
       },
-      {
-        title: "Xác định danh mục đề tài",
-        href: "/admin/topics/classification",
-        icon: BookOpen,
-        allowedRoles: [Roles.PQLKHHTQT],
-      },
+      // {
+      //   title: "Xác định danh mục đề tài",
+      //   href: "/admin/topics/classification",
+      //   icon: BookOpen,
+      //   allowedRoles: [Roles.PQLKHHTQT],
+      // },
       {
         title: "Loại đề tài",
         href: "/admin/categories",
@@ -124,13 +118,7 @@ const sidebarItems: SidebarItem[] = [
     title: "Quản lý hợp đồng",
     href: "/admin/contracts",
     icon: FileSignature,
-    allowedRoles: [Roles.ADMIN],
-  },
-  {
-    title: "Quản lý tài chính",
-    href: "/admin/finance",
-    icon: DollarSign,
-    allowedRoles: [Roles.ADMIN, Roles.BGH],
+    allowedRoles: [Roles.ADMIN, Roles.COUNCIL_MEMBER],
   },
   {
     title: "Quản lý đợt đăng ký",
