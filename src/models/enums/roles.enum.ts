@@ -30,6 +30,10 @@ export function getRoleLabel(role: Roles): string {
             return "Giảng viên";
         case Roles.STUDENT:
             return "Sinh viên";
+        case Roles.COUNCIL_MEMBER:
+            return "Thành viên hội đồng";
+        case Roles.TOPIC_MEMBER:
+            return "Thành viên đề tài";
         default:
             return "Không xác định";
     }

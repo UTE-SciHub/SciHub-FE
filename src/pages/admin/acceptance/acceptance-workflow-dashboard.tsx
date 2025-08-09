@@ -374,7 +374,7 @@ export default function AcceptanceDashboard() {
                                           <div className="flex items-start justify-between">
                                             <div className="space-y-2">
                                               <div className="flex items-center gap-2">
-                                                <span className="font-medium">Lần #{acc.id}</span>
+                                                <span className="font-medium">Lần #{acceptances.length - index}</span>
                                                 {acc.isFinal && (
                                                   <Badge className="bg-green-100 text-green-800">
                                                     Nghiệm thu chính thức

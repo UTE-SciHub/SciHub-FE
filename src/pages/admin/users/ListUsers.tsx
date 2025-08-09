@@ -41,7 +41,6 @@ import { vi } from "date-fns/locale"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { User } from "@/models/user"
-import exp from "constants"
 import Loading from "@/components/loading/loading"
 import ImportUsersModal from "@/pages/admin/users/ImportUserModal"
 import UserDetailModal from "@/pages/admin/users/UserDetailModal"
@@ -49,6 +48,7 @@ import { UserStatus } from "@/models/enums/user-status"
 import { getInitialsAvt } from "@/utils/common"
 import { formatTimeAgo } from "@/utils/dateTimeFormat"
 import { UserService } from "@/service/user-service"
+import { Roles, getAllRoles, getRoleLabel } from "@/models/enums/roles.enum"
 
 const AdminUsers = () => {
   const location = useLocation()
@@ -61,6 +61,7 @@ const AdminUsers = () => {
   const initialSort = params.get("sort") || "createdAt"
   const initialOrder = params.get("order") || "desc"
   const initialTab = params.get("tab") || ""
+  const initialRole = params.get("role") === "all" ? undefined : params.get("role") || undefined
 
   const [users, setUsers] = useState<User[]>([])
   const [selectedUser, setSelectedUser] = useState(null)
@@ -76,6 +77,7 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState(initialTab)
+  const [roleFilter, setRoleFilter] = useState<string | undefined>(initialRole)
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
   const isUpdatingUrl = useRef(false)
@@ -92,6 +94,7 @@ const AdminUsers = () => {
     sort: string
     order: string
     tab?: string
+    role?: string
   }) => {
     setLoading(true)
     try {
@@ -102,6 +105,7 @@ const AdminUsers = () => {
         order: params.order,
         q: params.q,
         tab: params.tab,
+        role: params.role,
       })
 
       setUsers(response.data.data)
@@ -126,13 +130,14 @@ const AdminUsers = () => {
       sort: sortField,
       order: sortOrder,
       tab: activeTab,
+      role: roleFilter,
     })
-  }, [currentPage, itemsPerPage, debouncedSearchQuery, sortField, sortOrder, activeTab])
+  }, [currentPage, itemsPerPage, debouncedSearchQuery, sortField, sortOrder, activeTab, roleFilter])
 
   const updateUrl = (params: Record<string, string | number>) => {
     const searchParams = new URLSearchParams(location.search)
     Object.entries(params).forEach(([key, value]) => {
-      if (value) {
+      if (value !== undefined && value !== null) {
         searchParams.set(key, value.toString())
       } else {
         searchParams.delete(key)
@@ -188,7 +193,6 @@ const AdminUsers = () => {
       variant: "default",
     })
 
-    // Refresh data after blocking
     fetchData({
       p: currentPage,
       s: itemsPerPage,
@@ -196,6 +200,7 @@ const AdminUsers = () => {
       sort: sortField,
       order: sortOrder,
       tab: activeTab,
+      role: roleFilter,
     })
   }
 
@@ -213,6 +218,7 @@ const AdminUsers = () => {
       sort: sortField,
       order: sortOrder,
       tab: activeTab,
+      role: roleFilter,
     })
   }
 
@@ -231,7 +237,6 @@ const AdminUsers = () => {
     setSelectedRowKeys([])
     setSelectedRows([])
 
-    // Refresh data after batch blocking
     fetchData({
       p: currentPage,
       s: itemsPerPage,
@@ -239,6 +244,7 @@ const AdminUsers = () => {
       sort: sortField,
       order: sortOrder,
       tab: activeTab,
+      role: roleFilter,
     })
   }
 
@@ -250,6 +256,7 @@ const AdminUsers = () => {
       sort: sortField,
       order: sortOrder,
       tab: activeTab,
+      role: roleFilter,
     })
   }
 
@@ -303,7 +310,7 @@ const AdminUsers = () => {
     )
   }
 
-  const getRoleBadge = (role) => {
+  const getRoleBadge = (role: string) => {
     switch (role) {
       case "ADMIN":
         return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Quản trị viên</Badge>
@@ -349,7 +356,12 @@ const AdminUsers = () => {
       key: "role",
       title: "Vai trò",
       width: "150px",
-      render: (_, record) => getRoleBadge(record.roles?.[0]?.name || "Chưa cập nhật"),
+      render: (_, record) => {
+        const badgeRole = roleFilter
+          ? record.roles?.find((r) => r.name === roleFilter)?.name
+          : record.roles?.[0]?.name
+        return getRoleBadge(badgeRole || "Chưa cập nhật")
+      },
     },
     {
       key: "status",
@@ -415,6 +427,7 @@ const AdminUsers = () => {
       sort: sortField,
       order: sortOrder,
       tab: activeTab,
+      role: roleFilter,
     })
     setIsCreateMultipleModalOpen(false)
     setIsCreateUserModalOpen(false)
@@ -430,50 +443,49 @@ const AdminUsers = () => {
         status: activeTab,
         sort: sortField,
         order: sortOrder,
-      });
+      })
 
       if (response.status !== 200) {
         toast({
           title: "Có lỗi trong quá trình xuất file!",
           variant: "error",
-        });
-        return;
+        })
+        return
       }
 
-      // Tạo tên file dựa trên ngày giờ hiện tại
-      const now = new Date();
-      const timestamp = now.toISOString().replace(/[:T-]/g, "").slice(0, 14);
-      const fileName = `users_${timestamp}.xlsx`;
+      const now = new Date()
+      const timestamp = now.toISOString().replace(/[:T-]/g, "").slice(0, 14)
+      const fileName = `users_${timestamp}.xlsx`
 
       const blob = new Blob([response.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const url = window.URL.createObjectURL(blob);
+      })
+      const url = window.URL.createObjectURL(blob)
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
+      const link = document.createElement("a")
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
 
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
 
       toast({
         title: "Xuất file thành công",
         variant: "success",
-      });
+      })
     } catch (error) {
       toast({
         title: "Đã xảy ra lỗi không mong muốn!",
         description: error.message || "Vui lòng thử lại sau.",
         variant: "error",
-      });
-      console.error("Export Excel Error:", error);
+      })
+      console.error("Export Excel Error:", error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const userCounts = {
     all: totalItems,
@@ -491,15 +503,13 @@ const AdminUsers = () => {
           description: `Người dùng với ID ${userId} đã được cập nhật trạng thái thành công.`,
           variant: "success",
         })
-
-        return true;
+        return true
       } else {
         toast({
           title: response.data.message || "Có lỗi trong quá trình thay đổi trạng thái",
           variant: "error",
         })
-
-        return false;
+        return false
       }
     } catch (error) {
       console.error("Error changing user status:", error)
@@ -507,33 +517,39 @@ const AdminUsers = () => {
         title: "Có lỗi trong quá trình thay đổi trạng thái",
         variant: "error",
       })
-
-      return false;
+      return false
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleResetPassword = async (userId: string) => {
-    const response = await UserService.resetPassword(userId);
+    const response = await UserService.resetPassword(userId)
 
     if (response.status === 200 || response.data.code === 1000) {
       toast({
         title: "Đặt lại mật khẩu thành công",
         description: `Mật khẩu đã được đặt lại cho người dùng với ID ${userId}`,
         variant: "success",
-      });
+      })
     } else {
       toast({
         title: response.data.message || "Có lỗi trong quá trình đặt lại mật khẩu",
         variant: "error",
-      });
+      })
     }
   }
 
   const handleCancelLoading = () => {
-    setIsLoading(false);
-  };
+    setIsLoading(false)
+  }
+
+  const handleRoleChange = (value: string) => {
+    const roleValue = value === "all" ? undefined : value
+    setRoleFilter(roleValue)
+    setCurrentPage(1)
+    updateUrl({ role: roleValue, p: 1 })
+  }
 
   return (
     <div className="space-y-6">
@@ -602,19 +618,22 @@ const AdminUsers = () => {
                     onChange={handleSearchChange}
                   />
                 </div>
-                {/* <Select
-                  value={statusFilter}
+                <Select
+                  value={roleFilter ?? "all"}
+                  onValueChange={handleRoleChange}
                 >
                   <SelectTrigger className="w-full md:w-[180px]">
-                    <SelectValue placeholder="Lọc theo trạng thái" />
+                    <SelectValue placeholder="Lọc theo vai trò" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả người dùng</SelectItem>
-                    <SelectItem value="active">Đang hoạt động</SelectItem>
-                    <SelectItem value="blocked">Đã chặn</SelectItem>
-                    <SelectItem value="inactive">Không hoạt động</SelectItem>
+                    <SelectItem value="all">Tất cả vai trò</SelectItem>
+                    {getAllRoles().map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
-                </Select> */}
+                </Select>
 
                 <div className="h-10 flex flex-1 justify-end items-center">
                   {selectedRowKeys.length > 0 ? (
@@ -632,8 +651,8 @@ const AdminUsers = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          setSelectedRowKeys([]);
-                          setSelectedRows([]);
+                          setSelectedRowKeys([])
+                          setSelectedRows([])
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -690,13 +709,12 @@ const AdminUsers = () => {
         open={isDetailModalOpen}
         onOpenChange={(open) => {
           if (!open) handleAccountsCreated()
-          else setIsDetailModalOpen(true)
+          setIsDetailModalOpen(open)
         }}
         user={selectedUser}
         onStatusChange={handleUserStatusChange}
         onResetPassword={handleResetPassword}
       />
-
     </div>
   )
 }

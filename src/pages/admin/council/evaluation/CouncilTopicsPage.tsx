@@ -485,36 +485,28 @@ export default function CouncilTopicsPage() {
                                                 </div>
                                             </CardContent>
                                             <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-blue-50/30 border-t border-gray-100">
-                                                {topic.status === TopicStatus.IN_CATALOG ? (
+                                                {topic.status === TopicStatus.IN_PROGRESS ? (
                                                     <div className="flex flex-wrap gap-2">
                                                         <Button
                                                             size="sm"
                                                             onClick={() => handleViewProgress(topic.id)}
-                                                            variant="outline"
+                                                            variant="default"
                                                             className="flex-1 gap-2 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors"
                                                         >
                                                             <Eye className="h-4 w-4" />
                                                             Tiến độ
                                                         </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() => handleEvaluateTopic(topic)}
-                                                            className="flex-1 gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all"
-                                                        >
-                                                            <Star className="h-4 w-4" />
-                                                            Đánh giá
-                                                        </Button>
-                                                        {/* <Button
-                                                            size="sm"
-                                                            onClick={() => handleSummarizeTopic(topic)}
-                                                            variant="outline"
-                                                            className="flex-1 gap-2 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 transition-colors"
-                                                        >
-                                                            <Award className="h-4 w-4" />
-                                                            Tổng kết
-                                                        </Button> */}
                                                     </div>
-                                                ) : (
+                                                ) : topic.status === TopicStatus.IN_CATALOG ? (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleEvaluateTopic(topic)}
+                                                        className="flex-1 gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all"
+                                                    >
+                                                        <Star className="h-4 w-4" />
+                                                        Đánh giá ứng viên
+                                                    </Button>
+                                                ) : topic.status === TopicStatus.REVIEWED ? (
                                                     <Button
                                                         size="sm"
                                                         onClick={() => handleClassifyTopic(topic.id)}
@@ -523,7 +515,7 @@ export default function CouncilTopicsPage() {
                                                         <Edit3 className="h-4 w-4" />
                                                         Xác định danh mục
                                                     </Button>
-                                                )}
+                                                ) : null}
                                             </div>
                                         </Card>
                                     ))}
