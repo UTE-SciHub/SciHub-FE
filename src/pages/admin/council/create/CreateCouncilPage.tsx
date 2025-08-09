@@ -290,7 +290,8 @@ export default function CreateCouncilPage() {
 
         try {
             // Format dates to ISO string
-            const establishmentDate = data.establishmentDate.toISOString().split("T")[0]
+            const today = new Date();
+            const establishmentDate = today.toISOString().split("T")[0]; 
             const startDate = data.startDate.toISOString().split("T")[0]
             const endDate = data.endDate.toISOString().split("T")[0]
 

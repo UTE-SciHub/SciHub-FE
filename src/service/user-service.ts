@@ -16,6 +16,7 @@ export class UserService {
         sort?: string;
         order?: string;
         tab?: string;
+        role?: string;
     }) {
         return axiosClient.get(`${BASE_URL}users`, { params });
     }

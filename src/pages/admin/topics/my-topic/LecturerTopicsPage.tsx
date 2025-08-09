@@ -174,8 +174,16 @@ const LecturerTopicsPage = () => {
     const columnsTopics = useMemo(
         () => [
             {
+                key: "topicCode",
+                title: "Mã đề tài",
+                width: "150px",
+                sortable: true,
+                render: (value: string) => value || "N/A",
+            },
+            {
                 key: "vietnameseName",
                 title: "Tên tiếng Việt",
+                width: "350px",
                 sortable: true,
                 render: (value: string) => value || "N/A",
             },

@@ -67,7 +67,7 @@ export default function CouncilManagementPage() {
     const navigate = useNavigate()
     const user = useUserStore((state) => state.user)
     // Kiểm tra vai trò ADMIN
-    const isAdmin = user?.roles?.some((role) => role.name === "ADMIN") || false
+    const isAdmin = user?.roles?.some((role) => role.name === "ADMIN" || role.name === "PQLKHHTQT") || false
     const isChairman = user?.roles?.some((role) => role.name === "CHAIRMAN") || false
 
     // Parse URL parameters
